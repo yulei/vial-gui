@@ -20,6 +20,7 @@ from protocol.dynamic import ProtocolDynamic
 from protocol.key_override import ProtocolKeyOverride
 from protocol.macro import ProtocolMacro
 from protocol.tap_dance import ProtocolTapDance
+from protocol.amk import ProtocolAmk
 from unlocker import Unlocker
 from util import MSG_LEN, hid_send
 
@@ -31,7 +32,7 @@ class ProtocolError(Exception):
     pass
 
 
-class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, ProtocolKeyOverride):
+class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, ProtocolKeyOverride, ProtocolAmk):
     """ Low-level communication with a vial-enabled keyboard """
 
     def __init__(self, dev, usb_send=hid_send):
@@ -96,6 +97,16 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_combo()
         self.reload_key_override()
 
+        #reload apc/rt/dks if support
+        if self.keyboard_type == "ms":
+            print("Start loading ms related data")
+            self.amk_apc = dict()
+            self.reload_apc()
+            self.amk_rt = dict()
+            self.reload_rt()
+            self.amk_dks = dict()
+            self.reload_dks()
+
     def reload_layers(self):
         """ Get how many layers the keyboard has """
 
@@ -156,6 +167,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.cols = payload["matrix"]["cols"]
 
         self.custom_keycodes = payload.get("customKeycodes", None)
+        self.keyboard_type = payload.get("keyboardType", None)
 
         serial = KleSerial()
         kb = serial.deserialize(payload["layouts"]["keymap"])
