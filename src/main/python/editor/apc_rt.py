@@ -2,13 +2,14 @@
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox
 from PyQt5.QtCore import Qt, QTimer
 
-import math
+import math, struct
 
 from editor.basic_editor import BasicEditor
 from widgets.keyboard_widget import KeyboardWidget
 from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
-
+from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
+from protocol.amk import AMK_PROTOCOL_GET_APC, AMK_PROTOCOL_SET_APC, AMK_PROTOCOL_GET_RT, AMK_PROTOCOL_SET_RT
 
 class ApcRt(BasicEditor):
 
@@ -94,7 +95,7 @@ class ApcRt(BasicEditor):
     def valid(self):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard or self.device.keyboard.keyboard_type == "ms") and \
+               (self.device.keyboard and self.device.keyboard.keyboard_type == "ms") and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
      #def refresh_keycode_display(self):
@@ -125,6 +126,11 @@ class ApcRt(BasicEditor):
     def deactivate(self):
         print("apc/rt windows deactivated")
 
+    def apply_apc_rt(self, row, col, cmd, val):
+        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, cmd, row, col, val)
+        data = self.keyboard.usb_send(self.device.dev, data, retries=20)
+        print("SetAPC: row={}, col={}, cmd={}, val={}, result={}", row, col, cmd, val, data[2])
+
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
         if self.keyboardWidget.active_key is None:
@@ -136,11 +142,19 @@ class ApcRt(BasicEditor):
         apc = self.keyboard.amk_apc.get((row, col), 20)
         rt  = self.keyboard.amk_rt.get((row,col), 0)
 
+        self.apc_sld.blockSignals(True)
+        self.apc_dpb.blockSignals(True)
+        self.rt_cbx.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
+
         self.apc_sld.setValue(apc)
         self.apc_dpb.setValue(apc/10.0)
 
         if rt > 0:
             self.rt_cbx.setCheckState(Qt.Checked)
+            self.rt_sld.setEnabled(True)
+            self.rt_dpb.setEnabled(True)
             self.rt_sld.setValue(rt)
             self.rt_dpb.setValue(rt/10.0)
         else:
@@ -148,42 +162,96 @@ class ApcRt(BasicEditor):
             self.rt_sld.setEnabled(False)
             self.rt_dpb.setEnabled(False)
 
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
+        self.rt_cbx.blockSignals(False)
+        self.apc_dpb.blockSignals(False)
+        self.apc_sld.blockSignals(False)
+
         print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
 
-
     def on_rt_check(self):
+        self.rt_cbx.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
         if self.rt_cbx.isChecked():
             self.rt_dpb.setEnabled(True)
             self.rt_sld.setEnabled(True)
+            if self.keyboardWidget.active_key is not None:
+                row = self.keyboardWidget.active_key.desc.row
+                col = self.keyboardWidget.active_key.desc.col
+                rt = self.keyboard.amk_rt.get((row, col), 0)
+                if rt == 0:
+                    self.keyboard.amk_rt[(row,col)] = 1
+                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, rt)
+                    self.rt_sld.setValue(rt)
+                    self.rt_dpb.setValue(rt/10.0)
         else:
+            if self.keyboardWidget.active_key is not None:
+                row = self.keyboardWidget.active_key.desc.row
+                col = self.keyboardWidget.active_key.desc.col
+                rt = self.keyboard.amk_rt.get((row, col), 0)
+                if rt > 0:
+                    self.keyboard.amk_rt[(row,col)] = 0
+                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, rt)
+                    #self.rt_sld.setValue(rt)
+                    #self.rt_dpb.setValue(rt/10.0)
             self.rt_dpb.setEnabled(False)
             self.rt_sld.setEnabled(False)
-    
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
+        self.rt_cbx.blockSignals(False)
+
     def on_apc_dpb(self):
+        self.apc_sld.blockSignals(True)
+        self.apc_dpb.blockSignals(True)
         val = int(self.apc_dpb.value()*10)
         self.apc_sld.setValue(val)
         if self.keyboardWidget.active_key is not None:
-            self.keyboard.amk_apc[(self.keyboardWidget.active_key.desc.row,
-                                    self.keyboardWidget.active_key.desc.col)] = val
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.amk_apc[(row, col)] = val
+            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, val)
+        self.apc_dpb.blockSignals(False)
+        self.apc_sld.blockSignals(False)
+            
 
     def on_apc_sld(self):
+        self.apc_sld.blockSignals(True)
+        self.apc_dpb.blockSignals(True)
         val = self.apc_sld.value()/10.0
         self.apc_dpb.setValue(val)
         if self.keyboardWidget.active_key is not None:
-            self.keyboard.amk_apc[(self.keyboardWidget.active_key.desc.row,
-                                    self.keyboardWidget.active_key.desc.col)] = self.apc_sld.value()
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.amk_apc[(row, col)] = self.apc_sld.value()
+            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, self.apc_sld.value())
+        self.apc_dpb.blockSignals(False)
+        self.apc_sld.blockSignals(False)
 
     def on_rt_dpb(self):
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
         val = int(self.rt_dpb.value()*10)
         self.rt_sld.setValue(val)
         if self.keyboardWidget.active_key is not None:
-            self.keyboard.amk_rt[(self.keyboardWidget.active_key.desc.row,
-                                    self.keyboardWidget.active_key.desc.col)] = val
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.amk_rt[(row, col)] = val
+            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, val)
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
 
 
     def on_rt_sld(self):
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
         val = self.rt_sld.value()/10.0
         self.rt_dpb.setValue(val)
         if self.keyboardWidget.active_key is not None:
-            self.keyboard.amk_rt[(self.keyboardWidget.active_key.desc.row,
-                                    self.keyboardWidget.active_key.desc.col)] = self.rt_sld.value()
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.amk_rt[(row, col)] = self.rt_sld.value()
+            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, self.rt_sld.value())
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)

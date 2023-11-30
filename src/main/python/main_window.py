@@ -31,6 +31,7 @@ from util import tr, EXAMPLE_KEYBOARDS, KeycodeDisplay, EXAMPLE_KEYBOARD_PREFIX
 from vial_device import VialKeyboard
 from editor.matrix_test import MatrixTest
 from editor.apc_rt import ApcRt
+from editor.dks import Dks 
 
 import themes
 
@@ -82,12 +83,13 @@ class MainWindow(QMainWindow):
         self.matrix_tester = MatrixTest(self.layout_editor)
         self.rgb_configurator = RGBConfigurator()
         self.apc_rt = ApcRt(self.layout_editor)
+        self.dks = Dks(self.layout_editor)
 
         self.editors = [(self.keymap_editor, "Keymap"), (self.layout_editor, "Layout"), (self.macro_recorder, "Macros"),
                         (self.rgb_configurator, "Lighting"), (self.tap_dance, "Tap Dance"), (self.combos, "Combos"),
                         (self.key_override, "Key Overrides"), (self.qmk_settings, "QMK Settings"),
                         (self.matrix_tester, "Matrix tester"), (self.firmware_flasher, "Firmware updater"),
-                        (self.apc_rt, "APC/RT Settings")]
+                        (self.apc_rt, "APC/RT Settings"), (self.dks, "DKS Settings")]
 
         Unlocker.global_layout_editor = self.layout_editor
         Unlocker.global_main_window = self
@@ -314,7 +316,7 @@ class MainWindow(QMainWindow):
         for e in [self.layout_editor, self.keymap_editor, self.firmware_flasher, self.macro_recorder,
                   self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester,
                   self.rgb_configurator,
-                  self.apc_rt]:
+                  self.apc_rt, self.dks]:
             e.rebuild(self.autorefresh.current_device)
 
     def refresh_tabs(self):
