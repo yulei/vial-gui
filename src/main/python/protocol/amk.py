@@ -3,10 +3,6 @@ import struct
 from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
-from protocol.constants import CMD_VIA_MACRO_GET_COUNT, CMD_VIA_MACRO_GET_BUFFER_SIZE, CMD_VIA_MACRO_GET_BUFFER, \
-    CMD_VIA_MACRO_SET_BUFFER, BUFFER_FETCH_CHUNK, VIAL_PROTOCOL_ADVANCED_MACROS
-from unlocker import Unlocker
-from util import chunks
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -18,6 +14,12 @@ AMK_PROTOCOL_GET_RT = 3
 AMK_PROTOCOL_SET_RT = 4
 AMK_PROTOCOL_GET_DKS = 5
 AMK_PROTOCOL_SET_DKS = 6
+AMK_PROTOCOL_GET_POLL_RATE = 7
+AMK_PROTOCOL_SET_POLL_RATE = 8
+AMK_PROTOCOL_GET_DOWN_DEBOUNCE = 9
+AMK_PROTOCOL_SET_DOWN_DEBOUNCE = 10
+AMK_PROTOCOL_GET_UP_DEBOUNCE = 11
+AMK_PROTOCOL_SET_UP_DEBOUNCE = 12
 
 DKS_EVENT_0 = 0
 DKS_EVENT_1 = 1
@@ -31,11 +33,25 @@ class DksKey:
     def __init__(self):
         self.down_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
         self.up_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
-        self.keys = [0,0,0,0]
+        self.keys = ["KC_NO","KC_NO","KC_NO","KC_NO"]
         self.dirty = False
 
     def is_dirty(self):
         return self.dirty
+    
+    def is_valid(self):
+        for k in self.keys:
+            if k != "KC_NO":
+                return True
+        for t in self.down_events:
+            for e in t:
+                if e != 0:
+                    return True
+        for t in self.up_events:
+            for e in t:
+                if e != 0:
+                    return True
+        return False
     
     def set_dirty(self, dirty):
         self.dirty = dirty
@@ -51,8 +67,8 @@ class DksKey:
             return False
     
     def del_key(self, index):
-        if self.keys[index] != 0:
-            self.keys[index] = 0
+        if self.keys[index] != "KC_NO":
+            self.keys[index] = "KC_NO"
             self.dirty = True
 
     def add_event(self, event, key, down):
@@ -78,7 +94,6 @@ class DksKey:
         return True
 
     def pack_dks(self):
-        print("Pack DKS")
         evts = [0,0,0,0]
         for i in range(DKS_EVENT_MAX):
             for j in range(4):
@@ -90,7 +105,6 @@ class DksKey:
         keys = [0,0,0,0]
         for i in range(len(self.keys)):
             keys[i] = Keycode.resolve(self.keys[i])
-            print(keys[i])
         
         data = struct.pack(">BBBBHHHH", 
                         evts[0], evts[1], evts[2], evts[3],
@@ -102,17 +116,16 @@ class DksKey:
         for i in range(4):
             print("Event:{:b}".format(data[i]))
             for j in range(4):
-                if data[j] & (1<<j) > 0:
+                if data[i] & (1<<j) > 0:
                     self.down_events[i][j] = 1
                 else:
                     self.down_events[i][j] = 0
 
-                if data[j] & (1<<(j+4)) > 0:
+                if data[i] & (1<<(j+4)) > 0:
                     self.up_events[i][j] = 1
                 else:
                     self.up_events[i][j] = 0
 
-        print(data[4:13])
         keys = struct.unpack(">HHHH", data[4:13])
         for i in range(4):
             self.keys[i] = Keycode.serialize(keys[i])
@@ -121,7 +134,7 @@ class DksKey:
 
     def clear(self):
         for i in range(len(self.keys)):
-            self.keys[i] = 0
+            self.keys[i] = "KC_NO"
 
         for i in range(DKS_EVENT_MAX):
             for j in range(4):
@@ -196,3 +209,24 @@ class ProtocolAmk(BaseProtocol):
             dks.parse(dks_data)
             self.amk_dks[(row, col)] = dks 
             print("AMK protocol: DKS={}, row={}, col={}".format(dks.pack_dks(), row, col))
+    
+    def reload_poll_rate(self):
+        """ Reload Poll Rate information from keyboard """
+        # poll rate
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLL_RATE))
+        self.amk_poll_rate = data[3]
+        print("AMK protocol: poll rate={}, result={}".format(self.amk_poll_rate, data[2]))
+
+    def reload_debounce(self):
+        """ Reload Debounce information from keyboard """
+        # down debounce
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_DOWN_DEBOUNCE))
+        self.amk_down_debounce = data[3]
+        print("AMK protocol: down debounce ={}, result={}".format(self.amk_down_debounce, data[2]))
+        # up debounce
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_UP_DEBOUNCE))
+        self.amk_up_debounce = data[3]
+        print("AMK protocol: up debounce ={}, result={}".format(self.amk_up_debounce, data[2]))
+
+        
+        

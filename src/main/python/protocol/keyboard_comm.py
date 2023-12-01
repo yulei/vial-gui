@@ -99,13 +99,20 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
         #reload apc/rt/dks if support
         if self.keyboard_type == "ms":
-            print("Start loading ms related data")
             self.amk_apc = dict()
             self.reload_apc()
             self.amk_rt = dict()
             self.reload_rt()
             self.amk_dks = dict()
             self.reload_dks()
+
+        #reload keyboard misc settings
+        if self.keyboard_speed == "hs":
+            self.amk_poll_rate = 0
+            self.reload_poll_rate()
+            self.amk_down_debounce = 0
+            self.amk_up_debounce = 5
+            self.reload_debounce()
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """
@@ -168,6 +175,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
         self.custom_keycodes = payload.get("customKeycodes", None)
         self.keyboard_type = payload.get("keyboardType", None)
+        self.keyboard_speed = payload.get("keyboardSpeed", None)
 
         serial = KleSerial()
         kb = serial.deserialize(payload["layouts"]["keymap"])

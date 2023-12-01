@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QGridLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QGridLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QMessageBox
+from PyQt5.QtCore import QSize, Qt, QCoreApplication
+from PyQt5.QtGui import QPalette
+from PyQt5.QtWidgets import QApplication
 
 
 import math, struct
@@ -13,6 +15,17 @@ from keycodes.keycodes import Keycode
 from tabbed_keycodes import TabbedKeycodes, keycode_filter_masked
 from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
 from protocol.amk import AMK_PROTOCOL_GET_DKS, AMK_PROTOCOL_SET_DKS
+from protocol.amk import DksKey
+
+def dks_display(widget, dks):
+    if dks.is_valid():
+        widget.setText("DKS")
+        widget.setToolTip("DKS already set")
+        widget.setColor(QApplication.palette().color(QPalette.Link))
+    else:
+        widget.setText("")
+        widget.setToolTip("DKS not set")
+        widget.setColor(None)
 
 class DksButton(QPushButton):
 
@@ -185,8 +198,9 @@ class Dks(BasicEditor):
         self.keyboardWidget.update_layout()
 
         for widget in self.keyboardWidget.widgets:
-            code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
-            KeycodeDisplay.display_keycode(widget, code)
+            #code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
+            #KeycodeDisplay.display_keycode(widget, code)
+            dks_display(widget, self.keyboard.amk_dks[(widget.desc.row,widget.desc.col)])
             widget.setOn(False)
 
         self.keyboardWidget.update()
@@ -198,24 +212,62 @@ class Dks(BasicEditor):
     def deactivate(self):
         print("apc/rt windows deactivated")
 
+    def block_check_box(self, block):
+        for b in self.dks_ckbs:
+            b.blockSignals(block)
+
+    def save_dks(self, dks):
+        if self.keyboardWidget.active_key is None:
+            return
+
+        row = self.keyboardWidget.active_key.desc.row
+        col = self.keyboardWidget.active_key.desc.col
+
+        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col) + dks.pack_dks()
+        data = self.keyboard.usb_send(self.device.dev, data, retries=20)
+        print("SetDKS returned={}".format(data[2]))
+
     def refresh_dks(self, dks):
-        dks.dump()
-        # set buttons
         for i in range(4):
             kc = Keycode.find_by_qmk_id(dks.get_key(i))
             self.dks_btns[i].setText(kc.label)
 
-        for i in range(4):
-            # 4 trigger point
-            for j in range(2):
-                # up and down
-                for k in range(4):
-                    # 4 keys
-                    ckb = self.dks_ckbs[i*8+j*4+k]
-                    if dks.is_event_on(i, k, j==0):
-                        ckb.setChecked(True)
-                    else:
-                        ckb.setChecked(False)
+        self.block_check_box(True)
+        for index in range(32):
+            ckb = self.dks_ckbs[index]
+            event = index % 4
+            key = index // 8
+            down = True if (index % 8) < 4 else False
+
+            if dks.is_event_on(event, key, down):
+                ckb.setChecked(True)
+            else:
+                ckb.setChecked(False)
+        self.block_check_box(False)
+        if dks.is_dirty():
+            self.apply_btn.setEnabled(True)
+        else:
+            self.apply_btn.setEnabled(False)
+
+    def reset_active_dks(self):
+        if self.keyboardWidget.active_key is None:
+            return
+        
+        widget = self.keyboardWidget.active_key
+        dks_display(widget, self.keyboard.amk_dks[(widget.desc.row,widget.desc.col)])
+        self.keyboardWidget.update()
+
+    def save_or_discard(self, dks):
+        button = QMessageBox.warning(None, "DKS button",
+                                    "The current DKS button was modified, do you want to save ?",
+                                    buttons=QMessageBox.Save | QMessageBox.Discard,
+                                    defaultButton=QMessageBox.Save)
+        if button == QMessageBox.Save:
+            self.save_dks(dks)
+            self.active_dks.set_dirty(False)
+            self.apply_btn.setEnabled(False)
+            self.reset_keyboard_widget()
+            
 
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
@@ -225,9 +277,9 @@ class Dks(BasicEditor):
         row = self.keyboardWidget.active_key.desc.row
         col = self.keyboardWidget.active_key.desc.col
         dks = self.active_dks
-        if dks is not None:
-            print("Dump before switch")
-            dks.dump()
+        if dks is not None and dks.is_dirty():
+            self.save_or_discard(dks)
+
         self.active_dks = self.keyboard.amk_dks[(row, col)]
         self.refresh_dks(self.active_dks)
         print("Select dks at:{},{}".format(row, col))
@@ -257,20 +309,16 @@ class Dks(BasicEditor):
         if self.active_dks is None:
             return
 
-        row = self.keyboardWidget.active_key.desc.row
-        col = self.keyboardWidget.active_key.desc.col
+        self.save_dks(self.active_dks)
 
-        dks = self.active_dks.pack_dks()
-        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col)
-        data = data + dks
-        data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        print("SetDkS: result={}", data[2])
         self.active_dks.set_dirty(False)
         self.apply_btn.setEnabled(False)
+        self.reset_active_dks()
 
     def on_reset_clicked(self):
         if self.active_dks is not None:
             self.active_dks.clear()
+            self.refresh_dks(DksKey())
             self.apply_btn.setEnabled(True)
 
     def on_dks_checked(self):

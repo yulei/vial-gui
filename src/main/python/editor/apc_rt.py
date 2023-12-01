@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout
+from PyQt5.QtCore import QSize, Qt, QCoreApplication
+from PyQt5.QtGui import QPalette
+from PyQt5.QtWidgets import QApplication
 
 import math, struct
 
@@ -10,6 +12,21 @@ from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
 from protocol.amk import AMK_PROTOCOL_GET_APC, AMK_PROTOCOL_SET_APC, AMK_PROTOCOL_GET_RT, AMK_PROTOCOL_SET_RT
+
+def apc_rt_display(widget, apc, rt):
+    apc_text = "{:.2f}mm".format(apc/10.0)
+    tooltip = "APC/RT setting"
+
+    widget.setText(apc_text)
+    widget.setToolTip(tooltip)
+
+    if rt > 0:
+        widget.masked = True 
+        apc_text = "{:.2f}mm".format(rt/10.0)
+        widget.setMaskText(apc_text)
+        widget.setMaskColor(QApplication.palette().color(QPalette.Link))
+    else:
+        widget.masked = False
 
 class ApcRt(BasicEditor):
 
@@ -28,6 +45,8 @@ class ApcRt(BasicEditor):
 
         self.addLayout(layout)
 
+        apc_rt_layout = QGridLayout()
+
         self.apc_lbl = QLabel(tr("APC setting", "Set the actuation point:"))
         self.apc_dpb = QDoubleSpinBox()
         self.apc_dpb.setRange(0.1, 4.0)
@@ -36,20 +55,17 @@ class ApcRt(BasicEditor):
         self.apc_dpb.valueChanged.connect(self.on_apc_dpb) 
         self.apc_sld = QSlider(Qt.Horizontal)
         self.apc_sld.setMaximumWidth(300)
-        self.apc_sld.setMinimumWidth(100)
+        self.apc_sld.setMinimumWidth(200)
         self.apc_sld.setRange(1, 40)
         self.apc_sld.setSingleStep(1)
         self.apc_sld.setValue(12)
         self.apc_sld.setTickPosition(QSlider.TicksAbove)
+        self.apc_sld.setTracking(False)
         self.apc_sld.valueChanged.connect(self.on_apc_sld) 
-        apc_layout = QHBoxLayout()
-        apc_layout.addStretch()
 
-        apc_layout.addWidget(self.apc_lbl)
-        apc_layout.addWidget(self.apc_dpb)
-        apc_layout.addWidget(self.apc_sld)
-        apc_layout.setAlignment(self.apc_lbl, Qt.AlignCenter)
-        self.addLayout(apc_layout)
+        apc_rt_layout.addWidget(self.apc_lbl, 0, 1)
+        apc_rt_layout.addWidget(self.apc_dpb, 0, 2)
+        apc_rt_layout.addWidget(self.apc_sld, 0, 3)
 
         self.rt_cbx = QCheckBox("RT")
         self.rt_cbx.setTristate(False)
@@ -65,21 +81,23 @@ class ApcRt(BasicEditor):
         self.rt_sld= QSlider(Qt.Horizontal)
         self.rt_sld.setEnabled(False)
         self.rt_sld.setMaximumWidth(300)
-        self.rt_sld.setMinimumWidth(100)
+        self.rt_sld.setMinimumWidth(200)
         self.rt_sld.setRange(1, 40)
         self.rt_sld.setSingleStep(1)
         self.rt_sld.setValue(12)
         self.rt_sld.setTickPosition(QSlider.TicksAbove)
+        self.rt_sld.setTracking(False)
         self.rt_sld.valueChanged.connect(self.on_rt_sld) 
-        rt_layout = QHBoxLayout()
-        rt_layout.addStretch()
+        apc_rt_layout.addWidget(self.rt_cbx, 1, 0)
+        apc_rt_layout.addWidget(self.rt_lbl, 1, 1)
+        apc_rt_layout.addWidget(self.rt_dpb, 1, 2)
+        apc_rt_layout.addWidget(self.rt_sld, 1, 3)
 
-        rt_layout.addWidget(self.rt_cbx)
-        rt_layout.addWidget(self.rt_lbl)
-        rt_layout.addWidget(self.rt_dpb)
-        rt_layout.addWidget(self.rt_sld)
-        rt_layout.setAlignment(self.rt_lbl, Qt.AlignCenter)
-        self.addLayout(rt_layout)
+        layout = QHBoxLayout()
+        layout.addStretch(1)
+        layout.addLayout(apc_rt_layout)
+        layout.addStretch(1)
+        self.addLayout(layout)
 
         self.keyboard = None
         self.device = None
@@ -98,27 +116,30 @@ class ApcRt(BasicEditor):
                (self.device.keyboard and self.device.keyboard.keyboard_type == "ms") and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
-     #def refresh_keycode_display(self):
     def reset_keyboard_widget(self):
 
         self.keyboardWidget.update_layout()
 
         for widget in self.keyboardWidget.widgets:
             code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
-            KeycodeDisplay.display_keycode(widget, code)
+            #KeycodeDisplay.display_keycode(widget, code)
+            apc_rt_display(widget, self.keyboard.amk_apc[(widget.desc.row, widget.desc.col)],
+                        self.keyboard.amk_rt[(widget.desc.row, widget.desc.col)])
+
             widget.setOn(False)
 
         self.keyboardWidget.update()
         self.keyboardWidget.updateGeometry()
 
-#    def reset_keyboard_widget(self):
-        # reset keyboard widget
-#        for w in self.keyboardWidget.widgets:
-#            w.setOn(False)
-
-#        self.keyboardWidget.update_layout()
-#        self.keyboardWidget.update()
-#        self.keyboardWidget.updateGeometry()
+    def reset_active_apcrt(self):
+        if self.keyboardWidget.active_key is None:
+            return
+        
+        widget = self.keyboardWidget.active_key
+        row = widget.desc.row
+        col = widget.desc.col
+        apc_rt_display(widget, self.keyboard.amk_apc[(row,col)], self.keyboard.amk_rt[(row,col)])
+        self.keyboardWidget.update()
 
     def activate(self):
         print("apc/rt windows activated")
@@ -129,7 +150,8 @@ class ApcRt(BasicEditor):
     def apply_apc_rt(self, row, col, cmd, val):
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, cmd, row, col, val)
         data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        print("SetAPC: row={}, col={}, cmd={}, val={}, result={}", row, col, cmd, val, data[2])
+        print("SetAPC: row={}, col={}, cmd={}, val={}".format(row, col, cmd, val))
+        print("Result:{}".format(data[2]))
 
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
@@ -201,6 +223,7 @@ class ApcRt(BasicEditor):
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.rt_cbx.blockSignals(False)
+        self.reset_active_apcrt()
 
     def on_apc_dpb(self):
         self.apc_sld.blockSignals(True)
@@ -214,6 +237,7 @@ class ApcRt(BasicEditor):
             self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, val)
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
+        self.reset_active_apcrt()
             
 
     def on_apc_sld(self):
@@ -228,6 +252,7 @@ class ApcRt(BasicEditor):
             self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, self.apc_sld.value())
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
+        self.reset_active_apcrt()
 
     def on_rt_dpb(self):
         self.rt_sld.blockSignals(True)
@@ -241,7 +266,7 @@ class ApcRt(BasicEditor):
             self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, val)
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
-
+        self.reset_active_apcrt()
 
     def on_rt_sld(self):
         self.rt_sld.blockSignals(True)
@@ -255,3 +280,5 @@ class ApcRt(BasicEditor):
             self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, self.rt_sld.value())
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
+        self.reset_active_apcrt()
+
