@@ -14,7 +14,7 @@ from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_
 from protocol.amk import AMK_PROTOCOL_GET_APC, AMK_PROTOCOL_SET_APC, AMK_PROTOCOL_GET_RT, AMK_PROTOCOL_SET_RT
 
 def apc_rt_display(widget, apc, rt):
-    apc_text = "{:.2f}mm".format(apc/10.0)
+    apc_text = "{:.2f}\u2193".format(apc/10.0)
     tooltip = "APC/RT setting"
 
     widget.setText(apc_text)
@@ -22,7 +22,7 @@ def apc_rt_display(widget, apc, rt):
 
     if rt > 0:
         widget.masked = True 
-        apc_text = "{:.2f}mm".format(rt/10.0)
+        apc_text = "{:.2f}\u2191".format(rt/10.0)
         widget.setMaskText(apc_text)
         widget.setMaskColor(QApplication.palette().color(QPalette.Link))
     else:
@@ -150,7 +150,7 @@ class ApcRt(BasicEditor):
     def apply_apc_rt(self, row, col, cmd, val):
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, cmd, row, col, val)
         data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        print("SetAPC: row={}, col={}, cmd={}, val={}".format(row, col, cmd, val))
+        print("Set {}: row={}, col={}, cmd={}, val={}".format("APC" if cmd==AMK_PROTOCOL_SET_APC else "RT", row, col, cmd, val))
         print("Result:{}".format(data[2]))
 
     def on_key_clicked(self):
@@ -205,7 +205,7 @@ class ApcRt(BasicEditor):
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt == 0:
                     self.keyboard.amk_rt[(row,col)] = 1
-                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, rt)
+                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, 1)
                     self.rt_sld.setValue(rt)
                     self.rt_dpb.setValue(rt/10.0)
         else:
@@ -215,7 +215,7 @@ class ApcRt(BasicEditor):
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt > 0:
                     self.keyboard.amk_rt[(row,col)] = 0
-                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, rt)
+                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, 0)
                     #self.rt_sld.setValue(rt)
                     #self.rt_dpb.setValue(rt/10.0)
             self.rt_dpb.setEnabled(False)

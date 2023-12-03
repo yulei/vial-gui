@@ -113,6 +113,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_down_debounce = 0
             self.amk_up_debounce = 5
             self.reload_debounce()
+            self.amk_nkro = False
+            self.reload_nkro()
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """

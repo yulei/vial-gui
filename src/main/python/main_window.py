@@ -33,6 +33,7 @@ from editor.matrix_test import MatrixTest
 from editor.apc_rt import ApcRt
 from editor.dks import Dks 
 from editor.keyboard_misc import KeyboardMisc
+from protocol.amk import AMK_VERSION
 
 import themes
 
@@ -419,10 +420,10 @@ class MainWindow(QMainWindow):
 
     def about_vial(self):
         title = "About Vial"
-        text = 'Vial {}<br><br>Python {}<br>Qt {}<br><br>' \
+        text = 'Vial {}<br>AMK {}<br><br>Python {}<br>Qt {}<br><br>' \
                'Licensed under the terms of the<br>GNU General Public License (version 2 or later)<br><br>' \
                '<a href="https://get.vial.today/">https://get.vial.today/</a>' \
-               .format(qApp.applicationVersion(),
+               .format(qApp.applicationVersion(), AMK_VERSION,
                        platform.python_version(), QT_VERSION_STR)
 
         if sys.platform == "emscripten":

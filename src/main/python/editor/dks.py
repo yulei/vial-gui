@@ -19,7 +19,7 @@ from protocol.amk import DksKey
 
 def dks_display(widget, dks):
     if dks.is_valid():
-        widget.setText("DKS")
+        widget.setText("\u21DF\u21DE")
         widget.setToolTip("DKS already set")
         widget.setColor(QApplication.palette().color(QPalette.Link))
     else:
@@ -88,10 +88,10 @@ class DksCheckBox(QCheckBox):
     def get_index(self):
         return self.index
 
-DKS_TRIGGER_LABELS = [tr("DKS A", "Set the first trigger event:"), tr("DKS B", "Set the second trigger event:"), 
-                tr("DKS C", "Set the third trigger event:"), tr("DKS D", "Set the fourth trigger event:")]
+DKS_TRIGGER_LABELS = [tr("DKS A", "Event point 1:"), tr("DKS B", "Event point 2:"), 
+                tr("DKS C", "Event point 3:"), tr("DKS D", "Event point 3:")]
 
-DKS_KEY_EVENT_LABELS = [tr("Down Event", "Key down"), tr("Up Event", "Key up")]
+DKS_KEY_EVENT_LABELS = [tr("Down Event", "\u21A7"), tr("Up Event", "\u21A5")]
 
 class Dks(BasicEditor):
 
@@ -103,6 +103,8 @@ class Dks(BasicEditor):
         self.active_dks = None
         self.dks_btns = []
         self.dks_ckbs = []
+        #self.evt_slds = []
+        #self.evt_dpbs = []
 
         g_layout = QGridLayout()
         index = 0
@@ -122,11 +124,19 @@ class Dks(BasicEditor):
             lbl = QLabel(DKS_TRIGGER_LABELS[line])
             g_layout.addWidget(lbl, 2*line + 1, 0)
 
+            #s_layout = QHBoxLayout()
+            #dpb = QDoubleSpinBox()
+            #sld = QSlider(Qt.Horizontal)
+            #s_layout.addWidget(dpb)
+            #s_layout.addWidget(sld)
+            #g_layout.addLayout(s_layout, 2*line+2,0)
+
             for sub in range(2):
-                lbl = QLabel(DKS_KEY_EVENT_LABELS[sub])
-                g_layout.addWidget(lbl, 2*line+sub+1, 1)
+                #lbl = QLabel(DKS_KEY_EVENT_LABELS[sub])
+                #g_layout.addWidget(lbl, 2*line+sub+1, 1)
+                lbl = DKS_KEY_EVENT_LABELS[sub]
                 for x in range(4):
-                    ckb = DksCheckBox()
+                    ckb = DksCheckBox(lbl)
                     ckb.set_index(index)
                     ckb.setTristate(False)
                     ckb.stateChanged.connect(self.on_dks_checked)
@@ -148,9 +158,11 @@ class Dks(BasicEditor):
         h_layout.setAlignment(self.reset_btn, Qt.AlignRight)
 
         v_layout = QVBoxLayout()
+        v_layout.addStretch(1)
         v_layout.addLayout(g_layout)
         v_layout.addLayout(h_layout)
         v_layout.setAlignment(h_layout, Qt.AlignRight)
+        v_layout.addStretch(1)
 
         dks_layout = QHBoxLayout()
         dks_layout.addStretch(1)
@@ -225,6 +237,7 @@ class Dks(BasicEditor):
 
         data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col) + dks.pack_dks()
         data = self.keyboard.usb_send(self.device.dev, data, retries=20)
+        dks.dump()
         print("SetDKS returned={}".format(data[2]))
 
     def refresh_dks(self, dks):

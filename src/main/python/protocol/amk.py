@@ -4,6 +4,8 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
+AMK_VERSION = "0.1.0"
+
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
 
@@ -20,6 +22,8 @@ AMK_PROTOCOL_GET_DOWN_DEBOUNCE = 9
 AMK_PROTOCOL_SET_DOWN_DEBOUNCE = 10
 AMK_PROTOCOL_GET_UP_DEBOUNCE = 11
 AMK_PROTOCOL_SET_UP_DEBOUNCE = 12
+AMK_PROTOCOL_GET_NKRO = 13
+AMK_PROTOCOL_SET_NKRO = 14
 
 DKS_EVENT_0 = 0
 DKS_EVENT_1 = 1
@@ -227,6 +231,14 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_UP_DEBOUNCE))
         self.amk_up_debounce = data[3]
         print("AMK protocol: up debounce ={}, result={}".format(self.amk_up_debounce, data[2]))
+    
+    def reload_nkro(self):
+        """ Reload NKRO information from keyboard """
+        #nkro  
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_NKRO))
+        self.amk_nkro = True if data[3] > 0 else False
+        print("AMK protocol: NKRO={}, result={}".format(self.amk_nkro, data[2]))
+
 
         
         
