@@ -219,10 +219,12 @@ class Dks(BasicEditor):
         self.keyboardWidget.updateGeometry()
 
     def activate(self):
-        print("apc/rt windows activated")
+        pass
+        #print("apc/rt windows activated")
 
     def deactivate(self):
-        print("apc/rt windows deactivated")
+        pass
+        #print("apc/rt windows deactivated")
 
     def block_check_box(self, block):
         for b in self.dks_ckbs:
@@ -238,7 +240,7 @@ class Dks(BasicEditor):
         data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col) + dks.pack_dks()
         data = self.keyboard.usb_send(self.device.dev, data, retries=20)
         dks.dump()
-        print("SetDKS returned={}".format(data[2]))
+        #print("SetDKS returned={}".format(data[2]))
 
     def refresh_dks(self, dks):
         for i in range(4):
@@ -295,10 +297,10 @@ class Dks(BasicEditor):
 
         self.active_dks = self.keyboard.amk_dks[(row, col)]
         self.refresh_dks(self.active_dks)
-        print("Select dks at:{},{}".format(row, col))
+        #print("Select dks at:{},{}".format(row, col))
 
     def on_dks_btn_clicked(self):
-        print(self.sender().get_index())
+        #print(self.sender().get_index())
         if self.active_dks_btn is not None:
             if self.active_dks_btn.isChecked():
                 self.active_dks_btn.toggle()
@@ -309,7 +311,7 @@ class Dks(BasicEditor):
     
     def on_keycode_changed(self, code):
         if self.active_dks_btn is not None:
-            print("have active dks button")
+            #print("have active dks button")
             kc = Keycode.find_by_qmk_id(code)
             self.active_dks_btn.setText(kc.label)
             index = self.active_dks_btn.get_index()
@@ -337,7 +339,7 @@ class Dks(BasicEditor):
     def on_dks_checked(self):
         ckb = self.sender()
         index = ckb.get_index()
-        print("DKS checkbox index({}) state changed to {}".format(index, ckb.isChecked()))
+        #print("DKS checkbox index({}) state changed to {}".format(index, ckb.isChecked()))
         if self.active_dks is None:
             return
 
@@ -346,7 +348,7 @@ class Dks(BasicEditor):
 
         down = True if (index % 8) < 4 else False
         if ckb.isChecked():
-            print("Add event at {}, key {}, down {}".format(event, key, down))
+            #print("Add event at {}, key {}, down {}".format(event, key, down))
             self.active_dks.add_event(event, key, down)
         else:
             self.active_dks.del_event(event, key, down)

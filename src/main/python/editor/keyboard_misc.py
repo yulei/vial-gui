@@ -158,31 +158,33 @@ class KeyboardMisc(BasicEditor):
             self.ud_sld.setEnabled(True)
 
     def activate(self):
-        print("hs windows activated")
+        pass
+        #print("hs windows activated")
 
     def deactivate(self):
-        print("hs windows deactivated")
+        pass
+        #print("hs windows deactivated")
 
     def apply_poll_rate(self, val):
         data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLL_RATE, val), retries=20)
-        print("Set poll rate({}): return={}".format(val, data[2]))
+        #print("Set poll rate({}): return={}".format(val, data[2]))
 
     def apply_debounce(self, val, down):
         cmd = AMK_PROTOCOL_SET_DOWN_DEBOUNCE if down else AMK_PROTOCOL_SET_UP_DEBOUNCE
         data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, cmd, val), retries=20)
-        print("Set {} debounce: return={}".format( "Down" if down else "Up", data[2]))
+        #print("Set {} debounce: return={}".format( "Down" if down else "Up", data[2]))
     
     def apply_nkro(self, val):
         data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NKRO, val), retries=20)
-        print("Set NKRO({}): return={}".format(val, data[2]))
+        #print("Set NKRO({}): return={}".format(val, data[2]))
 
     def on_pr_btn(self):
-        print("Apply poll rate cliecked")
+        #print("Apply poll rate cliecked")
         val = self.pr_cbb.currentIndex()
         self.apply_poll_rate(val)
 
     def on_dd_sld(self):
-        print("Down debounce slider changed")
+        #print("Down debounce slider changed")
         self.dd_sbx.blockSignals(True)
         val = self.dd_sld.value()
         self.dd_sbx.setValue(val)
@@ -191,7 +193,7 @@ class KeyboardMisc(BasicEditor):
         self.apply_debounce(val, True)
 
     def on_dd_sbx(self):
-        print("Down debounce spinbox changed")
+        #print("Down debounce spinbox changed")
         self.dd_sld.blockSignals(True)
         val = self.dd_sbx.value()
         self.dd_sld.setValue(val)
@@ -200,7 +202,7 @@ class KeyboardMisc(BasicEditor):
         self.apply_debounce(val, True)
 
     def on_ud_sld(self):
-        print("Up debounce slider changed")
+        #print("Up debounce slider changed")
         self.ud_sbx.blockSignals(True)
         val = self.ud_sld.value()
         self.ud_sbx.setValue(val)
@@ -209,7 +211,7 @@ class KeyboardMisc(BasicEditor):
         self.apply_debounce(val, False)
 
     def on_ud_sbx(self):
-        print("Up debounce spinbox changed")
+        #print("Up debounce spinbox changed")
         self.ud_sld.blockSignals(True)
         val = self.ud_sbx.value()
         self.ud_sld.setValue(val)
@@ -218,7 +220,7 @@ class KeyboardMisc(BasicEditor):
         self.apply_debounce(val, False)
 
     def on_nk_cbx(self):
-        print("nkro checkbox changed")
+        #print("nkro checkbox changed")
         val = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
         if val != 0:
             self.ns_lbl.setText("ON")

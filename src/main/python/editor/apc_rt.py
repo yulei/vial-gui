@@ -142,16 +142,18 @@ class ApcRt(BasicEditor):
         self.keyboardWidget.update()
 
     def activate(self):
-        print("apc/rt windows activated")
+        pass
+        #print("apc/rt windows activated")
 
     def deactivate(self):
-        print("apc/rt windows deactivated")
+        pass
+        #print("apc/rt windows deactivated")
 
     def apply_apc_rt(self, row, col, cmd, val):
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, cmd, row, col, val)
         data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        print("Set {}: row={}, col={}, cmd={}, val={}".format("APC" if cmd==AMK_PROTOCOL_SET_APC else "RT", row, col, cmd, val))
-        print("Result:{}".format(data[2]))
+        #print("Set {}: row={}, col={}, cmd={}, val={}".format("APC" if cmd==AMK_PROTOCOL_SET_APC else "RT", row, col, cmd, val))
+        #print("Result:{}".format(data[2]))
 
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
@@ -190,7 +192,7 @@ class ApcRt(BasicEditor):
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
 
-        print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
+        #print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
 
     def on_rt_check(self):
         self.rt_cbx.blockSignals(True)

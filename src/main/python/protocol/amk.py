@@ -67,7 +67,7 @@ class DksKey:
                 self.dirty = True
             return True
         else:
-            print("DKS failed to add key: index ={}, key={}".format(index, key))
+            #print("DKS failed to add key: index ={}, key={}".format(index, key))
             return False
     
     def del_key(self, index):
@@ -77,7 +77,7 @@ class DksKey:
 
     def add_event(self, event, key, down):
         if event >= DKS_EVENT_MAX:
-            print("DKS failed to set event: index={}, key={}, down={}".format(event, key, down))
+            #print("DKS failed to set event: index={}, key={}, down={}".format(event, key, down))
             return False
 
         evts = self.down_events if down else self.up_events
@@ -88,7 +88,7 @@ class DksKey:
 
     def del_event(self, event, key, down):
         if event >= DKS_EVENT_MAX:
-            print("DKS failed to clear event: index={}, key={}, down={}".format(event, key, down))
+            #print("DKS failed to clear event: index={}, key={}, down={}".format(event, key, down))
             return False
 
         evts = self.down_events if down else self.up_events
@@ -116,9 +116,9 @@ class DksKey:
         return data
     
     def parse(self, data):
-        print("Parse DKS")
+        #print("Parse DKS")
         for i in range(4):
-            print("Event:{:b}".format(data[i]))
+            #print("Event:{:b}".format(data[i]))
             for j in range(4):
                 if data[i] & (1<<j) > 0:
                     self.down_events[i][j] = 1
@@ -133,7 +133,7 @@ class DksKey:
         keys = struct.unpack(">HHHH", data[4:13])
         for i in range(4):
             self.keys[i] = Keycode.serialize(keys[i])
-            print("Keys", self.keys[i])
+            #print("Keys", self.keys[i])
 
 
     def clear(self):
@@ -179,7 +179,7 @@ class ProtocolAmk(BaseProtocol):
     def amk_protocol_version(self):
         """ Get the version of AMK protocol """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_VERSION), retries=20)
-        print("AMK protocol:", data[2])
+        #print("AMK protocol:", data[2])
         return data[2]
 
     def reload_apc(self):
@@ -190,7 +190,7 @@ class ProtocolAmk(BaseProtocol):
                                 retries=20)
             val = struct.unpack(">H", data[3:5])
             self.amk_apc[(row, col)] = val[0]
-            print("AMK protocol: APC={}, row={}, col={}".format(val, row, col))
+            #print("AMK protocol: APC={}, row={}, col={}".format(val, row, col))
 
     def reload_rt(self):
         """ Reload RT information from keyboard """
@@ -200,7 +200,7 @@ class ProtocolAmk(BaseProtocol):
                                 retries=20)
             val = struct.unpack(">H", data[3:5])
             self.amk_rt[(row, col)] = val[0]
-            print("AMK protocol: RT={}, row={}, col={}".format(val, row, col))
+            #print("AMK protocol: RT={}, row={}, col={}".format(val, row, col))
 
     def reload_dks(self):
         """ Reload DKS information from keyboard """
@@ -212,32 +212,32 @@ class ProtocolAmk(BaseProtocol):
             dks = DksKey()
             dks.parse(dks_data)
             self.amk_dks[(row, col)] = dks 
-            print("AMK protocol: DKS={}, row={}, col={}".format(dks.pack_dks(), row, col))
+            #print("AMK protocol: DKS={}, row={}, col={}".format(dks.pack_dks(), row, col))
     
     def reload_poll_rate(self):
         """ Reload Poll Rate information from keyboard """
         # poll rate
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLL_RATE))
         self.amk_poll_rate = data[3]
-        print("AMK protocol: poll rate={}, result={}".format(self.amk_poll_rate, data[2]))
+        #print("AMK protocol: poll rate={}, result={}".format(self.amk_poll_rate, data[2]))
 
     def reload_debounce(self):
         """ Reload Debounce information from keyboard """
         # down debounce
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_DOWN_DEBOUNCE))
         self.amk_down_debounce = data[3]
-        print("AMK protocol: down debounce ={}, result={}".format(self.amk_down_debounce, data[2]))
+        #print("AMK protocol: down debounce ={}, result={}".format(self.amk_down_debounce, data[2]))
         # up debounce
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_UP_DEBOUNCE))
         self.amk_up_debounce = data[3]
-        print("AMK protocol: up debounce ={}, result={}".format(self.amk_up_debounce, data[2]))
+        #print("AMK protocol: up debounce ={}, result={}".format(self.amk_up_debounce, data[2]))
     
     def reload_nkro(self):
         """ Reload NKRO information from keyboard """
         #nkro  
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_NKRO))
         self.amk_nkro = True if data[3] > 0 else False
-        print("AMK protocol: NKRO={}, result={}".format(self.amk_nkro, data[2]))
+        #print("AMK protocol: NKRO={}, result={}".format(self.amk_nkro, data[2]))
 
 
         
