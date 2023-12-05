@@ -133,6 +133,7 @@ class KeyboardMisc(BasicEditor):
         else:
             self.dd_lbl.show()
             self.dd_sld.show()
+            self.dd_sbx.show()
             self.ud_lbl.show()
             self.ud_sld.show()
             self.ud_sbx.show()
