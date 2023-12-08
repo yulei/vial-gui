@@ -9,8 +9,11 @@ from util import tr
 
 from editor.basic_editor import BasicEditor
 from vial_device import VialKeyboard
+
 from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
-from protocol.amk import AMK_PROTOCOL_SET_NKRO, AMK_PROTOCOL_SET_POLL_RATE, AMK_PROTOCOL_SET_DOWN_DEBOUNCE, AMK_PROTOCOL_SET_UP_DEBOUNCE
+from protocol.amk import AMK_PROTOCOL_SET_NKRO, AMK_PROTOCOL_SET_POLL_RATE
+from protocol.amk import AMK_PROTOCOL_SET_DOWN_DEBOUNCE, AMK_PROTOCOL_SET_UP_DEBOUNCE
+from protocol.amk import AMK_PROTOCOL_SET_POLE
 
 class KeyboardMisc(BasicEditor):
 
@@ -19,33 +22,46 @@ class KeyboardMisc(BasicEditor):
 
         g_layout = QGridLayout()
 
+        line = 0
+        # magnetic pole setting
+        self.mp_lbl = QLabel(tr("Pole", "Set the magnetic pole of the switch:"))
+        g_layout.addWidget(self.mp_lbl, line, 0)
+        self.mp_cbb = QComboBox()
+        self.mp_cbb.addItem("South")
+        self.mp_cbb.addItem("North")
+        self.mp_cbb.currentIndexChanged.connect(self.on_mp_cbb)
+        g_layout.addWidget(self.mp_cbb, line, 1)
+
+        line = line + 1
         # nkro setting
         self.nk_lbl = QLabel(tr("NKRO", "Set the keyboard's nkro:"))
-        g_layout.addWidget(self.nk_lbl, 0, 0)
+        g_layout.addWidget(self.nk_lbl, line, 0)
         self.ns_lbl = QLabel(tr("NKRO State", "OFF"))
-        g_layout.addWidget(self.ns_lbl, 0, 1, alignment=Qt.AlignCenter)
+        g_layout.addWidget(self.ns_lbl, line, 1, alignment=Qt.AlignCenter)
         self.nk_cbx = QCheckBox()
         self.nk_cbx.setTristate(False)
         self.nk_cbx.setEnabled(True)
         self.nk_cbx.stateChanged.connect(self.on_nk_cbx)
-        g_layout.addWidget(self.nk_cbx, 0, 2)
+        g_layout.addWidget(self.nk_cbx, line, 2)
 
+        line = line + 1
         # polling rate setting
         self.pr_lbl = QLabel(tr("Poll Rate", "Set the keyboard's poll rate:"))
-        g_layout.addWidget(self.pr_lbl, 1, 0)
+        g_layout.addWidget(self.pr_lbl, line, 0)
         self.pr_cbb = QComboBox()
         self.pr_cbb.addItem("Fullspeed 1K Hz")
         self.pr_cbb.addItem("Highspeed 2K Hz")
         self.pr_cbb.addItem("Highspeed 4K Hz")
         self.pr_cbb.addItem("Highspeed 8K Hz")
-        g_layout.addWidget(self.pr_cbb, 1, 1)
+        g_layout.addWidget(self.pr_cbb, line, 1)
         self.pr_btn = QPushButton("Apply && Reset")
         self.pr_btn.clicked.connect(self.on_pr_btn)
-        g_layout.addWidget(self.pr_btn, 1, 2)
+        g_layout.addWidget(self.pr_btn, line, 2)
 
+        line = line + 1
         # down debounce setting
         self.dd_lbl = QLabel(tr("Down Debounce", "Set the debounce time(ms) when press key:"))
-        g_layout.addWidget(self.dd_lbl, 2, 0)
+        g_layout.addWidget(self.dd_lbl, line, 0)
         self.dd_sld= QSlider(Qt.Horizontal)
         self.dd_sld.setEnabled(False)
         self.dd_sld.setMaximumWidth(300)
@@ -56,18 +72,19 @@ class KeyboardMisc(BasicEditor):
         self.dd_sld.setTickPosition(QSlider.TicksAbove)
         self.dd_sld.setTracking(False)
         self.dd_sld.valueChanged.connect(self.on_dd_sld)
-        g_layout.addWidget(self.dd_sld, 2, 1)
+        g_layout.addWidget(self.dd_sld, line, 1)
         self.dd_sbx = QSpinBox()
         self.dd_sbx.setEnabled(False)
         self.dd_sbx.setRange(0, 10)
         self.dd_sbx.setValue(0)
         self.dd_sbx.setSingleStep(1)
         self.dd_sbx.valueChanged.connect(self.on_dd_sbx)
-        g_layout.addWidget(self.dd_sbx, 2, 2)
+        g_layout.addWidget(self.dd_sbx, line, 2)
 
+        line = line + 1
         # up debounce setting
         self.ud_lbl = QLabel(tr("Up Debounce", "Set the debounce time(ms) when release key:"))
-        g_layout.addWidget(self.ud_lbl, 3, 0)
+        g_layout.addWidget(self.ud_lbl, line, 0)
         self.ud_sld= QSlider(Qt.Horizontal)
         self.ud_sld.setEnabled(False)
         self.ud_sld.setMaximumWidth(300)
@@ -78,14 +95,14 @@ class KeyboardMisc(BasicEditor):
         self.ud_sld.setTickPosition(QSlider.TicksAbove)
         self.ud_sld.setTracking(False)
         self.ud_sld.valueChanged.connect(self.on_ud_sld)
-        g_layout.addWidget(self.ud_sld, 3, 1)
+        g_layout.addWidget(self.ud_sld, line, 1)
         self.ud_sbx = QSpinBox()
         self.ud_sbx.setEnabled(False)
         self.ud_sbx.setRange(0, 10)
         self.ud_sbx.setValue(0)
         self.ud_sbx.setSingleStep(1)
         self.ud_sbx.valueChanged.connect(self.on_ud_sbx)
-        g_layout.addWidget(self.ud_sbx, 3, 2)
+        g_layout.addWidget(self.ud_sbx, line, 2)
 
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
@@ -138,7 +155,6 @@ class KeyboardMisc(BasicEditor):
             self.ud_sld.show()
             self.ud_sbx.show()
 
-
         if self.keyboard.keyboard_type == "mx":
             self.dd_sld.blockSignals(True)
             self.dd_sbx.blockSignals(True)
@@ -178,6 +194,9 @@ class KeyboardMisc(BasicEditor):
     def apply_nkro(self, val):
         data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NKRO, val), retries=20)
         #print("Set NKRO({}): return={}".format(val, data[2]))
+
+    def apply_pole(self, val):
+        data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLE, val), retries=20)
 
     def on_pr_btn(self):
         #print("Apply poll rate cliecked")
@@ -229,3 +248,7 @@ class KeyboardMisc(BasicEditor):
             self.ns_lbl.setText("OFF")
 
         self.apply_nkro(val)
+
+    def on_mp_cbb(self):
+        val = True if self.mp_cbb.currentIndex() != 0 else False
+        self.apply_pole(1 if val else 0)

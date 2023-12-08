@@ -105,6 +105,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.reload_rt()
             self.amk_dks = dict()
             self.reload_dks()
+            self.amk_pole = False
+            self.reload_pole()
 
         #reload keyboard misc settings
         if self.keyboard_speed == "hs":

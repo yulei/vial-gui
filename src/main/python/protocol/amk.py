@@ -24,6 +24,8 @@ AMK_PROTOCOL_GET_UP_DEBOUNCE = 11
 AMK_PROTOCOL_SET_UP_DEBOUNCE = 12
 AMK_PROTOCOL_GET_NKRO = 13
 AMK_PROTOCOL_SET_NKRO = 14
+AMK_PROTOCOL_GET_POLE = 15
+AMK_PROTOCOL_SET_POLE = 16
 
 DKS_EVENT_0 = 0
 DKS_EVENT_1 = 1
@@ -238,6 +240,11 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_NKRO))
         self.amk_nkro = True if data[3] > 0 else False
         #print("AMK protocol: NKRO={}, result={}".format(self.amk_nkro, data[2]))
+
+    def reload_pole(self):
+        """ Reload Magnetic pole information from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLE))
+        self.amk_pole = True if data[3] > 0 else False
 
 
         
