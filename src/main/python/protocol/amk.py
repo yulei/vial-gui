@@ -62,6 +62,26 @@ class DksKey:
     def set_dirty(self, dirty):
         self.dirty = dirty
 
+    def update_inner_key(self, index, key):
+        if index >= DKS_KEY_MAX:
+            return
+
+        if not Keycode.is_basic(key):
+            return
+
+        if not Keycode.is_mask(self.keys[index]):
+            return
+
+        kc = Keycode.find_outer_keycode(self.keys[index])
+        if kc is None:
+            return
+        
+        keycode = kc.qmk_id.replace("(kc)", "({})".format(key))
+        self.keys[index] = keycode
+        self.dirty = True
+
+        #print("DKS keys: index={}, code={}".format(index, keycode))
+
     def add_key(self, index, key):
         if index < DKS_KEY_MAX:
             if self.keys[index] != key:

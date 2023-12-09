@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QGridLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QMessageBox
-from PyQt5.QtCore import QSize, Qt, QCoreApplication
-from PyQt5.QtGui import QPalette
+from PyQt5.QtCore import QSize, Qt, QCoreApplication, QRect
+from PyQt5.QtGui import QPalette, QPainter, QBrush
 from PyQt5.QtWidgets import QApplication
-
+from themes import Theme
 
 import math, struct
 
@@ -12,7 +12,7 @@ from widgets.keyboard_widget import KeyboardWidget
 from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 from keycodes.keycodes import Keycode
-from tabbed_keycodes import TabbedKeycodes, keycode_filter_masked
+from tabbed_keycodes import TabbedKeycodes, keycode_filter_any
 from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
 from protocol.amk import AMK_PROTOCOL_GET_DKS, AMK_PROTOCOL_SET_DKS
 from protocol.amk import DksKey
@@ -37,6 +37,21 @@ class DksButton(QPushButton):
         self.word_wrap = False
         self.text = ""
         self.index = 0
+        self.masked = False
+        self.masked_text = ""
+        self.mask_selected = False
+
+    def is_masked(self):
+        return self.masked
+    
+    def set_masked(self, masked):
+        self.masked = masked
+
+    def is_mask_selected(self):
+        return self.mask_selected
+    
+    def set_mask_selected(self, selected):
+        self.mask_selected = selected
 
     def set_index(self, index):
         self.index = index
@@ -44,36 +59,111 @@ class DksButton(QPushButton):
     def get_index(self):
         return self.index
 
+    def get_text(self):
+        return self.text
+
+    def set_text(self, text):
+        self.text = text
+
+    def get_masked_text(self):
+        return self.masked_text
+
+    def set_masked_text(self, text):
+        self.masked_text = text
+
     def setRelSize(self, ratio):
         self.scale = ratio
         self.updateGeometry()
-
-    def setWordWrap(self, state):
-        self.word_wrap = state
-        self.setText(self.text)
 
     def sizeHint(self):
         size = int(round(self.fontMetrics().height() * self.scale))
         return QSize(size, size)
 
-    # Override setText to facilitate automatic word wrapping
-    def setText(self, text):
-        self.text = text
-        if self.word_wrap:
-            super().setText("")
-            if self.label is None:
-                self.label = QLabel(text, self)
-                self.label.setWordWrap(True)
-                self.label.setAlignment(Qt.AlignCenter)
-                layout = QHBoxLayout(self)
-                layout.setContentsMargins(0, 0, 0, 0)
-                layout.addWidget(self.label,0,Qt.AlignCenter)
+    def mousePressEvent(self, ev):
+        if not self.isEnabled():
+            return
+        
+        if self.is_masked():
+            rect = self.rect()
+            masked_rect = QRect(0, rect.height()*2/5, rect.width(), rect.height()*3/5)
+            if masked_rect.contains(ev.pos()):
+                self.mask_selected = True
             else:
-                self.label.setText(text)
+                self.mask_selected = False
+
+        self.toggle()
+        self.clicked.emit()
+
+    def get_split_rect(self, masked):
+        rect = self.rect()
+        if masked:
+            return QRect(3, rect.height()*2/5+3, rect.width()-6, rect.height()*3/5-6)
         else:
-            if self.label is not None:
-                self.label.deleteLater()
-            super().setText(text)
+            return QRect(3, 3, rect.width()-6, rect.height()*2/5-6)
+
+
+    def paintEvent(self, event):
+        qp = QPainter()
+        qp.begin(self)
+        qp.setRenderHint(QPainter.Antialiasing)
+
+        background_brush = QBrush()
+        background_brush.setColor(QApplication.palette().color(QPalette.Button))
+        background_brush.setStyle(Qt.SolidPattern)
+
+        mask_brush = QBrush()
+        mask_brush.setColor(QApplication.palette().color(QPalette.Button).lighter(Theme.mask_light_factor()))
+        mask_brush.setStyle(Qt.SolidPattern)
+
+        active_pen = qp.pen()
+        active_pen.setColor(QApplication.palette().color(QPalette.Highlight))
+        active_pen.setWidthF(2)
+
+        masked_pen = qp.pen()
+        masked_pen.setColor(QApplication.palette().color(QPalette.Highlight).darker(120))
+
+        regular_pen = qp.pen()
+        regular_pen.setColor(QApplication.palette().color(QPalette.Button))
+
+        # for text 
+        text_pen = qp.pen()
+        text_pen.setColor(QApplication.palette().color(QPalette.ButtonText))
+
+        mask_font = qp.font()
+        mask_font.setPointSize(round(mask_font.pointSize() * 0.8))
+
+        rect = self.rect()
+        if self.isChecked():
+            qp.setPen(active_pen)
+            qp.setBrush(background_brush)
+            qp.drawRect(rect)
+        else:
+            qp.setPen(regular_pen)
+            qp.setBrush(background_brush)
+            qp.drawRect(rect)
+
+        if self.is_masked():
+            masked_rect = self.get_split_rect(True)
+            if self.mask_selected:
+                qp.setPen(masked_pen)
+            else:
+                qp.setPen(regular_pen)
+
+            qp.setBrush(mask_brush)
+            qp.drawRect(masked_rect)
+        
+        if self.is_masked():
+            qp.setPen(text_pen)
+            qp.setFont(mask_font)
+            outer_rect = self.get_split_rect(False)
+            qp.drawText(outer_rect, Qt.AlignCenter, self.text)
+            inner_rect = self.get_split_rect(True)
+            qp.drawText(inner_rect, Qt.AlignCenter, self.masked_text)
+        else:
+            qp.setPen(text_pen)
+            qp.drawText(rect, Qt.AlignCenter, self.text)
+
+        qp.end()
 
 class DksCheckBox(QCheckBox):
 
@@ -103,8 +193,6 @@ class Dks(BasicEditor):
         self.active_dks = None
         self.dks_btns = []
         self.dks_ckbs = []
-        #self.evt_slds = []
-        #self.evt_dpbs = []
 
         g_layout = QGridLayout()
         index = 0
@@ -124,16 +212,7 @@ class Dks(BasicEditor):
             lbl = QLabel(DKS_TRIGGER_LABELS[line])
             g_layout.addWidget(lbl, 2*line + 1, 0)
 
-            #s_layout = QHBoxLayout()
-            #dpb = QDoubleSpinBox()
-            #sld = QSlider(Qt.Horizontal)
-            #s_layout.addWidget(dpb)
-            #s_layout.addWidget(sld)
-            #g_layout.addLayout(s_layout, 2*line+2,0)
-
             for sub in range(2):
-                #lbl = QLabel(DKS_KEY_EVENT_LABELS[sub])
-                #g_layout.addWidget(lbl, 2*line+sub+1, 1)
                 lbl = DKS_KEY_EVENT_LABELS[sub]
                 for x in range(4):
                     ckb = DksCheckBox(lbl)
@@ -219,12 +298,10 @@ class Dks(BasicEditor):
         self.keyboardWidget.updateGeometry()
 
     def activate(self):
-        pass
-        #print("apc/rt windows activated")
+        self.refresh_dks(self.active_dks)
 
     def deactivate(self):
         pass
-        #print("apc/rt windows deactivated")
 
     def block_check_box(self, block):
         for b in self.dks_ckbs:
@@ -244,25 +321,48 @@ class Dks(BasicEditor):
 
     def refresh_dks(self, dks):
         for i in range(4):
-            kc = Keycode.find_by_qmk_id(dks.get_key(i))
-            self.dks_btns[i].setText(kc.label)
+            if dks is None:
+                self.dks_btns[i].setEnabled(False)
+            else:
+                self.dks_btns[i].setEnabled(True)
+
+                code = dks.get_key(i)
+                if Keycode.is_mask(code):
+                    outer = Keycode.find_outer_keycode(code)
+                    self.dks_btns[i].set_text(outer.label.replace("(kc)","").strip())
+                    inner = Keycode.find_inner_keycode(code)
+                    if inner is not None:
+                        self.dks_btns[i].set_masked_text(inner.label)
+                    self.dks_btns[i].set_masked(True)
+                else:
+                    kc = Keycode.find_by_qmk_id(dks.get_key(i))
+                    self.dks_btns[i].set_text(kc.label)
+                    self.dks_btns[i].set_masked(False)
+                self.dks_btns[i].repaint()
 
         self.block_check_box(True)
         for index in range(32):
-            ckb = self.dks_ckbs[index]
-            event = index % 4
-            key = index // 8
-            down = True if (index % 8) < 4 else False
-
-            if dks.is_event_on(event, key, down):
-                ckb.setChecked(True)
+            if dks is None:
+                self.dks_ckbs[index].setEnabled(False)
             else:
-                ckb.setChecked(False)
+                self.dks_ckbs[index].setEnabled(True)
+
+                ckb = self.dks_ckbs[index]
+                event = index % 4
+                key = index // 8
+                down = True if (index % 8) < 4 else False
+
+                if dks.is_event_on(event, key, down):
+                    ckb.setChecked(True)
+                else:
+                    ckb.setChecked(False)
         self.block_check_box(False)
-        if dks.is_dirty():
-            self.apply_btn.setEnabled(True)
-        else:
-            self.apply_btn.setEnabled(False)
+
+        if dks is not None:
+            if dks.is_dirty():
+                self.apply_btn.setEnabled(True)
+            else:
+                self.apply_btn.setEnabled(False)
 
     def reset_active_dks(self):
         if self.keyboardWidget.active_key is None:
@@ -304,6 +404,7 @@ class Dks(BasicEditor):
         if self.active_dks_btn is not None:
             if self.active_dks_btn.isChecked():
                 self.active_dks_btn.toggle()
+                self.active_dks_btn.set_mask_selected(False)
 
         self.active_dks_btn = self.sender()
         if not self.active_dks_btn.isChecked():
@@ -311,14 +412,41 @@ class Dks(BasicEditor):
     
     def on_keycode_changed(self, code):
         if self.active_dks_btn is not None:
-            #print("have active dks button")
-            kc = Keycode.find_by_qmk_id(code)
-            self.active_dks_btn.setText(kc.label)
-            index = self.active_dks_btn.get_index()
-            if self.active_dks is not None:
-                self.active_dks.add_key(index, code)
-                if self.active_dks.is_dirty():
-                    self.apply_btn.setEnabled(True)
+            #print("DKS BTN mask select: {}".format(self.active_dks_btn.is_mask_selected()))
+            if self.active_dks_btn.is_mask_selected():
+                if Keycode.is_mask(code):
+                    QMessageBox.warning(None, "Keycode selection",
+                                "Only basic keycodes can be used",
+                                buttons=QMessageBox.Ok)
+                    return
+                index = self.active_dks_btn.get_index()
+                if self.active_dks is not None:
+                    self.active_dks.update_inner_key(index, code)
+                    if self.active_dks.is_dirty():
+                        self.apply_btn.setEnabled(True)
+                    self.active_dks_btn.set_masked_text(Keycode.label(code))
+                    #print("DKS update inner text:{}".format(code))
+            else:
+                if Keycode.is_mask(code):
+                    outer = Keycode.find_outer_keycode(code)
+                    self.active_dks_btn.set_text(outer.label.replace("(kc)","").strip())
+                    inner = Keycode.find_inner_keycode(code)
+                    if inner is not None:
+                        self.active_dks_btn.set_masked_text(inner.label)
+                    self.active_dks_btn.set_masked(True)
+                    #print("DKS update outer label:{}, inner label:{}".format(outer.label, inner.label))
+                else:
+                    kc = Keycode.find_by_qmk_id(code)
+                    self.active_dks_btn.set_text(kc.label)
+                    self.active_dks_btn.set_masked(False)
+                    #print("DKS update label:{}".format(kc.label))
+
+                index = self.active_dks_btn.get_index()
+                if self.active_dks is not None:
+                    self.active_dks.add_key(index, code)
+                    if self.active_dks.is_dirty():
+                        self.apply_btn.setEnabled(True)
+            self.active_dks_btn.repaint()
 
     def on_apply_clicked(self):
         if self.active_dks is None:
