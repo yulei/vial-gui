@@ -85,7 +85,7 @@ class DksButton(QPushButton):
         
         if self.is_masked():
             rect = self.rect()
-            masked_rect = QRect(0, rect.height()*2/5, rect.width(), rect.height()*3/5)
+            masked_rect = self.get_split_rect(True)
             if masked_rect.contains(ev.pos()):
                 self.mask_selected = True
             else:
@@ -97,7 +97,7 @@ class DksButton(QPushButton):
     def get_split_rect(self, masked):
         rect = self.rect()
         if masked:
-            return QRect(3, rect.height()*2/5+3, rect.width()-6, rect.height()*3/5-6)
+            return QRect(3, int(rect.height()*2/5)+3, rect.width()-6, int(rect.height()*3/5)-6)
         else:
             return QRect(3, 3, rect.width()-6, rect.height()*2/5-6)
 
