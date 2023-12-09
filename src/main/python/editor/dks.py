@@ -99,7 +99,7 @@ class DksButton(QPushButton):
         if masked:
             return QRect(3, int(rect.height()*2/5)+3, rect.width()-6, int(rect.height()*3/5)-6)
         else:
-            return QRect(3, 3, rect.width()-6, rect.height()*2/5-6)
+            return QRect(3, 3, rect.width()-6, int(rect.height()*2/5)-6)
 
 
     def paintEvent(self, event):
