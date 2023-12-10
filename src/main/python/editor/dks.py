@@ -289,8 +289,6 @@ class Dks(BasicEditor):
         self.keyboardWidget.update_layout()
 
         for widget in self.keyboardWidget.widgets:
-            #code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
-            #KeycodeDisplay.display_keycode(widget, code)
             dks_display(widget, self.keyboard.amk_dks[(widget.desc.row,widget.desc.col)])
             widget.setOn(False)
 
@@ -397,10 +395,8 @@ class Dks(BasicEditor):
 
         self.active_dks = self.keyboard.amk_dks[(row, col)]
         self.refresh_dks(self.active_dks)
-        #print("Select dks at:{},{}".format(row, col))
 
     def on_dks_btn_clicked(self):
-        #print(self.sender().get_index())
         if self.active_dks_btn is not None:
             if self.active_dks_btn.isChecked():
                 self.active_dks_btn.toggle()
@@ -412,7 +408,6 @@ class Dks(BasicEditor):
     
     def on_keycode_changed(self, code):
         if self.active_dks_btn is not None:
-            #print("DKS BTN mask select: {}".format(self.active_dks_btn.is_mask_selected()))
             if self.active_dks_btn.is_mask_selected():
                 if Keycode.is_mask(code):
                     QMessageBox.warning(None, "Keycode selection",
@@ -425,7 +420,6 @@ class Dks(BasicEditor):
                     if self.active_dks.is_dirty():
                         self.apply_btn.setEnabled(True)
                     self.active_dks_btn.set_masked_text(Keycode.label(code))
-                    #print("DKS update inner text:{}".format(code))
             else:
                 if Keycode.is_mask(code):
                     outer = Keycode.find_outer_keycode(code)
@@ -434,12 +428,10 @@ class Dks(BasicEditor):
                     if inner is not None:
                         self.active_dks_btn.set_masked_text(inner.label)
                     self.active_dks_btn.set_masked(True)
-                    #print("DKS update outer label:{}, inner label:{}".format(outer.label, inner.label))
                 else:
                     kc = Keycode.find_by_qmk_id(code)
                     self.active_dks_btn.set_text(kc.label)
                     self.active_dks_btn.set_masked(False)
-                    #print("DKS update label:{}".format(kc.label))
 
                 index = self.active_dks_btn.get_index()
                 if self.active_dks is not None:
@@ -467,7 +459,6 @@ class Dks(BasicEditor):
     def on_dks_checked(self):
         ckb = self.sender()
         index = ckb.get_index()
-        #print("DKS checkbox index({}) state changed to {}".format(index, ckb.isChecked()))
         if self.active_dks is None:
             return
 
@@ -476,7 +467,6 @@ class Dks(BasicEditor):
 
         down = True if (index % 8) < 4 else False
         if ckb.isChecked():
-            #print("Add event at {}, key {}, down {}".format(event, key, down))
             self.active_dks.add_event(event, key, down)
         else:
             self.active_dks.del_event(event, key, down)
