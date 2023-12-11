@@ -12,7 +12,7 @@ from widgets.keyboard_widget import KeyboardWidget
 from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 from keycodes.keycodes import Keycode
-from tabbed_keycodes import TabbedKeycodes, keycode_filter_any
+from tabbed_keycodes import TabbedKeycodes, keycode_filter_masked
 from protocol.amk import DksKey
 
 def dks_display(widget, dks):
@@ -403,6 +403,10 @@ class Dks(BasicEditor):
         self.active_dks_btn = self.sender()
         if not self.active_dks_btn.isChecked():
             self.active_dks_btn.toggle()
+        if self.active_dks_btn.is_mask_selected():
+            self.tabbed_keycodes.set_keycode_filter(keycode_filter_masked)
+        else:
+            self.tabbed_keycodes.set_keycode_filter(None)
     
     def on_keycode_changed(self, code):
         if self.active_dks_btn is not None:
