@@ -1,21 +1,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
 
-import struct
+import os, struct, json
 
 from util import tr
 
 from editor.basic_editor import BasicEditor
 from vial_device import VialKeyboard
 
-from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
-from protocol.amk import AMK_PROTOCOL_SET_NKRO, AMK_PROTOCOL_SET_POLL_RATE
-from protocol.amk import AMK_PROTOCOL_SET_DOWN_DEBOUNCE, AMK_PROTOCOL_SET_UP_DEBOUNCE
-from protocol.amk import AMK_PROTOCOL_SET_POLE
-
-class KeyboardMisc(BasicEditor):
+class Misc(BasicEditor):
 
     def __init__(self):
         super().__init__()
@@ -23,6 +18,18 @@ class KeyboardMisc(BasicEditor):
         g_layout = QGridLayout()
 
         line = 0
+
+        # import/export setting from/to file
+        self.ie_lbl = QLabel(tr("imp exp", "Import or export keyboard config file:"))
+        g_layout.addWidget(self.ie_lbl, line, 0)
+        self.im_btn = QPushButton("Import ...")
+        self.im_btn.clicked.connect(self.on_im_btn)
+        g_layout.addWidget(self.im_btn, line, 1)
+        self.ex_btn = QPushButton("Export ...")
+        self.ex_btn.clicked.connect(self.on_ex_btn)
+        g_layout.addWidget(self.ex_btn, line, 2)
+
+        line = line + 1
         # magnetic pole setting
         self.mp_lbl = QLabel(tr("Pole", "Set the magnetic pole of the switch:"))
         g_layout.addWidget(self.mp_lbl, line, 0)
@@ -182,26 +189,10 @@ class KeyboardMisc(BasicEditor):
         pass
         #print("hs windows deactivated")
 
-    def apply_poll_rate(self, val):
-        data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLL_RATE, val), retries=20)
-        #print("Set poll rate({}): return={}".format(val, data[2]))
-
-    def apply_debounce(self, val, down):
-        cmd = AMK_PROTOCOL_SET_DOWN_DEBOUNCE if down else AMK_PROTOCOL_SET_UP_DEBOUNCE
-        data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, cmd, val), retries=20)
-        #print("Set {} debounce: return={}".format( "Down" if down else "Up", data[2]))
-    
-    def apply_nkro(self, val):
-        data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NKRO, val), retries=20)
-        #print("Set NKRO({}): return={}".format(val, data[2]))
-
-    def apply_pole(self, val):
-        data = self.keyboard.usb_send(self.device.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLE, val), retries=20)
-
     def on_pr_btn(self):
         #print("Apply poll rate cliecked")
         val = self.pr_cbb.currentIndex()
-        self.apply_poll_rate(val)
+        self.keyboard.apply_poll_rate(val)
 
     def on_dd_sld(self):
         #print("Down debounce slider changed")
@@ -210,7 +201,7 @@ class KeyboardMisc(BasicEditor):
         self.dd_sbx.setValue(val)
         self.dd_sbx.blockSignals(False)
 
-        self.apply_debounce(val, True)
+        self.keyboard.apply_debounce(val, True)
 
     def on_dd_sbx(self):
         #print("Down debounce spinbox changed")
@@ -219,7 +210,7 @@ class KeyboardMisc(BasicEditor):
         self.dd_sld.setValue(val)
         self.dd_sld.blockSignals(False)
 
-        self.apply_debounce(val, True)
+        self.keyboard.apply_debounce(val, True)
 
     def on_ud_sld(self):
         #print("Up debounce slider changed")
@@ -228,7 +219,7 @@ class KeyboardMisc(BasicEditor):
         self.ud_sbx.setValue(val)
         self.ud_sbx.blockSignals(False)
 
-        self.apply_debounce(val, False)
+        self.keyboard.apply_debounce(val, False)
 
     def on_ud_sbx(self):
         #print("Up debounce spinbox changed")
@@ -237,7 +228,7 @@ class KeyboardMisc(BasicEditor):
         self.ud_sld.setValue(val)
         self.ud_sld.blockSignals(False)
 
-        self.apply_debounce(val, False)
+        self.keyboard.apply_debounce(val, False)
 
     def on_nk_cbx(self):
         #print("nkro checkbox changed")
@@ -247,8 +238,77 @@ class KeyboardMisc(BasicEditor):
         else:
             self.ns_lbl.setText("OFF")
 
-        self.apply_nkro(val)
+        self.keyboard.apply_nkro(val)
 
     def on_mp_cbb(self):
         val = True if self.mp_cbb.currentIndex() != 0 else False
-        self.apply_pole(1 if val else 0)
+        self.keyboard.apply_pole(1 if val else 0)
+
+    def on_im_btn(self):
+        import_file, file_type = QFileDialog.getOpenFileName(None, "Select Config File", os.getcwd(), "Config Files (*.json);;All Files (*)")
+        with open(import_file, encoding="utf-8") as fp:
+            kbd = json.load(fp)
+            if kbd["name"] != self.device.desc["product_string"] or \
+                kbd["vendor_id"] != self.device.desc["vendor_id"] or \
+                kbd["product_id"] != self.device.desc["product_id"]:
+                button = QMessageBox.warning(None, "Loading config",
+                                            "The current config({}) was not for this keyboard.".format(kbd["name"]),
+                                            buttons=QMessageBox.Ok,
+                                            defaultButton=QMessageBox.Ok)
+                return
+            pole = kbd.get("pole", None)
+            if pole is not None:
+                self.keyboard.apply_pole(pole)
+                print("set pole as {}".format(pole))
+            nkro = kbd.get("nkro", None)
+            if nkro is not None:
+                self.keyboard.apply_nkro(nkro)
+            
+            keys = kbd.get("keys", None)
+            if keys is not None:
+                for key in keys:
+                    row = key["row"]
+                    col = key["col"]
+                    apc = key.get("apc", None)
+                    if apc is not None:
+                        self.keyboard.apply_apc(row, col, apc)
+
+                    rt = key.get("rt", None)
+                    if rt is not None:
+                        self.keyboard.apply_rt(row, col, rt)
+
+                    dks = key.get("dks", None)
+                    if dks is not None:
+                        self.keyboard.apply_dks(row, col, dks)
+
+            poll_rate = kbd.get("poll_rate", None)
+            if poll_rate is not None:
+                self.keyboard.apply_poll_rate(poll_rate)
+
+            self.reset_ui()
+
+    def on_ex_btn(self):
+        export_file, file_type = QFileDialog.getSaveFileName(None, "Select Config File", os.getcwd(), "Config Files (*.json);;All Files (*)")
+        kbd = {}
+        kbd["name"] = self.device.desc["product_string"]
+        kbd["vendor_id"] = self.device.desc["vendor_id"]
+        kbd["product_id"] = self.device.desc["product_id"]
+        kbd["type"] = self.keyboard.keyboard_type
+        kbd["speed"] = self.keyboard.keyboard_speed
+        kbd["pole"] = self.mp_cbb.currentIndex() 
+        kbd["nkro"] = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
+        kbd["poll_rate"] = self.pr_cbb.currentIndex()
+        kbd["keys"] = []
+
+        for row, col in self.keyboard.rowcol.keys():
+            key = {}
+            key["row"] = row
+            key["col"] = col
+            key["apc"] = self.keyboard.amk_apc[(row,col)]
+            key["rt"] = self.keyboard.amk_rt[(row,col)]
+            key["dks"] = self.keyboard.amk_dks[(row,col)].save()
+            kbd["keys"].append(key)
+        
+        with open(export_file, "w", encoding="utf-8") as fp:
+            #json.dump(kbd, fp, indent=4)
+            json.dump(kbd, fp)

@@ -10,8 +10,6 @@ from editor.basic_editor import BasicEditor
 from widgets.keyboard_widget import KeyboardWidget
 from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
-from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
-from protocol.amk import AMK_PROTOCOL_GET_APC, AMK_PROTOCOL_SET_APC, AMK_PROTOCOL_GET_RT, AMK_PROTOCOL_SET_RT
 
 def apc_rt_display(widget, apc, rt):
     apc_text = "{:.2f}\u2193".format(apc/10.0)
@@ -142,18 +140,10 @@ class ApcRt(BasicEditor):
         self.keyboardWidget.update()
 
     def activate(self):
-        pass
-        #print("apc/rt windows activated")
+        self.reset_keyboard_widget()
 
     def deactivate(self):
         pass
-        #print("apc/rt windows deactivated")
-
-    def apply_apc_rt(self, row, col, cmd, val):
-        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, cmd, row, col, val)
-        data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        #print("Set {}: row={}, col={}, cmd={}, val={}".format("APC" if cmd==AMK_PROTOCOL_SET_APC else "RT", row, col, cmd, val))
-        #print("Result:{}".format(data[2]))
 
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
@@ -206,8 +196,8 @@ class ApcRt(BasicEditor):
                 col = self.keyboardWidget.active_key.desc.col
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt == 0:
-                    self.keyboard.amk_rt[(row,col)] = 1
-                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, 1)
+                    #self.keyboard.amk_rt[(row,col)] = 1
+                    self.keyboard.apply_rt(row, col, 1)
                     self.rt_sld.setValue(rt)
                     self.rt_dpb.setValue(rt/10.0)
         else:
@@ -216,8 +206,8 @@ class ApcRt(BasicEditor):
                 col = self.keyboardWidget.active_key.desc.col
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt > 0:
-                    self.keyboard.amk_rt[(row,col)] = 0
-                    self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, 0)
+                    #self.keyboard.amk_rt[(row,col)] = 0
+                    self.keyboard.apply_rt(row, col, 0)
                     #self.rt_sld.setValue(rt)
                     #self.rt_dpb.setValue(rt/10.0)
             self.rt_dpb.setEnabled(False)
@@ -235,8 +225,8 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            self.keyboard.amk_apc[(row, col)] = val
-            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, val)
+            #self.keyboard.amk_apc[(row, col)] = val
+            self.keyboard.apply_apc(row, col, val)
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -250,8 +240,8 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            self.keyboard.amk_apc[(row, col)] = self.apc_sld.value()
-            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_APC, self.apc_sld.value())
+            #self.keyboard.amk_apc[(row, col)] = self.apc_sld.value()
+            self.keyboard.apply_apc(row, col, self.apc_sld.value())
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -264,8 +254,8 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            self.keyboard.amk_rt[(row, col)] = val
-            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, val)
+            #self.keyboard.amk_rt[(row, col)] = val
+            self.keyboard.apply_rt(row, col, val)
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -278,8 +268,8 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            self.keyboard.amk_rt[(row, col)] = self.rt_sld.value()
-            self.apply_apc_rt(row, col, AMK_PROTOCOL_SET_RT, self.rt_sld.value())
+            #self.keyboard.amk_rt[(row, col)] = self.rt_sld.value()
+            self.keyboard.apply_rt(row, col, self.rt_sld.value())
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()

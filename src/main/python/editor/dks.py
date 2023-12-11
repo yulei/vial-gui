@@ -13,8 +13,6 @@ from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 from keycodes.keycodes import Keycode
 from tabbed_keycodes import TabbedKeycodes, keycode_filter_any
-from protocol.amk import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OK, AMK_PROTOCOL_GET_VERSION
-from protocol.amk import AMK_PROTOCOL_GET_DKS, AMK_PROTOCOL_SET_DKS
 from protocol.amk import DksKey
 
 def dks_display(widget, dks):
@@ -296,6 +294,7 @@ class Dks(BasicEditor):
         self.keyboardWidget.updateGeometry()
 
     def activate(self):
+        self.reset_keyboard_widget()
         self.refresh_dks(self.active_dks)
 
     def deactivate(self):
@@ -311,13 +310,12 @@ class Dks(BasicEditor):
 
         row = self.keyboardWidget.active_key.desc.row
         col = self.keyboardWidget.active_key.desc.col
-
-        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col) + dks.pack_dks()
-        data = self.keyboard.usb_send(self.device.dev, data, retries=20)
-        dks.dump()
-        #print("SetDKS returned={}".format(data[2]))
+        self.keyboard.apply_dks(row, col)
 
     def refresh_dks(self, dks):
+        if dks is None:
+            return
+
         for i in range(4):
             if dks is None:
                 self.dks_btns[i].setEnabled(False)

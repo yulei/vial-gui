@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.1.1"
+AMK_VERSION = "0.1.2"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -137,6 +137,42 @@ class DksKey:
                         keys[0], keys[1], keys[2], keys[3])
         return data
     
+    def save(self):
+        dks = {}
+        dks["down"] = self.down_events
+        dks["up"] = self.up_events
+        dks["codes"] = self.keys
+        return dks
+
+    def load(self, dks):
+        for i in range(len(self.down_events)):
+            for j in range(len(self.down_events[i])):
+                self.down_events[i][j] = dks["down"][i][j]
+
+        for i in range(len(self.up_events)):
+            for j in range(len(self.up_events[i])):
+                self.down_events[i][j] = dks["up"][i][j]
+
+        for i in range(len(self.keys)):
+            self.keys[i] = dks["codes"][i]
+
+    def is_same(self, dks):
+        for i in range(len(self.down_events)):
+            for j in range(len(self.down_events[i])):
+                if self.down_events[i][j] != dks["down"][i][j]:
+                    return False
+
+        for i in range(len(self.up_events)):
+            for j in range(len(self.up_events[i])):
+                if self.down_events[i][j] != dks["up"][i][j]:
+                    return False
+
+        for i in range(len(self.keys)):
+            if self.keys[i] != dks["codes"][i]:
+                return False
+
+        return True
+
     def parse(self, data):
         #print("Parse DKS")
         for i in range(4):
@@ -266,6 +302,71 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLE))
         self.amk_pole = True if data[3] > 0 else False
 
+    def apply_dks(self, row, col, dks=None):
+        if dks is not None:
+            if self.amk_dks[(row, col)].is_same(dks):
+                return
+            self.amk_dks[(row,col)].load(dks)
 
-        
-        
+        #self.amk_dks[(row,col)].dump()
+        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_DKS, row, col) + self.amk_dks[(row,col)].pack_dks()
+        data = self.usb_send(self.dev, data, retries=20)
+
+    def apply_apc(self, row, col, val):
+        if self.amk_apc[(row,col)] == val:
+            return
+
+        print("Update APC at({},{}), old({}), new({})".format(row, col, self.amk_apc[(row,col)], val))
+        self.amk_apc[(row,col)] = val
+        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC, row, col, val)
+        data = self.usb_send(self.dev, data, retries=20)
+
+    def apply_rt(self, row, col, val):
+        if self.amk_rt[(row,col)] == val:
+            return
+
+        print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
+        self.amk_rt[(row,col)] = val
+        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, val)
+        data = self.usb_send(self.dev, data, retries=20)
+
+    def apply_poll_rate(self, val):
+        if self.amk_poll_rate == val:
+            return
+
+        #print("Update poll rate: old({}), new({})".format(self.amk_poll_rate, val))
+        self.amk_poll_rate = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLL_RATE, val), retries=20)
+
+    def apply_debounce(self, val, down):
+        if down:
+            if self.amk_down_debounce == val:
+                return 
+
+            #print("Update down debounce: old({}), new({})".format(self.amk_down_debounce, val))
+            self.amk_down_debounce = val
+        else:
+            if self.amk_up_debounce == val:
+                return
+
+            #print("Update up debounce: old({}), new({})".format(self.amk_up_debounce, val))
+            self.amk_up_debounce = val
+
+        cmd = AMK_PROTOCOL_SET_DOWN_DEBOUNCE if down else AMK_PROTOCOL_SET_UP_DEBOUNCE
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, cmd, val), retries=20)
+    
+    def apply_nkro(self, val):
+        if self.amk_nkro == val:
+            return
+
+        #print("Update NKRO : old({}), new({})".format(self.amk_nkro, val))
+        self.amk_nkro = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NKRO, val), retries=20)
+
+    def apply_pole(self, val):
+        if self.amk_pole == val:
+            return
+
+        #print("Update POLE: old({}), new({})".format(self.amk_pole, val))
+        self.amk_pole = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLE, val), retries=20)
