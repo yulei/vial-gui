@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.1.2"
+AMK_VERSION = "0.1.3"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -223,7 +223,8 @@ class DksKey:
         return False
 
     def dump(self):
-        print("Dump DKSKey")
+        return
+        #print("Dump DKSKey")
         for i in range(4):
             print("Key({}) is {}".format(i, self.keys[i]))
 
@@ -316,7 +317,7 @@ class ProtocolAmk(BaseProtocol):
         if self.amk_apc[(row,col)] == val:
             return
 
-        print("Update APC at({},{}), old({}), new({})".format(row, col, self.amk_apc[(row,col)], val))
+        #print("Update APC at({},{}), old({}), new({})".format(row, col, self.amk_apc[(row,col)], val))
         self.amk_apc[(row,col)] = val
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC, row, col, val)
         data = self.usb_send(self.dev, data, retries=20)
@@ -325,7 +326,7 @@ class ProtocolAmk(BaseProtocol):
         if self.amk_rt[(row,col)] == val:
             return
 
-        print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
+        #print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
         self.amk_rt[(row,col)] = val
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, val)
         data = self.usb_send(self.dev, data, retries=20)
