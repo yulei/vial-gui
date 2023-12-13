@@ -12,15 +12,23 @@ from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 
 def apc_rt_display(widget, apc, rt):
-    apc_text = "{:.2f}\u2193".format(apc/10.0)
-    tooltip = "APC/RT setting"
+    apc_text = ""
+    if rt["cont"]:
+        apc_text = "{:.1f}\u2193\u2713".format(apc/10.0)
+    else:
+        apc_text = "{:.1f}\u2193".format(apc/10.0)
 
+    tooltip = "APC/RT setting"
     widget.setText(apc_text)
     widget.setToolTip(tooltip)
 
-    if rt > 0:
+    if rt["up"] > 0:
         widget.masked = True 
-        apc_text = "{:.2f}\u2191".format(rt/10.0)
+        if rt["down"] > 0:
+            apc_text = "{:.1f}\u2193\n{:.1f}\u2191".format(rt["down"]/10.0, rt["up"]/10.0)
+        else:
+            apc_text = "{:.1f}\u2191".format(rt["up"]/10.0)
+
         widget.setMaskText(apc_text)
         widget.setMaskColor(QApplication.palette().color(QPalette.Link))
     else:
@@ -35,6 +43,7 @@ class ApcRt(BasicEditor):
 
         self.keyboardWidget = KeyboardWidget(layout_editor)
         self.keyboardWidget.set_enabled(True)
+        self.keyboardWidget.set_scale(1.2)
         self.keyboardWidget.clicked.connect(self.on_key_clicked)
 
         layout = QVBoxLayout()
@@ -86,10 +95,45 @@ class ApcRt(BasicEditor):
         self.rt_sld.setTickPosition(QSlider.TicksAbove)
         self.rt_sld.setTracking(False)
         self.rt_sld.valueChanged.connect(self.on_rt_sld) 
+
+        self.rt_cont_cbx = QCheckBox("Enable continuous RT")
+        self.rt_cont_cbx.setTristate(False)
+        self.rt_cont_cbx.setEnabled(False)
+        self.rt_cont_cbx.setCheckState(Qt.Unchecked)
+        self.rt_cont_cbx.stateChanged.connect(self.on_rt_cont_check)
+
         apc_rt_layout.addWidget(self.rt_lbl, 1, 0)
         apc_rt_layout.addWidget(self.rt_dpb, 1, 1)
         apc_rt_layout.addWidget(self.rt_sld, 1, 2)
         apc_rt_layout.addWidget(self.rt_cbx, 1, 3)
+        apc_rt_layout.addWidget(self.rt_cont_cbx, 1, 4)
+
+        self.rt_down_cbx = QCheckBox("Enable press RT")
+        self.rt_down_cbx.setTristate(False)
+        self.rt_down_cbx.setEnabled(False)
+        self.rt_down_cbx.setCheckState(Qt.Unchecked)
+        self.rt_down_cbx.stateChanged.connect(self.on_rt_down_check)
+        self.rt_down_lbl = QLabel(tr("RT press", "Set the rappid trigger press:"))
+        self.rt_down_dpb = QDoubleSpinBox()
+        self.rt_down_dpb.setEnabled(False)
+        self.rt_down_dpb.setRange(0.1, 2.5)
+        self.rt_down_dpb.setValue(1.0)
+        self.rt_down_dpb.setSingleStep(0.1)
+        self.rt_down_dpb.valueChanged.connect(self.on_rt_down_dpb) 
+        self.rt_down_sld= QSlider(Qt.Horizontal)
+        self.rt_down_sld.setEnabled(False)
+        self.rt_down_sld.setMaximumWidth(300)
+        self.rt_down_sld.setMinimumWidth(200)
+        self.rt_down_sld.setRange(1, 25)
+        self.rt_down_sld.setSingleStep(1)
+        self.rt_down_sld.setValue(10)
+        self.rt_down_sld.setTickPosition(QSlider.TicksAbove)
+        self.rt_down_sld.setTracking(False)
+        self.rt_down_sld.valueChanged.connect(self.on_rt_down_sld) 
+        apc_rt_layout.addWidget(self.rt_down_lbl, 2, 0)
+        apc_rt_layout.addWidget(self.rt_down_dpb, 2, 1)
+        apc_rt_layout.addWidget(self.rt_down_sld, 2, 2)
+        apc_rt_layout.addWidget(self.rt_down_cbx, 2, 3)
 
         layout = QHBoxLayout()
         layout.addStretch(1)
@@ -133,6 +177,7 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is None:
             return
         
+        print("reset apcrt button")
         widget = self.keyboardWidget.active_key
         row = widget.desc.row
         col = widget.desc.col
@@ -141,9 +186,96 @@ class ApcRt(BasicEditor):
 
     def activate(self):
         self.reset_keyboard_widget()
+        apc = None
+        rt = None
+        if self.keyboardWidget.active_key is not None:
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+
+            apc = self.keyboard.amk_apc.get((row, col), 20)
+            rt  = self.keyboard.amk_rt.get((row,col), None)
+
+        self.refresh_apc(apc)
+        self.refresh_rt(rt)
 
     def deactivate(self):
         pass
+    
+    def refresh_apc(self, apc = None):
+        self.apc_sld.blockSignals(True)
+        self.apc_dpb.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
+
+        if apc is None:
+            self.apc_sld.setValue(16)
+            self.apc_dpb.setValue(1.6)
+        else:
+            self.apc_sld.setValue(apc)
+            self.apc_dpb.setValue(apc/10.0)
+
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
+        self.apc_dpb.blockSignals(False)
+        self.apc_sld.blockSignals(False)
+
+    def refresh_rt(self, rt = None):
+        self.rt_cbx.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
+        self.rt_cont_cbx.blockSignals(True)
+        self.rt_down_cbx.blockSignals(True)
+        self.rt_down_sld.blockSignals(True)
+        self.rt_down_dpb.blockSignals(True)
+
+        if rt is None:
+            self.rt_cbx.setCheckState(Qt.Unchecked)
+            self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
+            self.rt_sld.setEnabled(False)
+            self.rt_dpb.setEnabled(False)
+
+            self.rt_cont_cbx.setCheckState(Qt.Unchecked)
+            self.rt_cont_cbx.setEnabled(False)
+            self.rt_down_cbx.setCheckState(Qt.Unchecked)
+            self.rt_down_cbx.setEnabled(False)
+            self.rt_down_sld.setEnabled(False)
+            self.rt_down_dpb.setEnabled(False)
+        else:
+            if rt["up"] > 0:
+                self.rt_sld.setEnabled(True)
+                self.rt_dpb.setEnabled(True)
+                self.rt_sld.setValue(rt["up"])
+                self.rt_dpb.setValue(rt["up"]/10.0)
+                self.rt_cbx.setEnabled(True)
+                self.rt_cbx.setCheckState(Qt.Checked)
+                self.rt_cont_cbx.setEnabled(True)
+                if rt["cont"]:
+                    self.rt_cont_cbx.setCheckState(Qt.Checked)
+                else:
+                    self.rt_cont_cbx.setCheckState(Qt.Unchecked)
+
+                if rt["down"] > 0:
+                    self.rt_lbl.setText(tr("RT release", "Set the rappid trigger release:"))
+                    self.rt_down_cbx.setEnabled(True)
+                    self.rt_down_cbx.setCheckState(Qt.Checked)
+
+                    self.rt_down_sld.setEnabled(True)
+                    self.rt_down_dpb.setEnabled(True)
+                    self.rt_down_sld.setValue(rt["down"])
+                    self.rt_down_dpb.setValue(rt["down"]/10.0)
+                else:
+                    self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
+                    self.rt_down_cbx.setEnabled(False)
+                    self.rt_down_sld.setEnabled(False)
+                    self.rt_down_dpb.setEnabled(False)
+
+        self.rt_down_dpb.blockSignals(False)
+        self.rt_down_sld.blockSignals(False)
+        self.rt_down_cbx.blockSignals(False)
+        self.rt_cont_cbx.blockSignals(False)
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
+        self.rt_cbx.blockSignals(False)
 
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
@@ -154,68 +286,12 @@ class ApcRt(BasicEditor):
         col = self.keyboardWidget.active_key.desc.col
 
         apc = self.keyboard.amk_apc.get((row, col), 20)
-        rt  = self.keyboard.amk_rt.get((row,col), 0)
+        self.refresh_apc(apc)
 
-        self.apc_sld.blockSignals(True)
-        self.apc_dpb.blockSignals(True)
-        self.rt_cbx.blockSignals(True)
-        self.rt_sld.blockSignals(True)
-        self.rt_dpb.blockSignals(True)
-
-        self.apc_sld.setValue(apc)
-        self.apc_dpb.setValue(apc/10.0)
-
-        if rt > 0:
-            self.rt_cbx.setCheckState(Qt.Checked)
-            self.rt_sld.setEnabled(True)
-            self.rt_dpb.setEnabled(True)
-            self.rt_sld.setValue(rt)
-            self.rt_dpb.setValue(rt/10.0)
-        else:
-            self.rt_cbx.setCheckState(Qt.Unchecked)
-            self.rt_sld.setEnabled(False)
-            self.rt_dpb.setEnabled(False)
-
-        self.rt_dpb.blockSignals(False)
-        self.rt_sld.blockSignals(False)
-        self.rt_cbx.blockSignals(False)
-        self.apc_dpb.blockSignals(False)
-        self.apc_sld.blockSignals(False)
+        rt  = self.keyboard.amk_rt.get((row,col), None)
+        self.refresh_rt(rt)
 
         #print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
-
-    def on_rt_check(self):
-        self.rt_cbx.blockSignals(True)
-        self.rt_sld.blockSignals(True)
-        self.rt_dpb.blockSignals(True)
-        if self.rt_cbx.isChecked():
-            self.rt_dpb.setEnabled(True)
-            self.rt_sld.setEnabled(True)
-            if self.keyboardWidget.active_key is not None:
-                row = self.keyboardWidget.active_key.desc.row
-                col = self.keyboardWidget.active_key.desc.col
-                rt = self.keyboard.amk_rt.get((row, col), 0)
-                if rt == 0:
-                    #self.keyboard.amk_rt[(row,col)] = 1
-                    self.keyboard.apply_rt(row, col, 1)
-                    self.rt_sld.setValue(rt)
-                    self.rt_dpb.setValue(rt/10.0)
-        else:
-            if self.keyboardWidget.active_key is not None:
-                row = self.keyboardWidget.active_key.desc.row
-                col = self.keyboardWidget.active_key.desc.col
-                rt = self.keyboard.amk_rt.get((row, col), 0)
-                if rt > 0:
-                    #self.keyboard.amk_rt[(row,col)] = 0
-                    self.keyboard.apply_rt(row, col, 0)
-                    #self.rt_sld.setValue(rt)
-                    #self.rt_dpb.setValue(rt/10.0)
-            self.rt_dpb.setEnabled(False)
-            self.rt_sld.setEnabled(False)
-        self.rt_dpb.blockSignals(False)
-        self.rt_sld.blockSignals(False)
-        self.rt_cbx.blockSignals(False)
-        self.reset_active_apcrt()
 
     def on_apc_dpb(self):
         self.apc_sld.blockSignals(True)
@@ -246,6 +322,25 @@ class ApcRt(BasicEditor):
         self.apc_sld.blockSignals(False)
         self.reset_active_apcrt()
 
+    def get_current_rt(self):
+        rt = {}
+        rt["cont"] = False
+        if self.rt_cont_cbx.isEnabled():
+            if self.rt_cont_cbx.isChecked():
+                rt["cont"] = True
+        rt["up"] = 0
+        if self.rt_cbx.isEnabled():
+            if self.rt_cbx.isChecked():
+                rt["up"] = self.rt_sld.value()
+
+        rt["down"] = 0 
+        if self.rt_down_cbx.isEnabled():
+            if self.rt_down_cbx.isChecked():
+                rt["down"] = self.rt_down_sld.value()
+
+        return rt
+
+
     def on_rt_dpb(self):
         self.rt_sld.blockSignals(True)
         self.rt_dpb.blockSignals(True)
@@ -254,8 +349,7 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_rt[(row, col)] = val
-            self.keyboard.apply_rt(row, col, val)
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -268,9 +362,126 @@ class ApcRt(BasicEditor):
         if self.keyboardWidget.active_key is not None:
             row = self.keyboardWidget.active_key.desc.row
             col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_rt[(row, col)] = self.rt_sld.value()
-            self.keyboard.apply_rt(row, col, self.rt_sld.value())
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()
 
+    def on_rt_down_dpb(self):
+        self.rt_down_sld.blockSignals(True)
+        self.rt_down_dpb.blockSignals(True)
+        val = int(self.rt_down_dpb.value()*10)
+        self.rt_down_sld.setValue(val)
+
+        if self.keyboardWidget.active_key is not None:
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
+
+        self.rt_down_dpb.blockSignals(False)
+        self.rt_down_sld.blockSignals(False)
+        self.reset_active_apcrt()
+
+    def on_rt_down_sld(self):
+        self.rt_down_sld.blockSignals(True)
+        self.rt_down_dpb.blockSignals(True)
+        val = self.rt_down_sld.value()/10.0
+        self.rt_down_dpb.setValue(val)
+
+        if self.keyboardWidget.active_key is not None:
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
+
+        self.rt_down_dpb.blockSignals(False)
+        self.rt_down_sld.blockSignals(False)
+        self.reset_active_apcrt()
+        
+    def on_rt_check(self):
+        self.rt_cbx.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.blockSignals(True)
+        self.rt_cont_cbx.blockSignals(True)
+        self.rt_down_cbx.blockSignals(True)
+        self.rt_down_sld.blockSignals(True)
+        self.rt_down_dpb.blockSignals(True)
+
+        self.rt_cont_cbx.setCheckState(Qt.Unchecked)
+        self.rt_down_cbx.setCheckState(Qt.Unchecked)
+        self.rt_down_sld.setValue(0)
+        self.rt_down_dpb.setValue(0.0)
+
+        if self.rt_cbx.isChecked():
+            self.rt_dpb.setEnabled(True)
+            self.rt_sld.setEnabled(True)
+            self.rt_cont_cbx.setEnabled(True)
+            self.rt_down_cbx.setEnabled(True)
+            self.rt_down_dpb.setEnabled(True)
+            self.rt_down_sld.setEnabled(True)
+
+            self.rt_sld.setValue(1)
+            self.rt_dpb.setValue(0.1)
+            if self.keyboardWidget.active_key is not None:
+                row = self.keyboardWidget.active_key.desc.row
+                col = self.keyboardWidget.active_key.desc.col
+
+                self.keyboard.apply_rt(row, col, self.get_current_rt())
+        else:
+            self.rt_sld.setValue(0)
+            self.rt_dpb.setValue(0.0)
+            if self.keyboardWidget.active_key is not None:
+                row = self.keyboardWidget.active_key.desc.row
+                col = self.keyboardWidget.active_key.desc.col
+                self.keyboard.apply_rt(row, col, self.get_current_rt())
+
+            self.rt_cont_cbx.setEnabled(False)
+            self.rt_down_cbx.setEnabled(False)
+            self.rt_down_dpb.setEnabled(False)
+            self.rt_down_sld.setEnabled(False)
+            self.rt_dpb.setEnabled(False)
+            self.rt_sld.setEnabled(False)
+
+        self.rt_down_dpb.blockSignals(False)
+        self.rt_down_sld.blockSignals(False)
+        self.rt_down_cbx.blockSignals(False)
+        self.rt_cont_cbx.blockSignals(False)
+        self.rt_dpb.blockSignals(False)
+        self.rt_sld.blockSignals(False)
+        self.rt_cbx.blockSignals(False)
+
+        self.reset_active_apcrt()
+
+    def on_rt_cont_check(self):
+        if self.keyboardWidget.active_key is not None:
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
+
+        self.reset_active_apcrt()
+
+    def on_rt_down_check(self):
+        self.rt_down_sld.blockSignals(True)
+        self.rt_down_dpb.blockSignals(True)
+
+        if self.rt_down_cbx.isChecked():
+            self.rt_lbl.setText(tr("RT release", "Set the rappid trigger release:"))
+            self.rt_down_dpb.setEnabled(True)
+            self.rt_down_sld.setEnabled(True)
+            self.rt_down_sld.setValue(1)
+            self.rt_down_dpb.setValue(0.1)
+        else:
+            self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
+            self.rt_down_sld.setValue(0)
+            self.rt_down_dpb.setValue(0.0)
+            self.rt_down_dpb.setEnabled(False)
+            self.rt_down_sld.setEnabled(False)
+
+        if self.keyboardWidget.active_key is not None:
+            row = self.keyboardWidget.active_key.desc.row
+            col = self.keyboardWidget.active_key.desc.col
+            self.keyboard.apply_rt(row, col, self.get_current_rt())
+
+        self.rt_down_dpb.blockSignals(False)
+        self.rt_down_sld.blockSignals(False)
+
+        self.reset_active_apcrt()

@@ -257,8 +257,13 @@ class ProtocolAmk(BaseProtocol):
             data = self.usb_send(self.dev, 
                                 struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT, row, col),
                                 retries=20)
-            val = struct.unpack(">H", data[3:5])
-            self.amk_rt[(row, col)] = val[0]
+            val = struct.unpack(">H", data[3:5])[0]
+            cont = True if val & 0xFF00 > 0 else False
+            down = val & 0x000F
+            up = (val & 0x00F0) >> 4
+            rt = {"cont": cont, "down": down, "up": up}
+
+            self.amk_rt[(row, col)] = rt
             #print("AMK protocol: RT={}, row={}, col={}".format(val, row, col))
 
     def reload_dks(self):
@@ -323,12 +328,23 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, data, retries=20)
 
     def apply_rt(self, row, col, val):
-        if self.amk_rt[(row,col)] == val:
+        if self.amk_rt[(row,col)]["cont"] == val["cont"] and \
+            self.amk_rt[(row,col)]["down"] == val["down"] and \
+            self.amk_rt[(row,col)]["up"] == val["up"]:
             return
 
-        #print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
-        self.amk_rt[(row,col)] = val
-        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, val)
+        print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
+
+        self.amk_rt[(row,col)]["cont"] = val["cont"] 
+        self.amk_rt[(row,col)]["down"] = val["down"] 
+        self.amk_rt[(row,col)]["up"] = val["up"] 
+        rt = 0x0100 if val["cont"] else 0
+        rt = rt + (val["down"] & 0x0F)
+        rt = rt + ((val["up"] & 0x0F) << 4)
+        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt)
+        print("rt data pcked:{}".format(data))
+        return
+
         data = self.usb_send(self.dev, data, retries=20)
 
     def apply_poll_rate(self, val):
