@@ -154,6 +154,12 @@ class Misc(BasicEditor):
             self.ud_lbl.hide()
             self.ud_sld.hide()
             self.ud_sbx.hide()
+
+            self.ie_lbl.show()
+            self.im_btn.show()
+            self.ex_btn.show()
+            self.mp_lbl.show()
+            self.mp_cbb.show()
         else:
             self.dd_lbl.show()
             self.dd_sld.show()
@@ -161,6 +167,12 @@ class Misc(BasicEditor):
             self.ud_lbl.show()
             self.ud_sld.show()
             self.ud_sbx.show()
+
+            self.ie_lbl.hide()
+            self.im_btn.hide()
+            self.ex_btn.hide()
+            self.mp_lbl.hide()
+            self.mp_cbb.hide()
 
         if self.keyboard.keyboard_type == "mx":
             self.dd_sld.blockSignals(True)

@@ -249,6 +249,7 @@ class ApcRt(BasicEditor):
                 self.rt_cbx.setEnabled(True)
                 self.rt_cbx.setCheckState(Qt.Checked)
                 self.rt_cont_cbx.setEnabled(True)
+                self.rt_down_cbx.setEnabled(True)
                 if rt["cont"]:
                     self.rt_cont_cbx.setCheckState(Qt.Checked)
                 else:
@@ -256,7 +257,6 @@ class ApcRt(BasicEditor):
 
                 if rt["down"] > 0:
                     self.rt_lbl.setText(tr("RT release", "Set the rappid trigger release:"))
-                    self.rt_down_cbx.setEnabled(True)
                     self.rt_down_cbx.setCheckState(Qt.Checked)
 
                     self.rt_down_sld.setEnabled(True)
@@ -265,9 +265,17 @@ class ApcRt(BasicEditor):
                     self.rt_down_dpb.setValue(rt["down"]/10.0)
                 else:
                     self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
-                    self.rt_down_cbx.setEnabled(False)
                     self.rt_down_sld.setEnabled(False)
                     self.rt_down_dpb.setEnabled(False)
+            else:
+                self.rt_cbx.setEnabled(True)
+                self.rt_cbx.setCheckState(Qt.Unchecked)
+                self.rt_sld.setEnabled(False)
+                self.rt_dpb.setEnabled(False)
+                self.rt_cont_cbx.setEnabled(False)
+                self.rt_down_cbx.setEnabled(False)
+                self.rt_down_sld.setEnabled(False)
+                self.rt_down_dpb.setEnabled(False)
 
         self.rt_down_dpb.blockSignals(False)
         self.rt_down_sld.blockSignals(False)
@@ -290,8 +298,7 @@ class ApcRt(BasicEditor):
 
         rt  = self.keyboard.amk_rt.get((row,col), None)
         self.refresh_rt(rt)
-
-        #print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
+        print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
 
     def on_apc_dpb(self):
         self.apc_sld.blockSignals(True)
