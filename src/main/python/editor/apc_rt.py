@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout
-from PyQt5.QtCore import QSize, Qt, QCoreApplication
+from PyQt5.QtCore import QSize, Qt, QCoreApplication, pyqtSignal
+
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication
 
@@ -8,6 +9,7 @@ import math, struct
 
 from editor.basic_editor import BasicEditor
 from widgets.keyboard_widget import KeyboardWidget
+from widgets.amk_widget import ClickableWidget, AmkWidget
 from util import tr, KeycodeDisplay
 from vial_device import VialKeyboard
 
@@ -33,15 +35,19 @@ class ApcRt(BasicEditor):
 
         self.layout_editor = layout_editor
 
-        self.keyboardWidget = KeyboardWidget(layout_editor)
+        self.keyboardWidget = AmkWidget(layout_editor) #KeyboardWidget(layout_editor)
         self.keyboardWidget.set_enabled(True)
         self.keyboardWidget.clicked.connect(self.on_key_clicked)
 
         layout = QVBoxLayout()
         layout.addWidget(self.keyboardWidget)
         layout.setAlignment(self.keyboardWidget, Qt.AlignCenter)
+        w = ClickableWidget()
+        w.setLayout(layout)
+        w.clicked.connect(self.on_empty_space_clicked)
 
-        self.addLayout(layout)
+        #self.addLayout(w)
+        self.addWidget(w)
 
         apc_rt_layout = QGridLayout()
 
@@ -130,13 +136,14 @@ class ApcRt(BasicEditor):
         self.keyboardWidget.updateGeometry()
 
     def reset_active_apcrt(self):
-        if self.keyboardWidget.active_key is None:
+        if not self.keyboardWidget.active_keys:
             return
-        
-        widget = self.keyboardWidget.active_key
-        row = widget.desc.row
-        col = widget.desc.col
-        apc_rt_display(widget, self.keyboard.amk_apc[(row,col)], self.keyboard.amk_rt[(row,col)])
+       
+        for idex, key in self.keyboardWidget.active_keys.items():
+            row = key.desc.row
+            col = key.desc.col
+            apc_rt_display(key, self.keyboard.amk_apc[(row,col)], self.keyboard.amk_rt[(row,col)])
+
         self.keyboardWidget.update()
 
     def activate(self):
@@ -145,13 +152,18 @@ class ApcRt(BasicEditor):
     def deactivate(self):
         pass
 
+    def on_empty_space_clicked(self):
+        self.keyboardWidget.clear_active_keys()
+        self.keyboardWidget.update()
+
     def on_key_clicked(self):
         """ Called when a key on the keyboard widget is clicked """
-        if self.keyboardWidget.active_key is None:
+        if not self.keyboardWidget.active_keys:
             return
 
-        row = self.keyboardWidget.active_key.desc.row
-        col = self.keyboardWidget.active_key.desc.col
+        widget = list(self.keyboardWidget.active_keys.values())[0]
+        row = widget.desc.row
+        col = widget.desc.col
 
         apc = self.keyboard.amk_apc.get((row, col), 20)
         rt  = self.keyboard.amk_rt.get((row,col), 0)
@@ -191,25 +203,25 @@ class ApcRt(BasicEditor):
         if self.rt_cbx.isChecked():
             self.rt_dpb.setEnabled(True)
             self.rt_sld.setEnabled(True)
-            if self.keyboardWidget.active_key is not None:
-                row = self.keyboardWidget.active_key.desc.row
-                col = self.keyboardWidget.active_key.desc.col
+            if self.keyboardWidget.active_keys:
+                key = list(self.keyboardWidget.active_keys.values())[0]
+                row = key.desc.row
+                col = key.desc.col
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt == 0:
-                    #self.keyboard.amk_rt[(row,col)] = 1
-                    self.keyboard.apply_rt(row, col, 1)
+                    self.update_group_rt(self.keyboardWidget.active_keys, 1)
+                    #self.keyboard.apply_rt(row, col, 1)
                     self.rt_sld.setValue(rt)
                     self.rt_dpb.setValue(rt/10.0)
         else:
-            if self.keyboardWidget.active_key is not None:
-                row = self.keyboardWidget.active_key.desc.row
-                col = self.keyboardWidget.active_key.desc.col
+            if self.keyboardWidget.active_keys:
+                key = list(self.keyboardWidget.active_keys.values())[0]
+                row = key.desc.row
+                col = key.desc.col
                 rt = self.keyboard.amk_rt.get((row, col), 0)
                 if rt > 0:
-                    #self.keyboard.amk_rt[(row,col)] = 0
-                    self.keyboard.apply_rt(row, col, 0)
-                    #self.rt_sld.setValue(rt)
-                    #self.rt_dpb.setValue(rt/10.0)
+                    self.update_group_rt(self.keyboardWidget.active_keys, 0)
+                    #self.keyboard.apply_rt(row, col, 0)
             self.rt_dpb.setEnabled(False)
             self.rt_sld.setEnabled(False)
         self.rt_dpb.blockSignals(False)
@@ -222,11 +234,11 @@ class ApcRt(BasicEditor):
         self.apc_dpb.blockSignals(True)
         val = int(self.apc_dpb.value()*10)
         self.apc_sld.setValue(val)
-        if self.keyboardWidget.active_key is not None:
-            row = self.keyboardWidget.active_key.desc.row
-            col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_apc[(row, col)] = val
-            self.keyboard.apply_apc(row, col, val)
+        if self.keyboardWidget.active_keys:
+            self.update_group_apc(self.keyboardWidget.active_keys, val)
+            #row = self.keyboardWidget.active_key.desc.row
+            #col = self.keyboardWidget.active_key.desc.col
+            #self.keyboard.apply_apc(row, col, val)
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -237,11 +249,11 @@ class ApcRt(BasicEditor):
         self.apc_dpb.blockSignals(True)
         val = self.apc_sld.value()/10.0
         self.apc_dpb.setValue(val)
-        if self.keyboardWidget.active_key is not None:
-            row = self.keyboardWidget.active_key.desc.row
-            col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_apc[(row, col)] = self.apc_sld.value()
-            self.keyboard.apply_apc(row, col, self.apc_sld.value())
+        if self.keyboardWidget.active_keys:
+            self.update_group_apc(self.keyboardWidget.active_keys, self.apc_sld.value())
+            #row = self.keyboardWidget.active_key.desc.row
+            #col = self.keyboardWidget.active_key.desc.col
+            #self.keyboard.apply_apc(row, col, self.apc_sld.value())
         self.apc_dpb.blockSignals(False)
         self.apc_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -251,11 +263,11 @@ class ApcRt(BasicEditor):
         self.rt_dpb.blockSignals(True)
         val = int(self.rt_dpb.value()*10)
         self.rt_sld.setValue(val)
-        if self.keyboardWidget.active_key is not None:
-            row = self.keyboardWidget.active_key.desc.row
-            col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_rt[(row, col)] = val
-            self.keyboard.apply_rt(row, col, val)
+        if self.keyboardWidget.active_keys:
+            #row = self.keyboardWidget.active_key.desc.row
+            #col = self.keyboardWidget.active_key.desc.col
+            #self.keyboard.apply_rt(row, col, val)
+            self.update_group_rt(self.keyboardWidget.active_keys, val)
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()
@@ -265,12 +277,21 @@ class ApcRt(BasicEditor):
         self.rt_dpb.blockSignals(True)
         val = self.rt_sld.value()/10.0
         self.rt_dpb.setValue(val)
-        if self.keyboardWidget.active_key is not None:
-            row = self.keyboardWidget.active_key.desc.row
-            col = self.keyboardWidget.active_key.desc.col
-            #self.keyboard.amk_rt[(row, col)] = self.rt_sld.value()
-            self.keyboard.apply_rt(row, col, self.rt_sld.value())
+        if self.keyboardWidget.active_keys:
+            #row = self.keyboardWidget.active_key.desc.row
+            #col = self.keyboardWidget.active_key.desc.col
+            #self.keyboard.apply_rt(row, col, self.rt_sld.value())
+            self.update_group_rt(self.keyboardWidget.active_keys, self.rt_sld.value())
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
         self.reset_active_apcrt()
+    
+    def update_group_apc(self, keys, val):
+        for idx, key in keys.items():
+            #print("apply apc for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
+            self.keyboard.apply_apc(key.desc.row, key.desc.col, val)
 
+    def update_group_rt(self, keys, val):
+        for idx, key in keys.items():
+            #print("apply rt for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
+            self.keyboard.apply_rt(key.desc.row, key.desc.col, val)
