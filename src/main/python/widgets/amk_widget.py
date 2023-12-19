@@ -68,10 +68,11 @@ class AmkWidget(KeyboardWidget):
         qp = QPainter()
         qp.begin(self)
 
-        # for regular keycaps
-        regular_pen = qp.pen()
-        regular_pen.setColor(QApplication.palette().color(QPalette.ButtonText))
-        qp.setPen(regular_pen)
+
+        drag_pen = qp.pen()
+        drag_pen.setColor(QApplication.palette().color(QPalette.Link).darker(80))
+        drag_pen.setStyle(Qt.DashDotLine)
+        qp.setPen(drag_pen)
 
         rect = QRect(begin, end) 
         qp.drawRect(rect)
