@@ -1,16 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout
-from PyQt5.QtCore import QSize, Qt, QCoreApplication, pyqtSignal
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout
+from PyQt5.QtCore import Qt
 
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication
 
-import math, struct
-
 from editor.basic_editor import BasicEditor
-from widgets.keyboard_widget import KeyboardWidget
 from widgets.amk_widget import ClickableWidget, AmkWidget
-from util import tr, KeycodeDisplay
+from util import tr
 from vial_device import VialKeyboard
 
 def apc_rt_display(widget, apc, rt):

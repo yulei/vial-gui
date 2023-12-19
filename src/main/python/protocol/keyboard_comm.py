@@ -97,7 +97,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_combo()
         self.reload_key_override()
 
-        #reload apc/rt/dks if support
+        #reload nkro
+        self.amk_nkro = False
+        self.reload_nkro()
+
+        #reload apc/rt/dks/sensitivity
         if self.keyboard_type == "ms":
             self.amk_apc = dict()
             self.reload_apc()
@@ -108,15 +112,23 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_pole = False
             self.reload_pole()
 
+            self.amk_rt_sens = 80
+            self.reload_rt_sensitivity()
+
+            self.amk_top_sens = 100
+            self.reload_top_sensitivity()
+
+            self.amk_btm_sens = 150
+            self.reload_bottom_sensitivity()
+
         #reload keyboard misc settings
         if self.keyboard_speed == "hs":
             self.amk_poll_rate = 0
             self.reload_poll_rate()
-            self.amk_down_debounce = 0
-            self.amk_up_debounce = 5
-            self.reload_debounce()
-            self.amk_nkro = False
-            self.reload_nkro()
+            if self.keyboard_type == "mx":
+                self.amk_down_debounce = 0
+                self.amk_up_debounce = 5
+                self.reload_debounce()
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """

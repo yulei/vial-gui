@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.1.3"
+AMK_VERSION = "0.1.4"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -26,11 +26,12 @@ AMK_PROTOCOL_GET_NKRO = 13
 AMK_PROTOCOL_SET_NKRO = 14
 AMK_PROTOCOL_GET_POLE = 15
 AMK_PROTOCOL_SET_POLE = 16
-
-DKS_EVENT_0 = 0
-DKS_EVENT_1 = 1
-DKS_EVENT_2 = 2
-DKS_EVENT_3 = 3
+AMK_PROTOCOL_GET_RT_SENS = 17
+AMK_PROTOCOL_SET_RT_SENS = 18
+AMK_PROTOCOL_GET_TOP_SENS = 19
+AMK_PROTOCOL_SET_TOP_SENS = 20
+AMK_PROTOCOL_GET_BTM_SENS = 21
+AMK_PROTOCOL_SET_BTM_SENS = 22
 
 DKS_EVENT_MAX = 4
 DKS_KEY_MAX = 4
@@ -308,6 +309,24 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLE))
         self.amk_pole = True if data[3] > 0 else False
 
+    def reload_rt_sensitivity(self):
+        """ Reload RT sensitivity setting from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT_SENS))
+        self.amk_rt_sens = data[3]
+        #print("AMK protocol: RT sensitivity={}, result={}".format(self.amk_rt_sens, data[2]))
+
+    def reload_top_sensitivity(self):
+        """ Reload TOP sensitivity setting from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_TOP_SENS))
+        self.amk_top_sens = data[3]
+        #print("AMK protocol: TOP sensitivity={}, result={}".format(self.amk_top_sens, data[2]))
+
+    def reload_bottom_sensitivity(self):
+        """ Reload BOTTOM sensitivity setting from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_BTM_SENS))
+        self.amk_btm_sens = data[3]
+        #print("AMK protocol: BOTTOM sensitivity={}, result={}".format(self.amk_btm_sens, data[2]))
+
     def apply_dks(self, row, col, dks=None):
         if dks is not None:
             if self.amk_dks[(row, col)].is_same(dks):
@@ -385,3 +404,27 @@ class ProtocolAmk(BaseProtocol):
         #print("Update POLE: old({}), new({})".format(self.amk_pole, val))
         self.amk_pole = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLE, val), retries=20)
+
+    def apply_rt_sensitivity(self, val):
+        if self.amk_rt_sens == val:
+            return
+
+        self.amk_rt_sens = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT_SENS, val), retries=20)
+        #print("update RT sensitivity: ", val)
+
+    def apply_top_sensitivity(self, val):
+        if self.amk_top_sens == val:
+            return
+
+        self.amk_top_sens = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_TOP_SENS, val), retries=20)
+        #print("update TOP sensitivity: ", val)
+
+    def apply_bottom_sensitivity(self, val):
+        if self.amk_btm_sens == val:
+            return
+
+        self.amk_btm_sens = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_BTM_SENS, val), retries=20)
+        #print("update BOTTOM sensitivity: ", val)

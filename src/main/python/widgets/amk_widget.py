@@ -1,7 +1,7 @@
 
-from PyQt5.QtGui import QPainter, QColor, QPalette
-from PyQt5.QtWidgets import QWidget, QToolTip, QApplication
-from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal
+from PyQt5.QtGui import QPainter, QPalette
+from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtCore import Qt, QRect, pyqtSignal
 
 from widgets.keyboard_widget import KeyboardWidget
 

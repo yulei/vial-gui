@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
 
-import os, struct, json
+import os, json
 
 from util import tr
 
@@ -110,6 +110,79 @@ class Misc(BasicEditor):
         self.ud_sbx.setSingleStep(1)
         self.ud_sbx.valueChanged.connect(self.on_ud_sbx)
         g_layout.addWidget(self.ud_sbx, line, 2)
+    
+        line = line + 1
+        #advanced
+        self.adv_btn = QPushButton(tr("advance", "Advanced \u22d9"))
+        self.adv_btn.setMaximumWidth(100)
+        self.adv_btn.clicked.connect(self.on_adv_btn)
+        g_layout.addWidget(self.adv_btn, line, 0)
+
+        line = line + 1
+        self.rt_lbl = QLabel(tr("rt sens", "Set the rt sensitivity:"))
+        g_layout.addWidget(self.rt_lbl, line, 0)
+        self.rt_dpb = QSpinBox()
+        #self.rt_dpb.setEnabled(False)
+        self.rt_dpb.setRange(1, 255)
+        #self.rt_dpb.setValue(80)
+        self.rt_dpb.setSingleStep(1)
+        self.rt_dpb.valueChanged.connect(self.on_rt_dpb) 
+        g_layout.addWidget(self.rt_dpb, line, 1)
+        self.rt_sld= QSlider(Qt.Horizontal)
+        #self.rt_sld.setEnabled(False)
+        self.rt_sld.setMaximumWidth(300)
+        self.rt_sld.setMinimumWidth(200)
+        self.rt_sld.setRange(1, 255)
+        self.rt_sld.setSingleStep(1)
+        #self.rt_sld.setValue(80)
+        self.rt_sld.setTickPosition(QSlider.TicksAbove)
+        self.rt_sld.setTracking(False)
+        self.rt_sld.valueChanged.connect(self.on_rt_sld) 
+        g_layout.addWidget(self.rt_sld, line, 2)
+
+        line = line + 1
+        self.top_lbl = QLabel(tr("top sens", "Set the top sensitivity:"))
+        g_layout.addWidget(self.top_lbl, line, 0)
+        self.top_dpb = QSpinBox()
+        #self.top_dpb.setEnabled(False)
+        self.top_dpb.setRange(1, 255)
+        #self.top_dpb.setValue(100)
+        self.top_dpb.setSingleStep(1)
+        self.top_dpb.valueChanged.connect(self.on_top_dpb) 
+        g_layout.addWidget(self.top_dpb, line, 1)
+        self.top_sld= QSlider(Qt.Horizontal)
+        #self.top_sld.setEnabled(False)
+        self.top_sld.setMaximumWidth(300)
+        self.top_sld.setMinimumWidth(200)
+        self.top_sld.setRange(1, 255)
+        self.top_sld.setSingleStep(1)
+        #self.top_sld.setValue(100)
+        self.top_sld.setTickPosition(QSlider.TicksAbove)
+        self.top_sld.setTracking(False)
+        self.top_sld.valueChanged.connect(self.on_top_sld) 
+        g_layout.addWidget(self.top_sld, line, 2)
+
+        line = line + 1
+        self.btm_lbl = QLabel(tr("bottom sens", "Set the bottom sensitivity:"))
+        g_layout.addWidget(self.btm_lbl, line, 0)
+        self.btm_dpb = QSpinBox()
+        #self.btm_dpb.setEnabled(False)
+        self.btm_dpb.setRange(1, 255)
+        #self.btm_dpb.setValue(100)
+        self.btm_dpb.setSingleStep(1)
+        self.btm_dpb.valueChanged.connect(self.on_btm_dpb) 
+        g_layout.addWidget(self.btm_dpb, line, 1)
+        self.btm_sld= QSlider(Qt.Horizontal)
+        #self.btm_sld.setEnabled(False)
+        self.btm_sld.setMaximumWidth(300)
+        self.btm_sld.setMinimumWidth(200)
+        self.btm_sld.setRange(1, 255)
+        self.btm_sld.setSingleStep(1)
+        #self.btm_sld.setValue(100)
+        self.btm_sld.setTickPosition(QSlider.TicksAbove)
+        self.btm_sld.setTracking(False)
+        self.btm_sld.valueChanged.connect(self.on_btm_sld) 
+        g_layout.addWidget(self.btm_sld, line, 2)
 
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
@@ -123,6 +196,7 @@ class Misc(BasicEditor):
 
         self.keyboard = None
         self.device = None
+        self.advance = False
 
     def rebuild(self, device):
         super().rebuild(device)
@@ -160,6 +234,9 @@ class Misc(BasicEditor):
             self.ex_btn.show()
             self.mp_lbl.show()
             self.mp_cbb.show()
+
+            self.adv_btn.show()
+            self.show_advance(self.advance)
         else:
             self.dd_lbl.show()
             self.dd_sld.show()
@@ -173,6 +250,8 @@ class Misc(BasicEditor):
             self.ex_btn.hide()
             self.mp_lbl.hide()
             self.mp_cbb.hide()
+            self.adv_btn.hide()
+            self.show_advance(False)
 
         if self.keyboard.keyboard_type == "mx":
             self.dd_sld.blockSignals(True)
@@ -192,6 +271,7 @@ class Misc(BasicEditor):
             self.ud_sld.blockSignals(False)
             self.ud_sbx.setEnabled(True)
             self.ud_sld.setEnabled(True)
+        
 
     def activate(self):
         pass
@@ -275,6 +355,16 @@ class Misc(BasicEditor):
             nkro = kbd.get("nkro", None)
             if nkro is not None:
                 self.keyboard.apply_nkro(nkro)
+
+            sens = kbd.get("rt_sens", None)
+            if sens is not None:
+                self.keyboard.apply_rt_sensitivity(sens)
+            sens = kbd.get("top_sens", None)
+            if sens is not None:
+                self.keyboard.apply_top_sensitivity(sens)
+            sens = kbd.get("btm_sens", None)
+            if sens is not None:
+                self.keyboard.apply_bottom_sensitivity(sens)
             
             keys = kbd.get("keys", None)
             if keys is not None:
@@ -310,6 +400,9 @@ class Misc(BasicEditor):
         kbd["pole"] = self.mp_cbb.currentIndex() 
         kbd["nkro"] = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
         kbd["poll_rate"] = self.pr_cbb.currentIndex()
+        kbd["rt_sens"] = self.rt_sld.value()
+        kbd["top_sens"] = self.top_sld.value()
+        kbd["btm_sens"] = self.btm_sld.value()
         kbd["keys"] = []
 
         for row, col in self.keyboard.rowcol.keys():
@@ -324,3 +417,102 @@ class Misc(BasicEditor):
         with open(export_file, "w", encoding="utf-8") as fp:
             #json.dump(kbd, fp, indent=4)
             json.dump(kbd, fp)
+
+    def show_advance(self, show):
+        if show:
+            self.rt_lbl.show()
+            self.rt_dpb.blockSignals(True)
+            self.rt_dpb.setValue(self.keyboard.amk_rt_sens)
+            self.rt_dpb.blockSignals(False)
+            self.rt_dpb.show()
+            self.rt_sld.blockSignals(True)
+            self.rt_sld.setValue(self.keyboard.amk_rt_sens)
+            self.rt_sld.blockSignals(False)
+            self.rt_sld.show()
+
+            self.top_lbl.show()
+            self.top_dpb.blockSignals(True)
+            self.top_dpb.setValue(self.keyboard.amk_top_sens)
+            self.top_dpb.blockSignals(False)
+            self.top_dpb.show()
+            self.top_sld.blockSignals(True)
+            self.top_sld.setValue(self.keyboard.amk_top_sens)
+            self.top_sld.blockSignals(False)
+            self.top_sld.show()
+
+            self.btm_lbl.show()
+            self.btm_dpb.blockSignals(True)
+            self.btm_dpb.setValue(self.keyboard.amk_btm_sens)
+            self.btm_dpb.blockSignals(False)
+            self.btm_dpb.show()
+            self.btm_sld.blockSignals(True)
+            self.btm_sld.setValue(self.keyboard.amk_btm_sens)
+            self.btm_sld.blockSignals(False)
+            self.btm_sld.show()
+
+            self.adv_btn.setText(tr("hide", "Hide \u22d8"))
+        else:
+            self.rt_lbl.hide()
+            self.rt_dpb.hide()
+            self.rt_sld.hide()
+
+            self.top_lbl.hide()
+            self.top_dpb.hide()
+            self.top_sld.hide()
+
+            self.btm_lbl.hide()
+            self.btm_dpb.hide()
+            self.btm_sld.hide()
+            self.adv_btn.setText(tr("advance", "Advanced \u22d9"))
+
+    def on_adv_btn(self):
+        self.advance = not self.advance
+        self.show_advance(self.advance)
+
+    def on_rt_dpb(self):
+        self.rt_dpb.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_sld.setValue(self.rt_dpb.value())
+        self.keyboard.apply_rt_sensitivity(self.rt_sld.value())
+        self.rt_sld.blockSignals(False)
+        self.rt_dpb.blockSignals(False)
+
+    def on_rt_sld(self):
+        self.rt_dpb.blockSignals(True)
+        self.rt_sld.blockSignals(True)
+        self.rt_dpb.setValue(self.rt_sld.value())
+        self.keyboard.apply_rt_sensitivity(self.rt_sld.value())
+        self.rt_sld.blockSignals(False)
+        self.rt_dpb.blockSignals(False)
+
+    def on_top_dpb(self):
+        self.top_dpb.blockSignals(True)
+        self.top_sld.blockSignals(True)
+        self.top_sld.setValue(self.top_dpb.value())
+        self.keyboard.apply_top_sensitivity(self.top_sld.value())
+        self.top_sld.blockSignals(False)
+        self.top_dpb.blockSignals(False)
+
+    def on_top_sld(self):
+        self.top_dpb.blockSignals(True)
+        self.top_sld.blockSignals(True)
+        self.top_dpb.setValue(self.top_sld.value())
+        self.keyboard.apply_top_sensitivity(self.top_sld.value())
+        self.top_sld.blockSignals(False)
+        self.top_dpb.blockSignals(False)
+
+    def on_btm_dpb(self):
+        self.btm_dpb.blockSignals(True)
+        self.btm_sld.blockSignals(True)
+        self.btm_sld.setValue(self.btm_dpb.value())
+        self.keyboard.apply_btm_sensitivity(self.btm_sld.value())
+        self.btm_sld.blockSignals(False)
+        self.btm_dpb.blockSignals(False)
+
+    def on_btm_sld(self):
+        self.btm_dpb.blockSignals(True)
+        self.btm_sld.blockSignals(True)
+        self.btm_dpb.setValue(self.btm_sld.value())
+        self.keyboard.apply_btm_sensitivity(self.btm_sld.value())
+        self.btm_sld.blockSignals(False)
+        self.btm_dpb.blockSignals(False)

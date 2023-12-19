@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QGridLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QMessageBox
-from PyQt5.QtCore import QSize, Qt, QCoreApplication, QRect
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QLabel, QCheckBox, QMessageBox
+from PyQt5.QtCore import QSize, Qt, QRect
 from PyQt5.QtGui import QPalette, QPainter, QBrush
 from PyQt5.QtWidgets import QApplication
-from themes import Theme
 
-import math, struct
+from themes import Theme
 
 from editor.basic_editor import BasicEditor
 from widgets.keyboard_widget import KeyboardWidget
-from util import tr, KeycodeDisplay
+from util import tr
 from vial_device import VialKeyboard
 from keycodes.keycodes import Keycode
 from tabbed_keycodes import TabbedKeycodes, keycode_filter_masked
