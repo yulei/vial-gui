@@ -342,6 +342,9 @@ class ProtocolAmk(BaseProtocol):
         rt = rt + ((val["down"] & 0x3F) << 6)
         rt = rt + (val["up"] & 0x3F)
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt)
+        print(data)
+        return
+
         data = self.usb_send(self.dev, data, retries=20)
 
     def apply_poll_rate(self, val):
