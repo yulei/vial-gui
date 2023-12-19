@@ -533,3 +533,13 @@ class ApcRt(BasicEditor):
         self.rt_down_sld.blockSignals(False)
 
         self.reset_active_apcrt()
+
+    def update_group_apc(self, keys, val):
+        for idx, key in keys.items():
+            #print("apply apc for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
+            self.keyboard.apply_apc(key.desc.row, key.desc.col, val)
+
+    def update_group_rt(self, keys, val):
+        for idx, key in keys.items():
+            #print("apply rt for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
+            self.keyboard.apply_rt(key.desc.row, key.desc.col, val)

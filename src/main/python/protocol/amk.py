@@ -333,7 +333,7 @@ class ProtocolAmk(BaseProtocol):
             self.amk_rt[(row,col)]["up"] == val["up"]:
             return
 
-        print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
+        #print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
 
         self.amk_rt[(row,col)]["cont"] = val["cont"] 
         self.amk_rt[(row,col)]["down"] = val["down"] 
@@ -342,8 +342,6 @@ class ProtocolAmk(BaseProtocol):
         rt = rt + ((val["down"] & 0x3F) << 6)
         rt = rt + (val["up"] & 0x3F)
         data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt)
-        print(data)
-        return
 
         data = self.usb_send(self.dev, data, retries=20)
 
