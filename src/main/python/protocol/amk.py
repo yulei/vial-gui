@@ -421,7 +421,7 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_TOP_SENS, val), retries=20)
         #print("update TOP sensitivity: ", val)
 
-    def apply_bottom_sensitivity(self, val):
+    def apply_btm_sensitivity(self, val):
         if self.amk_btm_sens == val:
             return
 

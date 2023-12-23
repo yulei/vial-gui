@@ -364,7 +364,7 @@ class Misc(BasicEditor):
                 self.keyboard.apply_top_sensitivity(sens)
             sens = kbd.get("btm_sens", None)
             if sens is not None:
-                self.keyboard.apply_bottom_sensitivity(sens)
+                self.keyboard.apply_btm_sensitivity(sens)
             
             keys = kbd.get("keys", None)
             if keys is not None:
