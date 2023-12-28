@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.1.4"
+AMK_VERSION = "0.2.0"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -32,6 +32,8 @@ AMK_PROTOCOL_GET_TOP_SENS = 19
 AMK_PROTOCOL_SET_TOP_SENS = 20
 AMK_PROTOCOL_GET_BTM_SENS = 21
 AMK_PROTOCOL_SET_BTM_SENS = 22
+AMK_PROTOCOL_GET_APC_SENS = 23
+AMK_PROTOCOL_SET_APC_SENS = 24
 
 DKS_EVENT_MAX = 4
 DKS_KEY_MAX = 4
@@ -327,6 +329,12 @@ class ProtocolAmk(BaseProtocol):
         self.amk_btm_sens = data[3]
         #print("AMK protocol: BOTTOM sensitivity={}, result={}".format(self.amk_btm_sens, data[2]))
 
+    def reload_apc_sensitivity(self):
+        """ Reload APC sensitivity setting from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_APC_SENS))
+        self.amk_apc_sens = data[3]
+        #print("AMK protocol: BOTTOM sensitivity={}, result={}".format(self.amk_btm_sens, data[2]))
+
     def apply_dks(self, row, col, dks=None):
         if dks is not None:
             if self.amk_dks[(row, col)].is_same(dks):
@@ -428,3 +436,11 @@ class ProtocolAmk(BaseProtocol):
         self.amk_btm_sens = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_BTM_SENS, val), retries=20)
         #print("update BOTTOM sensitivity: ", val)
+
+    def apply_apc_sensitivity(self, val):
+        if self.amk_apc_sens == val:
+            return
+
+        self.amk_apc_sens = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC_SENS, val), retries=20)
+        #print("update APC sensitivity: ", val)

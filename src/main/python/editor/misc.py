@@ -119,6 +119,24 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.adv_btn, line, 0)
 
         line = line + 1
+        self.apc_lbl = QLabel(tr("apc sens", "Set the apc sensitivity:"))
+        g_layout.addWidget(self.apc_lbl, line, 0)
+        self.apc_dpb = QSpinBox()
+        self.apc_dpb.setRange(1, 255)
+        self.apc_dpb.setSingleStep(1)
+        self.apc_dpb.valueChanged.connect(self.on_apc_dpb) 
+        g_layout.addWidget(self.apc_dpb, line, 1)
+        self.apc_sld= QSlider(Qt.Horizontal)
+        self.apc_sld.setMaximumWidth(300)
+        self.apc_sld.setMinimumWidth(200)
+        self.apc_sld.setRange(1, 255)
+        self.apc_sld.setSingleStep(1)
+        self.apc_sld.setTickPosition(QSlider.TicksAbove)
+        self.apc_sld.setTracking(False)
+        self.apc_sld.valueChanged.connect(self.on_apc_sld) 
+        g_layout.addWidget(self.apc_sld, line, 2)
+
+        line = line + 1
         self.rt_lbl = QLabel(tr("rt sens", "Set the rt sensitivity:"))
         g_layout.addWidget(self.rt_lbl, line, 0)
         self.rt_dpb = QSpinBox()
@@ -365,6 +383,10 @@ class Misc(BasicEditor):
             sens = kbd.get("btm_sens", None)
             if sens is not None:
                 self.keyboard.apply_btm_sensitivity(sens)
+
+            sens = kbd.get("apc_sens", None)
+            if sens is not None:
+                self.keyboard.apply_apc_sensitivity(sens)
             
             keys = kbd.get("keys", None)
             if keys is not None:
@@ -403,6 +425,7 @@ class Misc(BasicEditor):
         kbd["rt_sens"] = self.rt_sld.value()
         kbd["top_sens"] = self.top_sld.value()
         kbd["btm_sens"] = self.btm_sld.value()
+        kbd["apc_sens"] = self.apc_sld.value()
         kbd["keys"] = []
 
         for row, col in self.keyboard.rowcol.keys():
@@ -420,6 +443,16 @@ class Misc(BasicEditor):
 
     def show_advance(self, show):
         if show:
+            self.apc_lbl.show()
+            self.apc_dpb.blockSignals(True)
+            self.apc_dpb.setValue(self.keyboard.amk_apc_sens)
+            self.apc_dpb.blockSignals(False)
+            self.apc_dpb.show()
+            self.apc_sld.blockSignals(True)
+            self.apc_sld.setValue(self.keyboard.amk_apc_sens)
+            self.apc_sld.blockSignals(False)
+            self.apc_sld.show()
+
             self.rt_lbl.show()
             self.rt_dpb.blockSignals(True)
             self.rt_dpb.setValue(self.keyboard.amk_rt_sens)
@@ -452,6 +485,10 @@ class Misc(BasicEditor):
 
             self.adv_btn.setText(tr("hide", "Hide \u22d8"))
         else:
+            self.apc_lbl.hide()
+            self.apc_dpb.hide()
+            self.apc_sld.hide()
+
             self.rt_lbl.hide()
             self.rt_dpb.hide()
             self.rt_sld.hide()
@@ -468,6 +505,22 @@ class Misc(BasicEditor):
     def on_adv_btn(self):
         self.advance = not self.advance
         self.show_advance(self.advance)
+
+    def on_apc_dpb(self):
+        self.apc_dpb.blockSignals(True)
+        self.apc_sld.blockSignals(True)
+        self.apc_sld.setValue(self.apc_dpb.value())
+        self.keyboard.apply_apc_sensitivity(self.apc_sld.value())
+        self.apc_sld.blockSignals(False)
+        self.apc_dpb.blockSignals(False)
+
+    def on_apc_sld(self):
+        self.apc_dpb.blockSignals(True)
+        self.apc_sld.blockSignals(True)
+        self.apc_dpb.setValue(self.apc_sld.value())
+        self.keyboard.apply_rt_sensitivity(self.apc_sld.value())
+        self.apc_sld.blockSignals(False)
+        self.apc_dpb.blockSignals(False)
 
     def on_rt_dpb(self):
         self.rt_dpb.blockSignals(True)

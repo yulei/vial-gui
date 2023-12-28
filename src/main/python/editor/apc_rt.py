@@ -42,7 +42,7 @@ class ApcRt(BasicEditor):
 
         self.keyboardWidget = AmkWidget(layout_editor) #KeyboardWidget(layout_editor)
         self.keyboardWidget.set_enabled(True)
-        self.keyboardWidget.set_scale(1.2)
+        #self.keyboardWidget.set_scale(1.2)
         self.keyboardWidget.clicked.connect(self.on_key_clicked)
 
         layout = QVBoxLayout()

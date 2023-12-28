@@ -121,6 +121,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_btm_sens = 150
             self.reload_bottom_sensitivity()
 
+            self.amk_apc_sens = 80
+            self.reload_apc_sensitivity()
+
         #reload keyboard misc settings
         if self.keyboard_speed == "hs":
             self.amk_poll_rate = 0
