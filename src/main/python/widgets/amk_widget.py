@@ -1,7 +1,7 @@
 
 from PyQt5.QtGui import QPainter, QPalette
 from PyQt5.QtWidgets import QWidget, QApplication
-from PyQt5.QtCore import Qt, QRect, pyqtSignal
+from PyQt5.QtCore import Qt, QRect, QRectF, pyqtSignal
 
 from widgets.keyboard_widget import KeyboardWidget
 
@@ -56,11 +56,12 @@ class AmkWidget(KeyboardWidget):
 
     def update_select_keys(self):
         self.active_keys = {}
-        rect = QRect(self.start_pos, self.current_pos)
+        rect = QRectF(self.start_pos, self.current_pos)
         for key in self.widgets:
             row = key.desc.row
             col = key.desc.col
-            if rect.intersects(key.rect):
+            #if rect.intersects(key.rect):
+            if rect.intersects(key.polygon.boundingRect()):
                 self.active_keys[(row,col)] = key
         return bool(self.active_keys)
 

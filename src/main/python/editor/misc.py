@@ -518,7 +518,7 @@ class Misc(BasicEditor):
         self.apc_dpb.blockSignals(True)
         self.apc_sld.blockSignals(True)
         self.apc_dpb.setValue(self.apc_sld.value())
-        self.keyboard.apply_rt_sensitivity(self.apc_sld.value())
+        self.keyboard.apply_apc_sensitivity(self.apc_sld.value())
         self.apc_sld.blockSignals(False)
         self.apc_dpb.blockSignals(False)
 
