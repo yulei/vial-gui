@@ -102,7 +102,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         #reload apc/rt/dks/sensitivity
-        if self.keyboard_type == "ms":
+        if self.keyboard_type == "ms" or self.keyboard_type == "ec":
             self.amk_apc = dict()
             self.reload_apc()
             self.amk_rt = dict()
@@ -123,6 +123,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
             self.amk_apc_sens = 80
             self.reload_apc_sensitivity()
+
+            self.amk_noise_sens = 50
+            self.reload_noise_sensitivity()
 
         #reload keyboard misc settings
         if self.keyboard_speed == "hs":

@@ -119,6 +119,24 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.adv_btn, line, 0)
 
         line = line + 1
+        self.noise_lbl = QLabel(tr("noise sens", "Set the noise sensitivity:"))
+        g_layout.addWidget(self.noise_lbl, line, 0)
+        self.noise_dpb = QSpinBox()
+        self.noise_dpb.setRange(1, 255)
+        self.noise_dpb.setSingleStep(1)
+        self.noise_dpb.valueChanged.connect(self.on_noise_dpb) 
+        g_layout.addWidget(self.noise_dpb, line, 1)
+        self.noise_sld= QSlider(Qt.Horizontal)
+        self.noise_sld.setMaximumWidth(300)
+        self.noise_sld.setMinimumWidth(200)
+        self.noise_sld.setRange(1, 255)
+        self.noise_sld.setSingleStep(1)
+        self.noise_sld.setTickPosition(QSlider.TicksAbove)
+        self.noise_sld.setTracking(False)
+        self.noise_sld.valueChanged.connect(self.on_noise_sld) 
+        g_layout.addWidget(self.noise_sld, line, 2)
+
+        line = line + 1
         self.apc_lbl = QLabel(tr("apc sens", "Set the apc sensitivity:"))
         g_layout.addWidget(self.apc_lbl, line, 0)
         self.apc_dpb = QSpinBox()
@@ -226,7 +244,8 @@ class Misc(BasicEditor):
     def valid(self):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard and self.device.keyboard.keyboard_speed == "hs") and \
+               (self.device.keyboard and \
+               (self.device.keyboard.keyboard_speed == "hs" or self.device.keyboard.keyboard_type == "ms" or self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_ui(self):
@@ -235,11 +254,19 @@ class Misc(BasicEditor):
         self.ns_lbl.setText("ON" if self.keyboard.amk_nkro else "OFF")
         self.nk_cbx.blockSignals(False)
 
-        self.pr_cbb.blockSignals(True)
-        self.pr_cbb.setCurrentIndex(self.keyboard.amk_poll_rate)
-        self.pr_cbb.blockSignals(False)
+        if self.device.keyboard.keyboard_speed == "hs":
+            self.pr_cbb.blockSignals(True)
+            self.pr_cbb.setCurrentIndex(self.keyboard.amk_poll_rate)
+            self.pr_cbb.blockSignals(False)
+            self.pr_cbb.show()
+            self.pr_lbl.show()
+            self.pr_btn.show()
+        else:
+            self.pr_cbb.hide()
+            self.pr_lbl.hide()
+            self.pr_btn.hide()
 
-        if self.keyboard.keyboard_type == "ms":
+        if self.keyboard.keyboard_type == "ms" or self.keyboard.keyboard_type == "ec":
             self.dd_lbl.hide()
             self.dd_sld.hide()
             self.dd_sbx.hide()
@@ -289,7 +316,6 @@ class Misc(BasicEditor):
             self.ud_sld.blockSignals(False)
             self.ud_sbx.setEnabled(True)
             self.ud_sld.setEnabled(True)
-        
 
     def activate(self):
         pass
@@ -388,6 +414,10 @@ class Misc(BasicEditor):
             if sens is not None:
                 self.keyboard.apply_apc_sensitivity(sens)
             
+            sens = kbd.get("noise_sens", None)
+            if sens is not None:
+                self.keyboard.apply_noise_sensitivity(sens)
+
             keys = kbd.get("keys", None)
             if keys is not None:
                 for key in keys:
@@ -426,6 +456,7 @@ class Misc(BasicEditor):
         kbd["top_sens"] = self.top_sld.value()
         kbd["btm_sens"] = self.btm_sld.value()
         kbd["apc_sens"] = self.apc_sld.value()
+        kbd["noise_sens"] = self.noise_sld.value()
         kbd["keys"] = []
 
         for row, col in self.keyboard.rowcol.keys():
@@ -443,6 +474,16 @@ class Misc(BasicEditor):
 
     def show_advance(self, show):
         if show:
+            self.noise_lbl.show()
+            self.noise_dpb.blockSignals(True)
+            self.noise_dpb.setValue(self.keyboard.amk_noise_sens)
+            self.noise_dpb.blockSignals(False)
+            self.noise_dpb.show()
+            self.noise_sld.blockSignals(True)
+            self.noise_sld.setValue(self.keyboard.amk_noise_sens)
+            self.noise_sld.blockSignals(False)
+            self.noise_sld.show()
+
             self.apc_lbl.show()
             self.apc_dpb.blockSignals(True)
             self.apc_dpb.setValue(self.keyboard.amk_apc_sens)
@@ -485,6 +526,10 @@ class Misc(BasicEditor):
 
             self.adv_btn.setText(tr("hide", "Hide \u22d8"))
         else:
+            self.noise_lbl.hide()
+            self.noise_dpb.hide()
+            self.noise_sld.hide()
+
             self.apc_lbl.hide()
             self.apc_dpb.hide()
             self.apc_sld.hide()
@@ -505,6 +550,22 @@ class Misc(BasicEditor):
     def on_adv_btn(self):
         self.advance = not self.advance
         self.show_advance(self.advance)
+
+    def on_noise_dpb(self):
+        self.noise_dpb.blockSignals(True)
+        self.noise_sld.blockSignals(True)
+        self.noise_sld.setValue(self.noise_dpb.value())
+        self.keyboard.apply_noise_sensitivity(self.noise_sld.value())
+        self.noise_sld.blockSignals(False)
+        self.noise_dpb.blockSignals(False)
+
+    def on_noise_sld(self):
+        self.noise_dpb.blockSignals(True)
+        self.noise_sld.blockSignals(True)
+        self.noise_dpb.setValue(self.noise_sld.value())
+        self.keyboard.apply_noise_sensitivity(self.noise_sld.value())
+        self.noise_sld.blockSignals(False)
+        self.noise_dpb.blockSignals(False)
 
     def on_apc_dpb(self):
         self.apc_dpb.blockSignals(True)

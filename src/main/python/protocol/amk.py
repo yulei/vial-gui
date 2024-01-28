@@ -34,6 +34,8 @@ AMK_PROTOCOL_GET_BTM_SENS = 21
 AMK_PROTOCOL_SET_BTM_SENS = 22
 AMK_PROTOCOL_GET_APC_SENS = 23
 AMK_PROTOCOL_SET_APC_SENS = 24
+AMK_PROTOCOL_GET_NOISE_SENS = 25
+AMK_PROTOCOL_SET_NOISE_SENS = 26
 
 DKS_EVENT_MAX = 4
 DKS_KEY_MAX = 4
@@ -314,26 +316,37 @@ class ProtocolAmk(BaseProtocol):
     def reload_rt_sensitivity(self):
         """ Reload RT sensitivity setting from keyboard """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT_SENS))
-        self.amk_rt_sens = data[3]
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_rt_sens = data[3]
         #print("AMK protocol: RT sensitivity={}, result={}".format(self.amk_rt_sens, data[2]))
 
     def reload_top_sensitivity(self):
         """ Reload TOP sensitivity setting from keyboard """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_TOP_SENS))
-        self.amk_top_sens = data[3]
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_top_sens = data[3]
         #print("AMK protocol: TOP sensitivity={}, result={}".format(self.amk_top_sens, data[2]))
 
     def reload_bottom_sensitivity(self):
         """ Reload BOTTOM sensitivity setting from keyboard """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_BTM_SENS))
-        self.amk_btm_sens = data[3]
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_btm_sens = data[3]
         #print("AMK protocol: BOTTOM sensitivity={}, result={}".format(self.amk_btm_sens, data[2]))
 
     def reload_apc_sensitivity(self):
         """ Reload APC sensitivity setting from keyboard """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_APC_SENS))
-        self.amk_apc_sens = data[3]
-        #print("AMK protocol: BOTTOM sensitivity={}, result={}".format(self.amk_btm_sens, data[2]))
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_apc_sens = data[3]
+        #print("AMK protocol: APC sensitivity={}, result={}".format(self.amk_apc_sens, data[2]))
+
+    def reload_noise_sensitivity(self):
+        """ Reload NOISE sensitivity setting from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_NOISE_SENS))
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_noise_sens = data[3]
+        #print("AMK protocol: NOISE sensitivity={}, result={}".format(self.amk_noise_sens, data[2]))
 
     def apply_dks(self, row, col, dks=None):
         if dks is not None:
@@ -376,7 +389,7 @@ class ProtocolAmk(BaseProtocol):
         if self.amk_poll_rate == val:
             return
 
-        #print("Update poll rate: old({}), new({})".format(self.amk_poll_rate, val))
+        print("Update poll rate: old({}), new({})".format(self.amk_poll_rate, val))
         self.amk_poll_rate = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLL_RATE, val), retries=20)
 
@@ -444,3 +457,11 @@ class ProtocolAmk(BaseProtocol):
         self.amk_apc_sens = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC_SENS, val), retries=20)
         #print("update APC sensitivity: ", val)
+
+    def apply_noise_sensitivity(self, val):
+        if self.amk_noise_sens == val:
+            return
+
+        self.amk_noise_sens = val
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NOISE_SENS, val), retries=20)
+        #print("update NOISE sensitivity: ", val)
