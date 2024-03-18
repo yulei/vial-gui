@@ -266,6 +266,13 @@ class Misc(BasicEditor):
             self.pr_lbl.hide()
             self.pr_btn.hide()
 
+        if self.keyboard.keyboard_type == "ms":
+            self.mp_lbl.show()
+            self.mp_cbb.show()
+        else:
+            self.mp_lbl.hide()
+            self.mp_cbb.hide()
+
         if self.keyboard.keyboard_type == "ms" or self.keyboard.keyboard_type == "ec":
             self.dd_lbl.hide()
             self.dd_sld.hide()
@@ -277,8 +284,6 @@ class Misc(BasicEditor):
             self.ie_lbl.show()
             self.im_btn.show()
             self.ex_btn.show()
-            self.mp_lbl.show()
-            self.mp_cbb.show()
 
             self.adv_btn.show()
             self.show_advance(self.advance)
@@ -294,8 +299,6 @@ class Misc(BasicEditor):
             self.im_btn.hide()
             self.ex_btn.hide()
             self.mp_lbl.hide()
-            self.mp_cbb.hide()
-            self.adv_btn.hide()
             self.show_advance(False)
 
         if self.keyboard.keyboard_type == "mx":
