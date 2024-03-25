@@ -163,7 +163,10 @@ class LayoutEditor(BasicEditor):
             value = value[:-sz]
 
     def get_choice(self, index):
-        return int(self.choices[index].pack(), 2)
+        if index < len(self.choices):
+            return int(self.choices[index].pack(), 2)
+        else:
+            return 0
 
     def on_changed(self):
         self.changed.emit()

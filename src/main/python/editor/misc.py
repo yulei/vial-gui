@@ -298,7 +298,8 @@ class Misc(BasicEditor):
             self.ie_lbl.hide()
             self.im_btn.hide()
             self.ex_btn.hide()
-            self.mp_lbl.hide()
+
+            self.adv_btn.hide()
             self.show_advance(False)
 
         if self.keyboard.keyboard_type == "mx":

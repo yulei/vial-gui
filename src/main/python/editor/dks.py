@@ -269,11 +269,11 @@ class Dks(BasicEditor):
 
     def rebuild(self, device):
         super().rebuild(device)
+        self.keyboard = device.keyboard
         if self.valid():
-            self.keyboard = device.keyboard
             self.keyboardWidget.set_keys(self.keyboard.keys, self.keyboard.encoders)
-        self.keyboardWidget.setEnabled(self.valid())
-        self.reset_keyboard_widget()
+            self.keyboardWidget.setEnabled(self.valid())
+            self.reset_keyboard_widget()
 
     def valid(self):
         # Check if vial protocol is v3 or later
@@ -282,19 +282,20 @@ class Dks(BasicEditor):
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_keyboard_widget(self):
+        if self.valid():
+            self.keyboardWidget.update_layout()
 
-        self.keyboardWidget.update_layout()
+            for widget in self.keyboardWidget.widgets:
+                dks_display(widget, self.keyboard.amk_dks[(widget.desc.row,widget.desc.col)])
+                widget.setOn(False)
 
-        for widget in self.keyboardWidget.widgets:
-            dks_display(widget, self.keyboard.amk_dks[(widget.desc.row,widget.desc.col)])
-            widget.setOn(False)
-
-        self.keyboardWidget.update()
-        self.keyboardWidget.updateGeometry()
+            self.keyboardWidget.update()
+            self.keyboardWidget.updateGeometry()
 
     def activate(self):
-        self.reset_keyboard_widget()
-        self.refresh_dks(self.active_dks)
+        if self.valid():
+            self.reset_keyboard_widget()
+            self.refresh_dks(self.active_dks)
 
     def deactivate(self):
         pass

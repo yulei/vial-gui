@@ -149,11 +149,12 @@ class ApcRt(BasicEditor):
 
     def rebuild(self, device):
         super().rebuild(device)
+        self.keyboard = device.keyboard
+
         if self.valid():
-            self.keyboard = device.keyboard
             self.keyboardWidget.set_keys(self.keyboard.keys, self.keyboard.encoders)
-        self.keyboardWidget.setEnabled(self.valid())
-        self.reset_keyboard_widget()
+            self.keyboardWidget.setEnabled(self.valid())
+            self.reset_keyboard_widget()
 
     def valid(self):
         # Check if vial protocol is v3 or later
@@ -162,19 +163,19 @@ class ApcRt(BasicEditor):
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_keyboard_widget(self):
+        if self.valid():
+            self.keyboardWidget.update_layout()
 
-        self.keyboardWidget.update_layout()
+            for widget in self.keyboardWidget.widgets:
+                code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
+                #KeycodeDisplay.display_keycode(widget, code)
+                apc_rt_display(widget, self.keyboard.amk_apc[(widget.desc.row, widget.desc.col)],
+                            self.keyboard.amk_rt[(widget.desc.row, widget.desc.col)])
 
-        for widget in self.keyboardWidget.widgets:
-            code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
-            #KeycodeDisplay.display_keycode(widget, code)
-            apc_rt_display(widget, self.keyboard.amk_apc[(widget.desc.row, widget.desc.col)],
-                        self.keyboard.amk_rt[(widget.desc.row, widget.desc.col)])
+                widget.setOn(False)
 
-            widget.setOn(False)
-
-        self.keyboardWidget.update()
-        self.keyboardWidget.updateGeometry()
+            self.keyboardWidget.update()
+            self.keyboardWidget.updateGeometry()
 
     def reset_active_apcrt(self):
         if not self.keyboardWidget.active_keys:
@@ -188,18 +189,19 @@ class ApcRt(BasicEditor):
         self.keyboardWidget.update()
 
     def activate(self):
-        self.reset_keyboard_widget()
-        apc = None
-        rt = None
-        if self.keyboardWidget.active_key is not None:
-            row = self.keyboardWidget.active_key.desc.row
-            col = self.keyboardWidget.active_key.desc.col
+        if self.valid():
+            self.reset_keyboard_widget()
+            apc = None
+            rt = None
+            if self.keyboardWidget.active_key is not None:
+                row = self.keyboardWidget.active_key.desc.row
+                col = self.keyboardWidget.active_key.desc.col
 
-            apc = self.keyboard.amk_apc.get((row, col), 20)
-            rt  = self.keyboard.amk_rt.get((row,col), None)
+                apc = self.keyboard.amk_apc.get((row, col), 20)
+                rt  = self.keyboard.amk_rt.get((row,col), None)
 
-        self.refresh_apc(apc)
-        self.refresh_rt(rt)
+            self.refresh_apc(apc)
+            self.refresh_rt(rt)
 
     def deactivate(self):
         pass
