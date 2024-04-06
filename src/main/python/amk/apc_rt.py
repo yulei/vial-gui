@@ -6,7 +6,7 @@ from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication
 
 from editor.basic_editor import BasicEditor
-from widgets.amk_widget import ClickableWidget, AmkWidget
+from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
 

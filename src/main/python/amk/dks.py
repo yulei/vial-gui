@@ -12,7 +12,7 @@ from util import tr
 from vial_device import VialKeyboard
 from keycodes.keycodes import Keycode
 from tabbed_keycodes import TabbedKeycodes, keycode_filter_masked
-from protocol.amk import DksKey
+from amk.protocol import DksKey
 
 def dks_display(widget, dks):
     if dks.is_valid():

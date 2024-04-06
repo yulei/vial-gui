@@ -20,7 +20,7 @@ from protocol.dynamic import ProtocolDynamic
 from protocol.key_override import ProtocolKeyOverride
 from protocol.macro import ProtocolMacro
 from protocol.tap_dance import ProtocolTapDance
-from protocol.amk import ProtocolAmk
+from amk.protocol import ProtocolAmk
 from unlocker import Unlocker
 from util import MSG_LEN, hid_send
 

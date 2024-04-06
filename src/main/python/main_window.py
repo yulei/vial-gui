@@ -30,10 +30,10 @@ from unlocker import Unlocker
 from util import tr, EXAMPLE_KEYBOARDS, KeycodeDisplay, EXAMPLE_KEYBOARD_PREFIX
 from vial_device import VialKeyboard
 from editor.matrix_test import MatrixTest
-from editor.apc_rt import ApcRt
-from editor.dks import Dks 
-from editor.misc import Misc
-from protocol.amk import AMK_VERSION
+from amk.apc_rt import ApcRt
+from amk.dks import Dks 
+from amk.misc import Misc
+from amk.protocol import AMK_VERSION
 
 import themes
 
