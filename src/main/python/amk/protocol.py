@@ -36,6 +36,12 @@ AMK_PROTOCOL_GET_APC_SENS = 23
 AMK_PROTOCOL_SET_APC_SENS = 24
 AMK_PROTOCOL_GET_NOISE_SENS = 25
 AMK_PROTOCOL_SET_NOISE_SENS = 26
+AMK_PROTOCOL_GET_RGB_STRIP_COUNT = 27
+AMK_PROTOCOL_GET_RGB_STRIP_PARAM = 28
+AMK_PROTOCOL_GET_RGB_STRIP_LED = 29
+AMK_PROTOCOL_SET_RGB_STRIP_LED = 30
+AMK_PROTOCOL_GET_RGB_STRIP_MODE = 31
+AMK_PROTOCOL_SET_RGB_STRIP_MODE = 32
 
 DKS_EVENT_MAX = 4
 DKS_KEY_MAX = 4
@@ -238,6 +244,143 @@ class DksKey:
                 print("Event({}), Down({}) is {:b}".format(i, j, self.down_events[i][j]))
                 print("Event({}), Up({}) is {:b}".format(i, j, self.up_events[i][j]))
 
+class RgbLed:
+    def __init__(self, index, hue, sat, val, param):
+        self.index = index
+        self.hue = hue
+        self.sat = sat
+        self.val = val
+        self.on = 0
+        self.dynamic = 0
+        self.blink = 0
+        self.breath = 0
+        self.speed = 0
+        self.parse_param(param)
+
+    def parse_param(self, param):
+        self.on         = (param >> 0) & 0x01
+        self.dynamic    = (param >> 1) & 0x01
+        self.blink      = (param >> 2) & 0x01
+        self.breath     = (param >> 3) & 0x01
+        self.speed      = (param >> 4) & 0x0F
+
+    def pack_param(self):
+        param = 0
+        if self.on > 0:
+            param = param | (0x01 << 0)
+            
+        if self.dynamic > 0:
+            param = param | (0x01 << 1)
+
+        if self.blink > 0:
+            param = param | (0x01 << 2)
+
+        if self.breath > 0:
+            param = param | (0x01 << 3)
+    
+        param = param | ((self.speed&0x0F) << 4)
+        return param
+
+    def pack(self):
+        param = self.pack_param()
+
+        data = struct.pack("BBBB", self.hue, self.sat, self.val, param)
+        return data
+
+    def set_hue(self, hue):
+        self.hue = hue
+
+    def get_hue(self):
+        return self.hue
+
+    def set_sat(self, sat):
+        self.sat = sat
+
+    def get_sat(self):
+        return self.sat
+
+    def set_val(self, val):
+        self.val = val 
+
+    def get_val(self):
+        return self.val
+    
+    def set_on(self, on):
+        self.on = on
+
+    def get_on(self):
+        return self.on
+
+    def set_dynamic(self, dynamic):
+        self.dynamic = dynamic 
+
+    def get_dynamic(self):
+        return self.dynamic
+
+    def set_blink(self, blink):
+        self.blink = blink 
+
+    def get_blink(self):
+        return self.blink
+
+    def set_breath(self, breath):
+        self.breath = breath
+
+    def get_breath(self):
+        return self.breath
+
+    def set_speed(self, speed):
+        self.speed = speed
+
+    def get_speed(self):
+        return self.speed
+
+class RgbLedStrip:
+    def __init__(self, index, config, start, count):
+        self.index = index
+        self.config = config 
+        self.start = start
+        self.count = count
+        self.leds = [None] * count
+        self.mode = 0
+
+    def set_led(self, index, led):
+        self.leds[index] = led
+    
+    def get_led(self, index):
+        return self.leds[index]
+    
+    def set_index(self, index):
+        self.index = index 
+
+    def get_index(self):
+        return self.index
+
+    def set_config(self, config):
+        self.config = config 
+
+    def get_config(self):
+        return self.config
+
+    def set_start(self, start):
+        self.start = start
+
+    def get_start(self):
+        return self.start
+
+    def set_count(self, count):
+        self.count = count 
+
+    def get_count(self):
+        return self.count
+    
+    def set_mode(self, mode):
+        self.mode = mode
+    
+    def get_mode(self):
+        return self.mode
+
+
 class ProtocolAmk(BaseProtocol):
 
     def amk_protocol_version(self):
@@ -389,7 +532,7 @@ class ProtocolAmk(BaseProtocol):
         if self.amk_poll_rate == val:
             return
 
-        print("Update poll rate: old({}), new({})".format(self.amk_poll_rate, val))
+        #print("Update poll rate: old({}), new({})".format(self.amk_poll_rate, val))
         self.amk_poll_rate = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLL_RATE, val), retries=20)
 
@@ -465,3 +608,52 @@ class ProtocolAmk(BaseProtocol):
         self.amk_noise_sens = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NOISE_SENS, val), retries=20)
         #print("update NOISE sensitivity: ", val)
+
+    def reload_rgb_strips(self):
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_COUNT), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_rgb_strip_count = data[3]
+            for i in range(self.amk_rgb_strip_count):
+                data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_PARAM,i), retries=20)
+                if data[2] == AMK_PROTOCOL_OK:
+                    strip = RgbLedStrip(data[3], data[4], data[5], data[6])
+                    self.amk_rgb_strips.append(strip)
+                    #print("AMK protocol: get rgb strip: index={}, config={}, start={}, count={}".format(data[3], data[4], data[5], data[6]))
+                    data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_MODE,i), retries=20)
+                    if data[2] == AMK_PROTOCOL_OK:
+                        strip.set_mode(data[4])
+                        #print("AMK protocol: get rgb strip mode: index={}, mode={}".format(data[3], data[4]))
+                    #else:
+                    #    print("AMK protocol: failed to get rgb strip mode:{}".format(i))
+
+
+        #print("AMK protocol: rgb strip count ={}".format(self.amk_rgb_strip_count))
+
+    def reload_rgb_strip_led(self, index):
+        start = self.amk_rgb_strips[index].get_start()
+        count = self.amk_rgb_strips[index].get_count()
+
+        for i in range(count):
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_LED,start+i), retries=20)
+            if data[2] == AMK_PROTOCOL_OK:
+                led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+                self.amk_rgb_strips[index].set_led(i, led)
+                #print("AMK protocol: get rgb strip led: index={}, hue={},sat={},val={}, param={}".format(data[3], data[4], data[5], data[6],data[7]))
+
+
+    def apply_rgb_strip_led(self, strip, index, led):
+        self.amk_rgb_strips[strip].set_led(index, led)
+
+        data = self.usb_send(self.dev,
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_STRIP_LED, 
+                                        self.amk_rgb_strips[strip].start+index) + led.pack(), 
+                             retries=20)
+        #print("AMK protocol: set rgb strip led: strip={}, index={}, led={}".format(strip, index, led.pack()))
+
+    def apply_rgb_strip_mode(self, strip, mode):
+        if self.amk_rgb_strips[strip].get_mode() == mode:
+            return
+        
+        self.amk_rgb_strips[strip].set_mode(mode)
+        data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_STRIP_MODE, strip, mode), retries=20)
+        #print("AMK protocol: set rgb strip mode: index={}, mode={}".format(strip, mode))

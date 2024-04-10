@@ -69,6 +69,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
         self.via_protocol = self.vial_protocol = self.keyboard_id = -1
 
+        self.lighting_amk_rgblight = False
+
     def reload(self, sideload_json=None):
         """ Load information about the keyboard: number of layers, physical key layout """
 
@@ -135,6 +137,15 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                 self.amk_down_debounce = 0
                 self.amk_up_debounce = 5
                 self.reload_debounce()
+
+        print("amk: rgb light", self.lighting_amk_rgblight)
+        if self.lighting_amk_rgblight:
+            self.amk_rgb_strip_count = 0
+            self.amk_rgb_strips = []
+            self.reload_rgb_strips()
+            for i in range(self.amk_rgb_strip_count):
+                self.reload_rgb_strip_led(i)
+            
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """
@@ -277,6 +288,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.lighting_qmk_rgblight = self.definition["lighting"] in ["qmk_rgblight", "qmk_backlight_rgblight"]
             self.lighting_qmk_backlight = self.definition["lighting"] in ["qmk_backlight", "qmk_backlight_rgblight"]
             self.lighting_vialrgb = self.definition["lighting"] == "vialrgb"
+            self.lighting_amk_rgblight = self.definition["lighting"] == "amk_rgblight"
+            print(self.definition["lighting"])
 
         if self.lighting_vialrgb:
             data = self.usb_send(self.dev, struct.pack("BB", CMD_VIA_LIGHTING_GET_VALUE, VIALRGB_GET_INFO),
