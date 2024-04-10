@@ -61,7 +61,6 @@ class RgbButton(QPushButton):
         qp.begin(self)
         qp.setRenderHint(QPainter.Antialiasing)
 
-        color = QColor.fromHsv(0,255,255,255)
         background_brush = QBrush()
         #background_brush.setColor(QApplication.palette().color(QPalette.Button))
         background_brush.setColor(self.color)
@@ -226,7 +225,7 @@ class RgbStrip(BasicEditor):
                 led.set_sat(sat)
                 led.set_val(val)
                 self.keyboard.apply_rgb_strip_led(btn.get_strip(), btn.get_index(), led)
-                btn.set_color(QColor.fromHsv(hue, sat, val, 255))
+                btn.set_color(color)
                 btn.repaint()
 
     def enable_strip_leds(self, index, enable):
