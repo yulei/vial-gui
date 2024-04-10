@@ -138,7 +138,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                 self.amk_up_debounce = 5
                 self.reload_debounce()
 
-        print("amk: rgb light", self.lighting_amk_rgblight)
+        #print("amk: rgb light", self.lighting_amk_rgblight)
         if self.lighting_amk_rgblight:
             self.amk_rgb_strip_count = 0
             self.amk_rgb_strips = []
@@ -289,7 +289,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.lighting_qmk_backlight = self.definition["lighting"] in ["qmk_backlight", "qmk_backlight_rgblight"]
             self.lighting_vialrgb = self.definition["lighting"] == "vialrgb"
             self.lighting_amk_rgblight = self.definition["lighting"] == "amk_rgblight"
-            print(self.definition["lighting"])
+            #print(self.definition["lighting"])
 
         if self.lighting_vialrgb:
             data = self.usb_send(self.dev, struct.pack("BB", CMD_VIA_LIGHTING_GET_VALUE, VIALRGB_GET_INFO),
