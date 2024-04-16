@@ -145,6 +145,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.reload_rgb_strips()
             for i in range(self.amk_rgb_strip_count):
                 self.reload_rgb_strip_led(i)
+
+        self.rgb_indicators = {}
+        self.reload_rgb_indicators()
             
 
     def reload_layers(self):

@@ -104,8 +104,41 @@ class RgbStrip(BasicEditor):
         super().__init__()
         self.keyboard = None
         self.built = False
+        i_layout = QHBoxLayout()
+        i_layout.addStretch(1)
+        lbl = QLabel("Num Lock: ")
+        i_layout.addWidget(lbl)
+        self.num_btn = RgbButton(0, 0)
+        self.num_btn.setCheckable(False)
+        self.num_btn.clicked.connect(self.on_num_btn_clicked)
+        i_layout.addWidget(self.num_btn)
+        lbl = QLabel("Caps Lock: ")
+        i_layout.addWidget(lbl)
+        self.caps_btn = RgbButton(0, 0)
+        self.caps_btn.setCheckable(False)
+        self.caps_btn.clicked.connect(self.on_caps_btn_clicked)
+        i_layout.addWidget(self.caps_btn)
+        lbl = QLabel("Scroll Lock: ")
+        i_layout.addWidget(lbl)
+        self.scroll_btn = RgbButton(0, 0)
+        self.scroll_btn.setCheckable(False)
+        self.scroll_btn.clicked.connect(self.on_scroll_btn_clicked)
+        i_layout.addWidget(self.scroll_btn)
+        lbl = QLabel("Compose: ")
+        i_layout.addWidget(lbl)
+        self.compose_btn = RgbButton(0, 0)
+        self.compose_btn.setCheckable(False)
+        self.compose_btn.clicked.connect(self.on_compose_btn_clicked)
+        i_layout.addWidget(self.compose_btn)
+        lbl = QLabel("Kana: ")
+        i_layout.addWidget(lbl)
+        self.kana_btn = RgbButton(0, 0)
+        self.kana_btn.setCheckable(False)
+        self.kana_btn.clicked.connect(self.on_kana_btn_clicked)
+        i_layout.addWidget(self.kana_btn)
+        i_layout.addStretch(1)
+
         self.rgb_layout = QGridLayout()
-        
         w = ClickableWidget()
         w.setLayout(self.rgb_layout)
         w.clicked.connect(self.on_empty_space_clicked)
@@ -140,10 +173,13 @@ class RgbStrip(BasicEditor):
         h_layout.addWidget(QLabel("Speed"))
         h_layout.addStretch(1)
 
+
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
-        v_layout.addWidget(w)
+        v_layout.addLayout(i_layout)
         v_layout.addStretch(1)
+        v_layout.addWidget(w)
+        #v_layout.addStretch(1)
         v_layout.addLayout(h_layout)
         v_layout.addStretch(1)
         self.addLayout(v_layout)
@@ -162,7 +198,7 @@ class RgbStrip(BasicEditor):
         self.strip_modes = []
 
         for index in range(self.keyboard.amk_rgb_strip_count):
-            lbl = QLabel(tr("strip_{}".format(index), "Led Strip #{}: ".format(index)))
+            lbl = QLabel(tr("strip_{}".format(index+1), "Led Strip #{}: ".format(index+1)))
             self.rgb_layout.addWidget(lbl, index, 0)
             cbx = QCheckBox("Custom Mode")
             cbx.setTristate(False)
@@ -186,6 +222,32 @@ class RgbStrip(BasicEditor):
                 self.led_btns.append(btn)
                 self.rgb_layout.addWidget(btn, index, i+2)
                 self.rgb_layout.setAlignment(btn, Qt.AlignCenter)
+
+        led = self.keyboard.rgb_indicators.get("num_lock")
+        if led is not None:
+            color = QColor.fromHsv(led.get_led().get_hue(),led.get_led().get_sat(),led.get_led().get_val(), 255)
+            self.num_btn.set_color(color)
+        self.num_btn.setEnabled(True if led is not None else False)
+        led = self.keyboard.rgb_indicators.get("caps_lock")
+        if led is not None:
+            color = QColor.fromHsv(led.get_led().get_hue(),led.get_led().get_sat(),led.get_led().get_val(), 255)
+            self.caps_btn.set_color(color)
+        self.caps_btn.setEnabled(True if led is not None else False)
+        led = self.keyboard.rgb_indicators.get("scroll_lock")
+        if led is not None:
+            color = QColor.fromHsv(led.get_led().get_hue(),led.get_led().get_sat(),led.get_led().get_val(), 255)
+            self.scroll_btn.set_color(color)
+        self.scroll_btn.setEnabled(True if led is not None else False)
+        led = self.keyboard.rgb_indicators.get("compose")
+        if led is not None:
+            color = QColor.fromHsv(led.get_led().get_hue(),led.get_led().get_sat(),led.get_led().get_val(), 255)
+            self.compose_btn.set_color(color)
+        self.compose_btn.setEnabled(True if led is not None else False)
+        led = self.keyboard.rgb_indicators.get("kana")
+        if led is not None:
+            color = QColor.fromHsv(led.get_led().get_hue(),led.get_led().get_sat(),led.get_led().get_val(), 255)
+            self.kana_btn.set_color(color)
+        self.kana_btn.setEnabled(True if led is not None else False)
 
     def rebuild(self, device):
         super().rebuild(device)
@@ -307,3 +369,67 @@ class RgbStrip(BasicEditor):
                 if led.get_speed() != speed:
                     led.set_speed(speed)
                     self.keyboard.apply_rgb_strip_led(btn.get_strip(), btn.get_index(), led)
+
+    def current_indicator_color(self, indicator):
+        return QColor().fromHsv(indicator.get_led().get_hue()/255.0,indicator.get_led().get_sat()/255.0,indicator.get_led().get_val()/255.0)
+
+    def on_indicator_btn_clicked(self, indicator, btn):
+        self.indicator_color = QColorDialog()
+        self.indicator_color.setModal(True)
+        self.current_indicator = indicator
+        self.current_indicator_btn = btn 
+        self.current_indicator_color = QColor().setHsv(indicator.get_led().get_hue(),indicator.get_led().get_sat(),indicator.get_led().get_val())
+        self.indicator_color.finished.connect(self.update_indicator_color)
+       # self.indicator_color.setCurrentColor(self.current_indicator_color(indicator))
+        self.indicator_color.show()
+
+    def update_indicator_color(self):
+        color = self.indicator_color.selectedColor()
+        if not color.isValid():
+            return
+
+        h, s, v, a = color.getHsvF()
+        if h < 0:
+            h = 0
+
+        hue = int(255*h)
+        sat = int(255*s)
+        val = int(255*v)
+
+        led = self.current_indicator.get_led()
+        led.set_hue(hue)
+        led.set_sat(sat)
+        led.set_val(val)
+        self.keyboard.apply_rgb_indicator(self.current_indicator)
+        self.current_indicator_btn.set_color(color)
+        self.current_indicator_btn.repaint()
+
+    def on_num_btn_clicked(self):
+        indicator = self.keyboard.rgb_indicators.get("num_lock")
+        btn = self.num_btn
+        if indicator is not None:
+            self.on_indicator_btn_clicked(indicator, btn)
+
+    def on_caps_btn_clicked(self):
+        indicator = self.keyboard.rgb_indicators.get("caps_lock")
+        btn = self.caps_btn
+        if indicator is not None:
+            self.on_indicator_btn_clicked(indicator, btn)
+
+    def on_scroll_btn_clicked(self):
+        indicator = self.keyboard.rgb_indicators.get("scroll_lock")
+        btn = self.scroll_btn
+        if indicator is not None:
+            self.on_indicator_btn_clicked(indicator, btn)
+
+    def on_compose_btn_clicked(self):
+        indicator = self.keyboard.rgb_indicators.get("compose")
+        btn = self.compose_btn
+        if indicator is not None:
+            self.on_indicator_btn_clicked(indicator, btn)
+
+    def on_kana_btn_clicked(self):
+        indicator = self.keyboard.rgb_indicators.get("kana")
+        btn = self.kana_btn
+        if indicator is not None:
+            self.on_indicator_btn_clicked(indicator, btn)
