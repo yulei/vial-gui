@@ -149,9 +149,8 @@ class ApcRt(BasicEditor):
 
     def rebuild(self, device):
         super().rebuild(device)
-        self.keyboard = device.keyboard
-
         if self.valid():
+            self.keyboard = device.keyboard
             self.keyboardWidget.set_keys(self.keyboard.keys, self.keyboard.encoders)
             self.keyboardWidget.setEnabled(self.valid())
             self.reset_keyboard_widget()
