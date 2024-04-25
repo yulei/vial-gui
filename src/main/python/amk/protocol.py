@@ -51,6 +51,7 @@ AMK_PROTOCOL_WRITE_FILE = 38
 AMK_PROTOCOL_READ_FILE = 39
 AMK_PROTOCOL_CLOSE_FILE = 40
 AMK_PROTOCOL_DELETE_FILE = 41
+AMK_PROTOCOL_DISPLAY_CONTROL = 42
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -738,7 +739,6 @@ class ProtocolAmk(BaseProtocol):
                         if d[i] == 0:
                             index = i
                             break
-                    print(index)
                     self.anim_files.append(data[3:index+3].decode("utf-8"))
     
     def open_anim_file(self, name, read):
@@ -752,12 +752,12 @@ class ProtocolAmk(BaseProtocol):
             print("Failed to open file: ", name)
             return 0xFF
 
-    def write_anim_file(self, index, data):
+    def write_anim_file(self, index, data, offset):
         data = self.usb_send(self.dev, 
-                            struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, len(data)) + data,
+                            struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, len(data), offset) + data,
                             retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            print("Write file at index:{}, size:{}".format(index, len(data)))
+            #print("Write file at index:{}, size:{}".format(index, len(data)))
             return True
         else:
             print("Failed to write file: index=", index)
@@ -772,4 +772,24 @@ class ProtocolAmk(BaseProtocol):
             return True
         else:
             print("Failed to close file: index=", index)
+            return False
+
+    def delete_anim_file(self, index):
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_DELETE_FILE, index),
+                            retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            print("Delete file at index:", index)
+            return True
+        else:
+            print("Failed to delete file: index=", index)
+            return False
+
+    def display_anim_file(self, play):
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_DISPLAY_CONTROL, play),
+                            retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            return True
+        else:
             return False

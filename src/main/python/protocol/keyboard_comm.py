@@ -70,6 +70,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.via_protocol = self.vial_protocol = self.keyboard_id = -1
 
         self.lighting_amk_rgblight = False
+        self.animations = [] 
 
     def reload(self, sideload_json=None):
         """ Load information about the keyboard: number of layers, physical key layout """
@@ -148,7 +149,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
         self.rgb_indicators = {}
         self.reload_rgb_indicators()
-            
+
+        #animation
+        if "animation" in self.definition:
+            for anim in self.definition["animation"]:
+                self.animations.append({"name":anim["name"], "mode":anim["mode"], "suffix":anim["suffix"]})
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """

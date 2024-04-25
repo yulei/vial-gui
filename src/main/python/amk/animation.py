@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox
 from PyQt5.QtCore import QSize, QRect, QPoint, Qt, pyqtSignal, QObject, QTimer
 
 from PyQt5.QtGui import QPainter, QBrush, QColor, QImage, QPixmap, QImageReader, QMovie
@@ -109,6 +109,7 @@ def pack_anim_header(width, height, magic, total):
     sig = bytes(magic, "utf-8")
 
     #pack file header
+    print("File Header", sig, width, height, total)
     data = struct.pack(ANIM_HDR, sig, hdr_size, offset, file_size, width, height,2,total)
     return data
 
@@ -224,11 +225,17 @@ class AmkMovie(QObject):
     def update(self):
         self.index = (self.index+1) % len(self.frames)
         self.update_frame.emit()
-        self.timer.start(self.frames[self.index]["delay"])
+        if self.running:
+            self.timer.start(self.frames[self.index]["delay"])
     
     def start(self):
         self.index = 0
         self.timer.start(self.frames[self.index]["delay"])
+        self.running = True
+    
+    def stop(self):
+        self.timer.stop()
+        self.running = False
 
 
 class Animation(BasicEditor):
@@ -269,6 +276,7 @@ class Animation(BasicEditor):
         v.addWidget(lbl)
         self.file_lst = QListWidget()
         self.file_lst.setMaximumSize(QSize(200, 400))
+        self.file_lst.itemSelectionChanged.connect(self.on_keyboard_file_changed)
         v.addWidget(self.file_lst)
         c_layout.addLayout(v)
         v_layout_in = QVBoxLayout()
@@ -318,14 +326,28 @@ class Animation(BasicEditor):
     def clear_animation_ui(self):
         self.display_label.clear()
         self.convert_lst.clear()
+        self.file_lst.clear()
+        self.download_lst.clear()
 
     def rebuild_ui(self):
         self.clear_animation_ui()
 
         for format in KEYBOARD_FORMATS:
             self.convert_lst.addItem(format["name"])
-
         self.convert_lst.setCurrentRow(0)
+
+        if len(self.keyboard.animations) > 0:
+            for anim in self.keyboard.animations:
+                self.download_lst.addItem(anim["name"])
+            self.download_lst.setCurrentRow(0)
+            self.refresh_btn.setEnabled(True)
+            self.download_btn.setEnabled(True)
+        else:
+            self.refresh_btn.setEnabled(False)
+            self.download_btn.setEnabled(False)
+
+        self.delete_btn.setEnabled(False)
+        self.copy_btn.setEnabled(False)
 
     def rebuild(self, device):
         super().rebuild(device)
@@ -337,20 +359,62 @@ class Animation(BasicEditor):
         return isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard)
     
+    def on_keyboard_file_changed(self):
+        item = self.file_lst.currentItem()
+        if item and item.isSelected():
+            self.delete_btn.setEnabled(True)
+            self.copy_btn.setEnabled(True)
+        else:
+            self.delete_btn.setEnabled(False)
+            self.copy_btn.setEnabled(False)
+
     def on_refresh_btn_clicked(self):
         self.keyboard.reload_anim_file_list()
         self.file_lst.clear()
         for f in self.keyboard.anim_files:
            self.file_lst.addItem(f)
 
+    def name_to_format(self, name):
+        for format in KEYBOARD_FORMATS:
+            if name == format["name"]:
+                return format
+        return None
+
+
+    def set_animation_play(self, play):
+        if self.current_filter == FILE_FILTER_IMAGES:
+            return 
+
+        if play:
+            self.player.start()
+        else:
+            self.player.stop()
+
     
     def on_download_btn_clicked(self):
-        data = self.pack_animation_in_memory(self.current_file, "anim_128_128")
+        format = self.name_to_format(self.download_lst.currentItem().text())
+        print(format)
+        if format is None:
+            QMessageBox.information(None, "", "Please select format")
+            return
+
+        if len(self.current_file) == 0:
+            QMessageBox.information(None, "", "Please select file to download")
+            return
+
+        self.set_animation_play(False)
+        data = self.pack_animation_in_memory(self.current_file, format["mode"], "e:\\test.crs")
         if len(data) == 0:
+            QMessageBox.information(None, "", "Failed to pack animation file")
+            self.set_animation_play(True)
             return
         
-        name = self.generate_filename(Path(self.current_file).stem) + ".CRS"
+        name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
         read = False
+        if self.keyboard.display_anim_file(False) == False:
+            print("Failed to stop display")
+            return
+
         index = self.keyboard.open_anim_file(name, read)
         if index != 0xFF:
             total = len(data) 
@@ -358,8 +422,8 @@ class Animation(BasicEditor):
             remain = total
             cur = 0
             while remain > 0:
-                size = 28 if remain > 28 else remain
-                if self.keyboard.write_anim_file(index, data[cur:cur+size]):
+                size = 24 if remain > 24 else remain
+                if self.keyboard.write_anim_file(index, data[cur:cur+size], cur):
                     remain = remain - size
                     cur = cur + size
                 else:
@@ -370,11 +434,29 @@ class Animation(BasicEditor):
 
             self.keyboard.close_anim_file(index)
 
+        self.set_animation_play(True)
+        self.keyboard.display_anim_file(True)
+
     def on_delete_btn_clicked(self):
-        pass
+        if self.file_lst.count() == 0:
+            return
+
+        row = self.file_lst.currentRow()
+        item = self.file_lst.item(row)
+        if item and item.isSelected():
+            msg = "Are you sure to delete: {} ?".format(item.text())
+            button = QMessageBox.warning(None, 
+                                         "Delete keyboard file",
+                                         msg,
+                                        buttons=QMessageBox.Yes | QMessageBox.Cancel,
+                                        defaultButton=QMessageBox.Cancel)
+            if button == QMessageBox.Yes:
+                self.keyboard.display_anim_file(False)
+                self.keyboard.delete_anim_file(row)
+                self.keyboard.display_anim_file(True)
 
     def on_copy_btn_clicked(self):
-        pass
+        QMessageBox.information(None, "", "Not implemented")
 
     def update_animation_display(self):
         pixmap = QPixmap.fromImage(self.player.get_current_image()["frame"])
@@ -399,6 +481,7 @@ class Animation(BasicEditor):
             if len(file_list) > 0:
                 self.current_file = file_list[0]
                 self.current_filter = dialog.selectedNameFilter()
+                #self.download_btn.setEnabled(True)
 
                 if self.current_filter == FILE_FILTER_ANIMATIONS:
                     self.player = QMovie(self.current_file)
@@ -490,7 +573,7 @@ class Animation(BasicEditor):
             data = data + frames[i]["data"]
         
         if file_name is not None:
-            with open(file_name) as f:
+            with open(file_name, "wb") as f:
                 f.write(data)
 
         return data
@@ -531,7 +614,6 @@ class Animation(BasicEditor):
             append_tilde = True
             
         if append_tilde:
-            cur[6] = "~"
-            cur[7] = "1"
+            cur = cur + "~{}".format(1)
 
         return cur
