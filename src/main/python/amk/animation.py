@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox
-from PyQt5.QtCore import QSize, QRect, QPoint, Qt, pyqtSignal, QObject, QTimer
+from PyQt5.QtCore import QSize, QRect, QPoint, Qt, pyqtSignal, QObject, QTimer, QThread
 
 from PyQt5.QtGui import QPainter, QBrush, QColor, QImage, QPixmap, QImageReader, QMovie
 
@@ -237,6 +237,39 @@ class AmkMovie(QObject):
         self.timer.stop()
         self.running = False
 
+class TaskThread(QThread):
+    notifyProgress = pyqtSignal(int)
+    notifyDone = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+
+    def set_param(self, keyboard, data, name):
+        self.keyboard = keyboard
+        self.data = data
+        self.name = name
+
+    def run(self):
+        index = self.keyboard.open_anim_file(self.name, False)
+        if index != 0xFF:
+            total = len(self.data) 
+            progress = 0
+            remain = total
+            cur = 0
+            while remain > 0:
+                size = 24 if remain > 24 else remain
+                if self.keyboard.write_anim_file(index, self.data[cur:cur+size], cur):
+                    remain = remain - size
+                    cur = cur + size
+                else:
+                    break
+                if int((total-remain)*100/ total) > progress:
+                    progress = int((total-remain)*100/total) 
+                    self.notifyProgress.emit(progress)
+                    #self.download_bar.setValue(progress)
+
+            self.keyboard.close_anim_file(index)
+        self.notifyDone.emit()
 
 class Animation(BasicEditor):
     def __init__(self):
@@ -244,6 +277,9 @@ class Animation(BasicEditor):
         self.keyboard = None
         self.current_file = ""
         self.current_filter = ""
+        self.download_task = TaskThread()
+        self.download_task.notifyProgress.connect(self.on_task_progress)
+        self.download_task.notifyDone.connect(self.on_task_done)
 
         h_layout = QHBoxLayout()
         h_layout.addStretch(1)
@@ -390,7 +426,14 @@ class Animation(BasicEditor):
         else:
             self.player.stop()
 
-    
+    def on_task_progress(self, progress):
+        self.download_bar.setValue(progress)
+
+    def on_task_done(self):
+        self.set_animation_play(True)
+        self.keyboard.display_anim_file(True)
+        self.download_btn.setEnabled(True)
+
     def on_download_btn_clicked(self):
         format = self.name_to_format(self.download_lst.currentItem().text())
         print(format)
@@ -403,7 +446,7 @@ class Animation(BasicEditor):
             return
 
         self.set_animation_play(False)
-        data = self.pack_animation_in_memory(self.current_file, format["mode"], "e:\\test.crs")
+        data = self.pack_animation_in_memory(self.current_file, format["mode"])
         if len(data) == 0:
             QMessageBox.information(None, "", "Failed to pack animation file")
             self.set_animation_play(True)
@@ -414,28 +457,10 @@ class Animation(BasicEditor):
         if self.keyboard.display_anim_file(False) == False:
             print("Failed to stop display")
             return
-
-        index = self.keyboard.open_anim_file(name, read)
-        if index != 0xFF:
-            total = len(data) 
-            progress = 0
-            remain = total
-            cur = 0
-            while remain > 0:
-                size = 24 if remain > 24 else remain
-                if self.keyboard.write_anim_file(index, data[cur:cur+size], cur):
-                    remain = remain - size
-                    cur = cur + size
-                else:
-                    break
-                if int((total-remain)*100/ total) > progress:
-                    progress = int((total-remain)*100/total) 
-                    self.download_bar.setValue(progress)
-
-            self.keyboard.close_anim_file(index)
-
-        self.set_animation_play(True)
-        self.keyboard.display_anim_file(True)
+        
+        self.download_task.set_param(self.keyboard, data, name)
+        self.download_btn.setEnabled(False)
+        self.download_task.start()
 
     def on_delete_btn_clicked(self):
         if self.file_lst.count() == 0:
