@@ -44,7 +44,7 @@ AMK_PROTOCOL_GET_RGB_STRIP_MODE = 31
 AMK_PROTOCOL_SET_RGB_STRIP_MODE = 32
 AMK_PROTOCOL_GET_RGB_INDICATOR_LED = 33
 AMK_PROTOCOL_SET_RGB_INDICATOR_LED = 34
-AMK_PROTOCOL_GET_FILE_COUNT = 35
+AMK_PROTOCOL_GET_FILE_SYSTEM_INFO = 35
 AMK_PROTOCOL_GET_FILE_INFO = 36
 AMK_PROTOCOL_OPEN_FILE = 37
 AMK_PROTOCOL_WRITE_FILE = 38
@@ -724,26 +724,25 @@ class ProtocolAmk(BaseProtocol):
     
     def reload_anim_file_list(self):
         self.anim_files = []
+        self.anim_file_system = {}
         data = self.usb_send(self.dev, 
-                             struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_COUNT), 
+                             struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_SYSTEM_INFO), 
                              retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            for i in range(data[3]):
+            total_file, free_space, total_space = struct.unpack("<BII", data[3:12])
+            self.anim_file_system = {"total_file":total_file, "free_space":free_space, "total_space":total_space}
+            for i in range(total_file):
                 data = self.usb_send(self.dev, 
                                     struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_INFO, i), 
                                     retries=20)
                 if data[2] == AMK_PROTOCOL_OK:
-                    d = data[3:16]
-                    index = 0
-                    for i in range(len(d)):
-                        if d[i] == 0:
-                            index = i
-                            break
-                    self.anim_files.append(data[3:index+3].decode("utf-8"))
+                    name = data[3:16].decode("utf-8")
+                    size, = struct.unpack("<I", data[16:20])
+                    self.anim_files.append({"name":name.split("\0")[0], "size":size})
     
-    def open_anim_file(self, name, read):
+    def open_anim_file(self, name, read, index=0xFF):
         data = self.usb_send(self.dev, 
-                            struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, 0xFF, 1 if read else 0) + bytearray(name, "utf-8"),
+                            struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, index, 1 if read else 0) + bytearray(name, "utf-8"),
                             retries=20)
         if data[2] == AMK_PROTOCOL_OK:
             print("Open file at index:", data[3])
@@ -763,6 +762,16 @@ class ProtocolAmk(BaseProtocol):
             print("Failed to write file: index=", index)
             return False
     
+    def read_anim_file(self, index, offset, size):
+        data = self.usb_send(self.dev, 
+                            struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_READ_FILE, index, size, offset),
+                            retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            size = data[3]
+            return data[8:8+size] 
+        else:
+            return None
+
     def close_anim_file(self, index):
         data = self.usb_send(self.dev, 
                             struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_CLOSE_FILE, index),

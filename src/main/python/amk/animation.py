@@ -36,26 +36,26 @@ ABKG_BIG_WIDTH  = 240
 ABKG_BIG_HEIGHT = 120
 
 ANIM_MODES = {
-    "anim_80_80": {"width": 80, "height": 80, "magic": "ANIM"},
-    "anim_60_60": {"width": 60, "height": 60, "magic": "ANIM"},
-    "anim_128_128": {"width": 128, "height": 128, "magic": "ANIM"},
-    "auxi_80_30": {"width": 80, "height": 30, "magic": "AUXI"},
-    "amft_10_30": {"width": 10, "height": 30, "magic": "AMFT"},
-    "asts_80_30": {"width": 80, "height": 30, "magic": "ASTS"},
-    "abkg_160_80": {"width": 160, "height": 80, "magic": "ABKG"},
-    "abkg_240_120": {"width": 240, "height": 120, "magic": "ABKG"},
+    "anim_80_80": {"width": 80, "height": 80, "magic": "ANIM", "size":80*80*2},
+    "anim_60_60": {"width": 60, "height": 60, "magic": "ANIM", "size":60*60*2},
+    "anim_128_128": {"width": 128, "height": 128, "magic": "ANIM", "size":128*128*2},
+    "auxi_80_30": {"width": 80, "height": 30, "magic": "AUXI", "size":80*30*2},
+    "amft_10_30": {"width": 10, "height": 30, "magic": "AMFT", "size":10*30*2},
+    "asts_80_30": {"width": 80, "height": 30, "magic": "ASTS", "size":80*30*2},
+    "abkg_160_80": {"width": 160, "height": 80, "magic": "ABKG", "size":160*80*2},
+    "abkg_240_120": {"width": 240, "height": 120, "magic": "ABKG", "size":240*120*2},
 }
 
 KEYBOARD_FORMATS = [
-    {"name": "Navi", "mode": "anim_128_128", "suffix": ".crs", "filter": "Navi Files (*.crs)"},
-    {"name": "Corsa", "mode": "anim_128_128", "suffix": ".crs", "filter": "Corsa Files (*.crs)"},
-    {"name": "Meta Background", "mode": "abkg_160_80", "suffix": ".bkg", "filter": "Meta Backaground Files (*.bkg)"},
-    {"name": "Meta Status", "mode": "asts_80_30", "suffix": ".sts", "filter": "Meta Status Files (*.sts)"},
-    {"name": "Meta Right", "mode": "anim_60_60", "suffix": ".sml", "filter": "Meta Right Files (*.sml)"},
-    {"name": "Meta Up Left", "mode": "auxi_80_30", "suffix": ".aux","filter": "Meta Up Left Files (*.aux)"},
-    {"name": "8XV3.0", "mode": "anim_60_60", "suffix": ".sml","filter": "8xv3.0 Files (*.sml)"},
-    {"name": "Vita Up", "mode": "anim_60_60", "suffix": ".anm","filter": "Vita Up Files (*.anm)"},
-    {"name": "Vita Down", "mode": "auxi_80_30", "suffix": ".aux","filter": "Vita Down Files (*.aux)"},
+    {"name": "Navi", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Navi Files (*.CRS)"},
+    {"name": "Corsa", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Corsa Files (*.CRS)"},
+    {"name": "Meta Background", "mode": "abkg_160_80", "suffix": ".BKG", "filter": "Meta Backaground Files (*.BKG)"},
+    {"name": "Meta Status", "mode": "asts_80_30", "suffix": ".STS", "filter": "Meta Status Files (*.STS)"},
+    {"name": "Meta Right", "mode": "anim_60_60", "suffix": ".SML", "filter": "Meta Right Files (*.SML)"},
+    {"name": "Meta Up Left", "mode": "auxi_80_30", "suffix": ".AUX","filter": "Meta Up Left Files (*.AUX)"},
+    {"name": "8XV3.0", "mode": "anim_60_60", "suffix": ".SML","filter": "8xv3.0 Files (*.SML)"},
+    {"name": "Vita Up", "mode": "anim_60_60", "suffix": ".ANM","filter": "Vita Up Files (*.ANM)"},
+    {"name": "Vita Down", "mode": "auxi_80_30", "suffix": ".AUX","filter": "Vita Down Files (*.AUX)"},
 ]
 
 ANIM_HDR = "<4s2HI4H"
@@ -140,7 +140,6 @@ class AmkMovie(QObject):
                 img.setPixelColor(w,h,c)
 
         return img
-
 
     def parse(self):
         if self.file_name is None:
@@ -239,26 +238,58 @@ class AmkMovie(QObject):
 
 class TaskThread(QThread):
     notifyProgress = pyqtSignal(int)
+    notifyConvert = pyqtSignal()
     notifyDone = pyqtSignal()
 
     def __init__(self):
         super().__init__()
 
-    def set_param(self, keyboard, data, name):
-        self.keyboard = keyboard
-        self.data = data
+    def set_param(self, animation, file, format, name, read=False, index=0, file_size=0):
+        self.animation = animation 
+        self.file = file 
+        self.mode = ANIM_MODES.get(format)
         self.name = name
+        self.read = read
+        self.index = index
+        self.file_size = file_size
 
-    def run(self):
-        index = self.keyboard.open_anim_file(self.name, False)
+    def download_task(self):
+        if self.mode is None:
+            QMessageBox.information(None, "", "Unsupported format")
+            self.notifyDone.emit()
+            return
+
+        frames = self.animation.extract_frames(self.file, self.mode)
+        total = len(frames)
+        if total == 0:
+            QMessageBox.information(None, "", "Failed to convert animation file")
+            self.notifyDone.emit()
+            return
+
+        #pack file header
+        data = pack_anim_header(self.mode["width"], self.mode["height"], self.mode["magic"], total)
+        #pack frame durations
+        for i in range(total):
+            data = data + struct.pack("<H", frames[i]["delay"])
+        #pack frame data
+        progress = 0
+        for i in range(total):
+            data = data + frames[i]["data"]
+            if int(i*100/total) > progress:
+                progress = int(i*100/total)
+                self.notifyProgress.emit(progress)
+        
+        self.notifyConvert.emit()
+
+        index = self.animation.keyboard.open_anim_file(self.name, False)
         if index != 0xFF:
-            total = len(self.data) 
+            total = len(data) 
             progress = 0
             remain = total
             cur = 0
             while remain > 0:
                 size = 24 if remain > 24 else remain
-                if self.keyboard.write_anim_file(index, self.data[cur:cur+size], cur):
+                if self.animation.keyboard.write_anim_file(index, data[cur:cur+size], cur):
                     remain = remain - size
                     cur = cur + size
                 else:
@@ -266,10 +297,39 @@ class TaskThread(QThread):
                 if int((total-remain)*100/ total) > progress:
                     progress = int((total-remain)*100/total) 
                     self.notifyProgress.emit(progress)
-                    #self.download_bar.setValue(progress)
 
-            self.keyboard.close_anim_file(index)
+            self.animation.keyboard.close_anim_file(index)
         self.notifyDone.emit()
+    
+    def upload_task(self):
+        index = self.animation.keyboard.open_anim_file(self.name, True, self.index)
+        total = self.file_size
+        if index != 0xFF:
+            progress = 0
+            remain = total
+            offset = 0
+            with open(self.file, "wb") as f:
+                while remain > 0:
+                    size = 24 if remain > 24 else remain
+                    data = self.animation.keyboard.read_anim_file(self.index, offset, size)
+                    if data is not None:
+                        remain = remain - len(data)
+                        offset = offset + len(data)
+                        f.write(data)
+                    else:
+                        break
+                    if int((total-remain)*100/ total) > progress:
+                        progress = int((total-remain)*100/total) 
+                        self.notifyProgress.emit(progress)
+
+            self.animation.keyboard.close_anim_file(index)
+        self.notifyDone.emit()
+
+    def run(self):
+        if self.read:
+            self.upload_task()
+        else:
+            self.download_task()
 
 class Animation(BasicEditor):
     def __init__(self):
@@ -277,9 +337,10 @@ class Animation(BasicEditor):
         self.keyboard = None
         self.current_file = ""
         self.current_filter = ""
-        self.download_task = TaskThread()
-        self.download_task.notifyProgress.connect(self.on_task_progress)
-        self.download_task.notifyDone.connect(self.on_task_done)
+        self.worker= TaskThread()
+        self.worker.notifyProgress.connect(self.on_task_progress)
+        self.worker.notifyConvert.connect(self.on_task_convert)
+        self.worker.notifyDone.connect(self.on_task_done)
 
         h_layout = QHBoxLayout()
         h_layout.addStretch(1)
@@ -408,7 +469,7 @@ class Animation(BasicEditor):
         self.keyboard.reload_anim_file_list()
         self.file_lst.clear()
         for f in self.keyboard.anim_files:
-           self.file_lst.addItem(f)
+           self.file_lst.addItem(f["name"])
 
     def name_to_format(self, name):
         for format in KEYBOARD_FORMATS:
@@ -429,14 +490,44 @@ class Animation(BasicEditor):
     def on_task_progress(self, progress):
         self.download_bar.setValue(progress)
 
-    def on_task_done(self):
-        self.set_animation_play(True)
-        self.keyboard.display_anim_file(True)
-        self.download_btn.setEnabled(True)
+    def on_task_convert(self):
+        self.download_btn.setText("Downloading...")
+        self.download_bar.setValue(0)
 
+    def on_task_done(self):
+        self.keyboard.display_anim_file(True)
+        self.download_btn.setText("Downloading...")
+        self.download_btn.setEnabled(True)
+        if self.file_lst.currentItem() is not None:
+            self.copy_btn.setEnabled(True)
+            self.delete_btn.setEnabled(True)
+
+    def is_space_available(self, frame_size):
+        frame = 1
+        if self.current_filter == FILE_FILTER_ANIMATIONS:
+            frame = self.player.frameCount()
+
+        if self.current_filter == FILE_FILTER_AMK:
+            frame = self.player.total()
+        #header size
+        total = struct.calcsize(ANIM_HDR)
+        #delay size
+        total = total + frame*2
+        #frame size
+        total = total + frame*frame_size
+
+        free_space = self.keyboard.anim_file_system.get("free_space")
+        if free_space is None:
+            self.on_refresh_btn_clicked()
+            free_space = self.keyboard.anim_file_system.get("free_space")
+
+        if free_space is None:
+            return False
+
+        return free_space > total
+    
     def on_download_btn_clicked(self):
         format = self.name_to_format(self.download_lst.currentItem().text())
-        print(format)
         if format is None:
             QMessageBox.information(None, "", "Please select format")
             return
@@ -444,23 +535,17 @@ class Animation(BasicEditor):
         if len(self.current_file) == 0:
             QMessageBox.information(None, "", "Please select file to download")
             return
+        
+        if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
+            QMessageBox.information(None, "", "Not enough space on disk for this file")
+            return
 
-        self.set_animation_play(False)
-        data = self.pack_animation_in_memory(self.current_file, format["mode"])
-        if len(data) == 0:
-            QMessageBox.information(None, "", "Failed to pack animation file")
-            self.set_animation_play(True)
-            return
-        
         name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
-        read = False
-        if self.keyboard.display_anim_file(False) == False:
-            print("Failed to stop display")
-            return
-        
-        self.download_task.set_param(self.keyboard, data, name)
+        self.worker.set_param(self, self.current_file, format["mode"], name)
+        self.download_btn.setText("Converting ...")
         self.download_btn.setEnabled(False)
-        self.download_task.start()
+        self.keyboard.display_anim_file(False)
+        self.worker.start()
 
     def on_delete_btn_clicked(self):
         if self.file_lst.count() == 0:
@@ -481,7 +566,32 @@ class Animation(BasicEditor):
                 self.keyboard.display_anim_file(True)
 
     def on_copy_btn_clicked(self):
-        QMessageBox.information(None, "", "Not implemented")
+        file_item = self.file_lst.currentItem()
+        if file_item is None:
+            QMessageBox.information(None, "", "Please select a file")
+            return
+        full_name = file_item.text()
+        suffix = Path(full_name).suffix.upper()
+
+        dst_file, _ = QFileDialog.getSaveFileName(None, "Copy File", full_name, "Animation Files ({})".format(suffix))
+
+        file_size = 0
+        for f in self.keyboard.anim_files:
+            if f["name"] == full_name:
+                file_size = f["size"]
+                break
+
+        if file_size == 0:
+            QMessageBox.information(None, "File Error", "The select file length was ZERO")
+            return
+
+        print(dst_file, file_size)
+        self.worker.set_param(self, dst_file, None, full_name, True, self.file_lst.currentRow(), file_size)
+        self.download_btn.setEnabled(False)
+        self.copy_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
+        self.keyboard.display_anim_file(False)
+        self.worker.start()
 
     def update_animation_display(self):
         pixmap = QPixmap.fromImage(self.player.get_current_image()["frame"])
@@ -506,7 +616,6 @@ class Animation(BasicEditor):
             if len(file_list) > 0:
                 self.current_file = file_list[0]
                 self.current_filter = dialog.selectedNameFilter()
-                #self.download_btn.setEnabled(True)
 
                 if self.current_filter == FILE_FILTER_ANIMATIONS:
                     self.player = QMovie(self.current_file)
@@ -551,7 +660,6 @@ class Animation(BasicEditor):
             for i in range(reader.frameCount()):
                 if reader.jumpToFrame(i):
                     img = reader.currentImage()
-                    #file_name = "e:\\work\\vial\\{}.bmp".format(i)
                     frame = convert_frame(img, mode["width"], mode["height"], None)
                     data = extract_frame_data(frame)
                     delay = reader.nextFrameDelay()
