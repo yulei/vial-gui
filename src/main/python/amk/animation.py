@@ -54,7 +54,7 @@ KEYBOARD_FORMATS = [
     {"name": "Meta Right", "mode": "anim_60_60", "suffix": ".SML", "filter": "Meta Right Files (*.SML)"},
     {"name": "Meta Up Left", "mode": "auxi_80_30", "suffix": ".AUX","filter": "Meta Up Left Files (*.AUX)"},
     {"name": "8XV3.0", "mode": "anim_60_60", "suffix": ".SML","filter": "8xv3.0 Files (*.SML)"},
-    {"name": "Vita Up", "mode": "anim_60_60", "suffix": ".ANM","filter": "Vita Up Files (*.ANM)"},
+    {"name": "Vita Up", "mode": "anim_80_80", "suffix": ".ANM","filter": "Vita Up Files (*.ANM)"},
     {"name": "Vita Down", "mode": "auxi_80_30", "suffix": ".AUX","filter": "Vita Down Files (*.AUX)"},
 ]
 
