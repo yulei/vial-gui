@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox, QComboBox
 from PyQt5.QtCore import QSize, QRect, QPoint, Qt, pyqtSignal, QObject, QTimer, QThread
 
-from PyQt5.QtGui import QPainter, QBrush, QColor, QImage, QPixmap, QImageReader, QMovie
+from PyQt5.QtGui import QPainter, QColor, QImage, QPixmap, QImageReader, QMovie
 
 from themes import Theme
 from editor.basic_editor import BasicEditor
@@ -63,6 +63,16 @@ ANIM_HDR = "<4s2HI4H"
 FILE_FILTER_IMAGES="Images (*.jpg *.png *.bmp)"
 FILE_FILTER_ANIMATIONS="Animations (*.gif)"
 FILE_FILTER_AMK="Converted Files (*.anm *.sml *.bkg *.crs *.sts)"
+
+DOWNLOAD_BTN_CONVERTING = "Converting 正在转换"
+DOWNLOAD_BTN_UPLOAD = "Uploading 正在上传"
+DOWNLOAD_BTN_NORMAL = "Upload to keyboard 上传到键盘"
+
+COPY_BTN_DOWNLOAD = "Downloading 正在下载"
+COPY_BTN_NORMAL = "Download 下载"
+
+CONVERT_BTN_CONVERT = "Converting 正在转换"
+CONVERT_BTN_NORMAL = "Convert&&Save 转换保存"
 
 def convert_frame(image, dst_width, dst_height, file_name):
     image_width = image.rect().width()
@@ -243,25 +253,57 @@ class TaskThread(QThread):
     def __init__(self):
         super().__init__()
 
-    def set_param(self, animation, file, format, name, read=False, index=0, file_size=0):
+    def set_param(self, animation, file, format, name, operation="download", index=0, file_size=0):
         self.animation = animation 
         self.file = file 
         self.mode = ANIM_MODES.get(format)
         self.name = name
-        self.read = read
+        self.operation = operation 
         self.index = index
         self.file_size = file_size
-
-    def download_task(self):
+    
+    def convert_task(self):
         if self.mode is None:
-            QMessageBox.information(None, "", "Unsupported format/不支持的格式")
+            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
             self.notifyDone.emit()
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
-            QMessageBox.information(None, "", "Failed to convert animation file/转换失败")
+            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
+            self.notifyDone.emit()
+            return
+
+        with open(self.name, "wb") as f:
+            #pack file header
+            data = pack_anim_header(self.mode["width"], self.mode["height"], self.mode["magic"], total)
+            f.write(data)
+            #pack frame durations
+            for i in range(total):
+                data = struct.pack("<H", frames[i]["delay"])
+            f.write(data)
+            #pack frame data
+            #progress = 0
+            for i in range(total):
+                data = frames[i]["data"]
+                f.write(data)
+                #if int(i*100/total) > progress:
+                    #progress = int(i*100/total)
+                    #self.notifyProgress.emit(progress)
+            
+        self.notifyDone.emit()
+
+    def download_task(self):
+        if self.mode is None:
+            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
+            self.notifyDone.emit()
+            return
+
+        frames = self.animation.extract_frames(self.file, self.mode)
+        total = len(frames)
+        if total == 0:
+            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
             self.notifyDone.emit()
             return
 
@@ -325,10 +367,14 @@ class TaskThread(QThread):
         self.notifyDone.emit()
 
     def run(self):
-        if self.read:
+        if self.operation == "upload":
             self.upload_task()
-        else:
+        elif self.operation == "download":
             self.download_task()
+        elif self.operation == "convert":
+            self.convert_task()
+        else:
+            print("unknown task: ", self.operation)
 
 class Animation(BasicEditor):
     def __init__(self):
@@ -345,97 +391,101 @@ class Animation(BasicEditor):
         h_layout.addStretch(1)
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
-        lbl = QLabel("Preview/预览")
-        v_layout.addWidget(lbl)
+
+        u_lyt = QHBoxLayout()
+        u_lyt.addStretch(1)
+
+        lyt = QVBoxLayout()
+        lbl = QLabel("Preview 预览")
+        lyt.addWidget(lbl)
         self.display_label = QLabel()
         self.display_label.setMinimumSize(QSize(640, 480))
         self.display_label.setMaximumSize(QSize(640, 480))
         self.display_label.setObjectName("Display")
         self.display_label.setAlignment(Qt.AlignCenter)
         self.display_label.setStyleSheet("background-color: black;") 
+        lyt.addWidget(self.display_label)
 
-        v_layout.addWidget(self.display_label)
-        self.select_btn = QPushButton("Select File/选择文件")
-        self.select_btn.setMaximumSize(QSize(300, 100))
+        lyt2 = QHBoxLayout()
+        self.select_btn = QPushButton("Select File 选择文件")
+        #self.select_btn.setMaximumSize(QSize(300, 100))
         self.select_btn.clicked.connect(self.on_select_btn_clicked)
-        v_layout.addWidget(self.select_btn)
-        v_layout.setAlignment(Qt.AlignHCenter )
-        v_layout.addStretch(1)
-        h_layout.addLayout(v_layout)
+        lyt2.addWidget(self.select_btn)
+        lyt2.addStretch(1)
 
-        h_layout.addStretch(1)
-        v_layout_out = QVBoxLayout()
-        v_layout_out.addStretch(4)
-        c_layout = QHBoxLayout()
-        v = QVBoxLayout()
-        lbl = QLabel("Keyboard Files/键盘动画文件")
-        v.addWidget(lbl)
-        self.file_lst = QListWidget()
-        self.file_lst.setMaximumSize(QSize(200, 400))
-        self.file_lst.itemSelectionChanged.connect(self.on_keyboard_file_changed)
-        v.addWidget(self.file_lst)
-        c_layout.addLayout(v)
-        v_layout_in = QVBoxLayout()
-        v_layout_in.addStretch(1)
-        lbl = QLabel("File Format/动画文件格式")
-        v_layout_in.addWidget(lbl)
-        self.download_lst = QListWidget()
-        self.download_lst.setMaximumSize(QSize(200, 80))
-        v_layout_in.addWidget(self.download_lst)
-        self.refresh_btn = QPushButton("Refresh/刷新")
-        self.refresh_btn.setEnabled(False)
-        self.refresh_btn.clicked.connect(self.on_refresh_btn_clicked)
-        v_layout_in.addWidget(self.refresh_btn)
-        self.delete_btn = QPushButton("Delete/删除")
-        self.delete_btn.setEnabled(False)
-        self.delete_btn.clicked.connect(self.on_delete_btn_clicked)
-        v_layout_in.addWidget(self.delete_btn)
-        self.copy_btn = QPushButton("Copy/拷贝")
-        self.copy_btn.setEnabled(False)
-        self.copy_btn.clicked.connect(self.on_copy_btn_clicked)
-        v_layout_in.addWidget(self.copy_btn)
-        self.download_btn = QPushButton("Download/下载")
+        self.convert_cbx = QComboBox()
+        lyt2.addWidget(self.convert_cbx)
+        self.convert_btn = QPushButton(CONVERT_BTN_NORMAL)
+        self.convert_btn.clicked.connect(self.on_convert_btn_clicked)
+        lyt2.addWidget(self.convert_btn)
+        lyt.addLayout(lyt2)
+
+        u_lyt.addLayout(lyt)
+
+        lyt = QVBoxLayout()
+        lyt.addStretch(1)
+        self.download_cbx= QComboBox()
+        lyt.addWidget(self.download_cbx)
+        self.download_btn = QPushButton(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(False)
         self.download_btn.clicked.connect(self.on_download_btn_clicked)
-        v_layout_in.addWidget(self.download_btn)
+        lyt.addWidget(self.download_btn)
+        lyt.addStretch(1)
+
+        u_lyt.addLayout(lyt)
+
+        lyt = QVBoxLayout()
+        lbl = QLabel("Files in keyboard 键盘内文件")
+        lyt.addWidget(lbl)
+        self.file_lst = QListWidget()
+        self.file_lst.setMaximumSize(QSize(400, 480))
+        self.file_lst.itemSelectionChanged.connect(self.on_keyboard_file_changed)
+        lyt.addWidget(self.file_lst)
+
+        lyt2 = QHBoxLayout()
+        self.refresh_btn = QPushButton("Refresh 刷新")
+        self.refresh_btn.setEnabled(False)
+        self.refresh_btn.clicked.connect(self.on_refresh_btn_clicked)
+        lyt2.addWidget(self.refresh_btn)
+        self.delete_btn = QPushButton("Delete 删除")
+        self.delete_btn.setEnabled(False)
+        self.delete_btn.clicked.connect(self.on_delete_btn_clicked)
+        lyt2.addWidget(self.delete_btn)
+        self.copy_btn = QPushButton(COPY_BTN_NORMAL)
+        self.copy_btn.setEnabled(False)
+        self.copy_btn.clicked.connect(self.on_copy_btn_clicked)
+        lyt2.addWidget(self.copy_btn)
+        lyt.addLayout(lyt2)
+        u_lyt.addLayout(lyt)
+        u_lyt.addStretch(1)
+
+        v_layout.addLayout(u_lyt)
+        v_layout.addStretch(1)
+
         self.download_bar = QProgressBar()
         self.download_bar.setMinimum(0)
         self.download_bar.setMaximum(100)
-        v_layout_in.addWidget(self.download_bar)
-        v_layout_in.addStretch(1)
-        c_layout.addLayout(v_layout_in)
-        v_layout_out.addLayout(c_layout)
-        v_layout_out.addStretch(1)
-        c_layout = QHBoxLayout()
-        self.convert_lst = QListWidget()
-        self.convert_lst.setMaximumSize(QSize(200, 120))
-        c_layout.addWidget(self.convert_lst)
-        self.convert_btn = QPushButton("Convert/转换动画")
-        self.convert_btn.clicked.connect(self.on_convert_btn_clicked)
-        c_layout.addWidget(self.convert_btn)
-        v_layout_out.addLayout(c_layout)
-        v_layout_out.addStretch(4)
-        h_layout.addLayout(v_layout_out)
+        v_layout.addWidget(self.download_bar)
+        v_layout.addStretch(1)
+        h_layout.addLayout(v_layout)
         h_layout.addStretch(1)
         self.addLayout(h_layout)
 
     def clear_animation_ui(self):
         self.display_label.clear()
-        self.convert_lst.clear()
+        self.convert_cbx.clear()
         self.file_lst.clear()
-        self.download_lst.clear()
+        self.download_cbx.clear()
 
     def rebuild_ui(self):
         self.clear_animation_ui()
 
         for format in KEYBOARD_FORMATS:
-            self.convert_lst.addItem(format["name"])
-        self.convert_lst.setCurrentRow(0)
+            self.convert_cbx.addItem(format["name"])
 
         if len(self.keyboard.animations) > 0:
             for anim in self.keyboard.animations:
-                self.download_lst.addItem(anim["name"])
-            self.download_lst.setCurrentRow(0)
+                self.download_cbx.addItem(anim["name"])
             self.refresh_btn.setEnabled(True)
             self.download_btn.setEnabled(True)
         else:
@@ -490,13 +540,17 @@ class Animation(BasicEditor):
         self.download_bar.setValue(progress)
 
     def on_task_convert(self):
-        self.download_btn.setText("Downloading/下载中")
+        self.download_btn.setText(DOWNLOAD_BTN_UPLOAD)
         self.download_bar.setValue(0)
 
     def on_task_done(self):
         self.keyboard.display_anim_file(True)
-        self.download_btn.setText("Download/下载")
+        self.download_btn.setText(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(True)
+        self.copy_btn.setText(COPY_BTN_NORMAL)
+        self.copy_btn.setEnabled(True)
+        self.convert_btn.setText(CONVERT_BTN_NORMAL)
+        self.convert_btn.setEnabled(True)
         if self.file_lst.currentItem() is not None:
             self.copy_btn.setEnabled(True)
             self.delete_btn.setEnabled(True)
@@ -526,23 +580,25 @@ class Animation(BasicEditor):
         return free_space > total
     
     def on_download_btn_clicked(self):
-        format = self.name_to_format(self.download_lst.currentItem().text())
+        format = self.name_to_format(self.download_cbx.currentText())
         if format is None:
-            QMessageBox.information(None, "", "Please select format/请选择正确的文件格式")
+            QMessageBox.information(None, "", "Please select format 请选择正确的文件格式")
             return
 
         if len(self.current_file) == 0:
-            QMessageBox.information(None, "", "Please select file to download/请先选择需要下载到键盘的文件")
+            QMessageBox.information(None, "", "Please select file to download 请先选择需要下载到键盘的文件")
             return
         
         if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
-            QMessageBox.information(None, "", "Not enough space on disk for this file/键盘空间不足")
+            QMessageBox.information(None, "", "Not enough space on disk for this file 键盘空间不足")
             return
 
         name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
         self.worker.set_param(self, self.current_file, format["mode"], name)
-        self.download_btn.setText("Converting/转换中")
+        self.download_btn.setText(DOWNLOAD_BTN_CONVERTING)
         self.download_btn.setEnabled(False)
+        self.copy_btn.setEnabled(False)
+        self.convert_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
         self.worker.start()
 
@@ -567,7 +623,7 @@ class Animation(BasicEditor):
     def on_copy_btn_clicked(self):
         file_item = self.file_lst.currentItem()
         if file_item is None:
-            QMessageBox.information(None, "", "Please select a file/请先选择动画文件")
+            QMessageBox.information(None, "", "Please select a file 请先选择动画文件")
             return
         full_name = file_item.text()
         suffix = Path(full_name).suffix.upper()
@@ -581,12 +637,14 @@ class Animation(BasicEditor):
                 break
 
         if file_size == 0:
-            QMessageBox.information(None, "File Error", "The select file length was ZERO/文件错误")
+            QMessageBox.information(None, "File Error", "The select file length was ZERO 文件错误")
             return
 
-        self.worker.set_param(self, dst_file, None, full_name, True, self.file_lst.currentRow(), file_size)
-        self.download_btn.setEnabled(False)
+        self.worker.set_param(self, dst_file, None, full_name, "upload", self.file_lst.currentRow(), file_size)
+        self.copy_btn.setText(COPY_BTN_DOWNLOAD)
         self.copy_btn.setEnabled(False)
+        self.download_btn.setEnabled(False)
+        self.convert_btn.setEnabled(False)
         self.delete_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
         self.worker.start()
@@ -642,13 +700,24 @@ class Animation(BasicEditor):
     
     def on_convert_btn_clicked(self):
         if self.current_file is not None:
-            name = self.convert_lst.currentItem().text()
+            name = self.convert_cbx.currentText()
+            filter = None
             for format in KEYBOARD_FORMATS:
                 if name == format["name"]:
-                    fileName, _ = QFileDialog.getSaveFileName(None, "Save File", "", format["filter"])
-                    if fileName:
-                        self.pack_animation_to_file(self.current_file, fileName, format["mode"])
+                    filter = format["filter"]
                     break
+
+            if filter is not None:
+                dst_file, _ = QFileDialog.getSaveFileName(None, "Save File", "", format["filter"])
+                if dst_file:
+                    self.worker.set_param(self, self.current_file, format["mode"], dst_file, "convert")
+                    self.download_btn.setEnabled(False)
+                    self.copy_btn.setEnabled(False)
+                    self.convert_btn.setText(CONVERT_BTN_CONVERT)
+                    self.convert_btn.setEnabled(False)
+                    self.delete_btn.setEnabled(False)
+                    self.keyboard.display_anim_file(False)
+                    self.worker.start()
 
     def extract_frames(self, src, mode):
         frames = []
