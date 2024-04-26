@@ -745,10 +745,10 @@ class ProtocolAmk(BaseProtocol):
                             struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, index, 1 if read else 0) + bytearray(name, "utf-8"),
                             retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            print("Open file at index:", data[3])
+            #print("Open file at index:", data[3])
             return data[3]
         else:
-            print("Failed to open file: ", name)
+            #print("Failed to open file: ", name)
             return 0xFF
 
     def write_anim_file(self, index, data, offset):
@@ -759,7 +759,7 @@ class ProtocolAmk(BaseProtocol):
             #print("Write file at index:{}, size:{}".format(index, len(data)))
             return True
         else:
-            print("Failed to write file: index=", index)
+            #print("Failed to write file: index=", index)
             return False
     
     def read_anim_file(self, index, offset, size):
@@ -777,10 +777,10 @@ class ProtocolAmk(BaseProtocol):
                             struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_CLOSE_FILE, index),
                             retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            print("Close file at index:", index)
+            #print("Close file at index:", index)
             return True
         else:
-            print("Failed to close file: index=", index)
+            #print("Failed to close file: index=", index)
             return False
 
     def delete_anim_file(self, index):
@@ -788,10 +788,10 @@ class ProtocolAmk(BaseProtocol):
                             struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_DELETE_FILE, index),
                             retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            print("Delete file at index:", index)
+            #print("Delete file at index:", index)
             return True
         else:
-            print("Failed to delete file: index=", index)
+            #print("Failed to delete file: index=", index)
             return False
 
     def display_anim_file(self, play):
