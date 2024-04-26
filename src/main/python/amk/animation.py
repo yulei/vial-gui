@@ -282,7 +282,7 @@ class TaskThread(QThread):
             #pack frame durations
             for i in range(total):
                 data = struct.pack("<H", frames[i]["delay"])
-            f.write(data)
+                f.write(data)
             #pack frame data
             #progress = 0
             for i in range(total):
