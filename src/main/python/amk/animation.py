@@ -506,7 +506,8 @@ class Animation(BasicEditor):
             self.rebuild_ui()
 
     def valid(self):
-        return isinstance(self.device, VialKeyboard) and \
+        import sys
+        return (sys.platform != "emscripten") and isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard)
     
     def on_keyboard_file_changed(self):

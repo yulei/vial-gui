@@ -281,9 +281,15 @@ class Misc(BasicEditor):
             self.ud_sld.hide()
             self.ud_sbx.hide()
 
-            self.ie_lbl.show()
-            self.im_btn.show()
-            self.ex_btn.show()
+            import sys
+            if sys.platform == "emscripten":
+                self.ie_lbl.hide()
+                self.im_btn.hide()
+                self.ex_btn.hide()
+            else:
+                self.ie_lbl.show()
+                self.im_btn.show()
+                self.ex_btn.show()
 
             self.adv_btn.show()
             self.show_advance(self.advance)
