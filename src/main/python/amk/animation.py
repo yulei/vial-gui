@@ -248,7 +248,7 @@ class AmkMovie(QObject):
 class TaskThread(QThread):
     notifyProgress = pyqtSignal(int)
     notifyConvert = pyqtSignal()
-    notifyDone = pyqtSignal()
+    notifyDone = pyqtSignal(bool)
 
     def __init__(self):
         super().__init__()
@@ -265,14 +265,14 @@ class TaskThread(QThread):
     def convert_task(self):
         if self.mode is None:
             QMessageBox.information(None, "", "Unsupported format 不支持的格式")
-            self.notifyDone.emit()
+            self.notifyDone.emit(False)
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
             QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
-            self.notifyDone.emit()
+            self.notifyDone.emit(False)
             return
 
         with open(self.name, "wb") as f:
@@ -292,19 +292,19 @@ class TaskThread(QThread):
                     #progress = int(i*100/total)
                     #self.notifyProgress.emit(progress)
             
-        self.notifyDone.emit()
+        self.notifyDone.emit(False)
 
     def download_task(self):
         if self.mode is None:
             QMessageBox.information(None, "", "Unsupported format 不支持的格式")
-            self.notifyDone.emit()
+            self.notifyDone.emit(False)
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
             QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
-            self.notifyDone.emit()
+            self.notifyDone.emit(False)
             return
 
         #pack file header
@@ -340,7 +340,7 @@ class TaskThread(QThread):
                     self.notifyProgress.emit(progress)
 
             self.animation.keyboard.close_anim_file(index)
-        self.notifyDone.emit()
+        self.notifyDone.emit(True)
     
     def upload_task(self):
         index = self.animation.keyboard.open_anim_file(self.name, True, self.index)
@@ -364,7 +364,7 @@ class TaskThread(QThread):
                         self.notifyProgress.emit(progress)
 
             self.animation.keyboard.close_anim_file(index)
-        self.notifyDone.emit()
+        self.notifyDone.emit(False)
 
     def run(self):
         if self.operation == "upload":
@@ -483,14 +483,18 @@ class Animation(BasicEditor):
         for format in KEYBOARD_FORMATS:
             self.convert_cbx.addItem(format["name"])
 
-        if len(self.keyboard.animations) > 0:
-            for anim in self.keyboard.animations:
-                self.download_cbx.addItem(anim["name"])
+        if len(self.keyboard.animations["format"]) > 0:
+            for f in self.keyboard.animations["format"]:
+                self.download_cbx.addItem(f["name"])
             self.refresh_btn.setEnabled(True)
             self.download_btn.setEnabled(True)
         else:
             self.refresh_btn.setEnabled(False)
             self.download_btn.setEnabled(False)
+        
+        if len(self.keyboard.animations["file"]) > 0:
+            for f in self.keyboard.animations["file"]:
+                self.file_lst.addItem(f["name"])
 
         self.delete_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
@@ -517,7 +521,7 @@ class Animation(BasicEditor):
     def on_refresh_btn_clicked(self):
         self.keyboard.reload_anim_file_list()
         self.file_lst.clear()
-        for f in self.keyboard.anim_files:
+        for f in self.keyboard.animations["file"]:
            self.file_lst.addItem(f["name"])
 
     def name_to_format(self, name):
@@ -543,7 +547,7 @@ class Animation(BasicEditor):
         self.download_btn.setText(DOWNLOAD_BTN_UPLOAD)
         self.download_bar.setValue(0)
 
-    def on_task_done(self):
+    def on_task_done(self, refresh):
         self.keyboard.display_anim_file(True)
         self.download_btn.setText(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(True)
@@ -554,6 +558,8 @@ class Animation(BasicEditor):
         if self.file_lst.currentItem() is not None:
             self.copy_btn.setEnabled(True)
             self.delete_btn.setEnabled(True)
+        if refresh:
+            self.on_refresh_btn_clicked()
 
     def is_space_available(self, frame_size):
         frame = 1
@@ -569,10 +575,10 @@ class Animation(BasicEditor):
         #frame size
         total = total + frame*frame_size
 
-        free_space = self.keyboard.anim_file_system.get("free_space")
+        free_space = self.keyboard.animations["disk"].get("free_space")
         if free_space is None:
             self.on_refresh_btn_clicked()
-            free_space = self.keyboard.anim_file_system.get("free_space")
+            free_space = self.keyboard.animations["disk"].get("free_space")
 
         if free_space is None:
             return False
@@ -619,6 +625,7 @@ class Animation(BasicEditor):
                 self.keyboard.display_anim_file(False)
                 self.keyboard.delete_anim_file(row)
                 self.keyboard.display_anim_file(True)
+        self.on_refresh_btn_clicked()
 
     def on_copy_btn_clicked(self):
         file_item = self.file_lst.currentItem()
@@ -631,7 +638,7 @@ class Animation(BasicEditor):
         dst_file, _ = QFileDialog.getSaveFileName(None, "Copy File", full_name, "Animation Files ({})".format(suffix))
 
         file_size = 0
-        for f in self.keyboard.anim_files:
+        for f in self.keyboard.animations["file"]:
             if f["name"] == full_name:
                 file_size = f["size"]
                 break

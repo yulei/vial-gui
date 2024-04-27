@@ -723,22 +723,28 @@ class ProtocolAmk(BaseProtocol):
                              retries=20)
     
     def reload_anim_file_list(self):
-        self.anim_files = []
-        self.anim_file_system = {}
         data = self.usb_send(self.dev, 
                              struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_SYSTEM_INFO), 
                              retries=20)
         if data[2] == AMK_PROTOCOL_OK:
             total_file, free_space, total_space = struct.unpack("<BII", data[3:12])
-            self.anim_file_system = {"total_file":total_file, "free_space":free_space, "total_space":total_space}
+            self.animations["disk"] = {"total_file":total_file, "free_space":free_space, "total_space":total_space}
+            self.animations["file"] = []
             for i in range(total_file):
                 data = self.usb_send(self.dev, 
                                     struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_INFO, i), 
                                     retries=20)
                 if data[2] == AMK_PROTOCOL_OK:
-                    name = data[3:16].decode("utf-8")
+                    index = 0
+                    for d in range(13):
+                        if data[3+d] == 0:
+                            index = d
+                            break
+                    name = data[3:3+index].decode("utf-8")
                     size, = struct.unpack("<I", data[16:20])
-                    self.anim_files.append({"name":name.split("\0")[0], "size":size})
+                    self.animations["file"].append({"name":name.split("\0")[0], "size":size})
+                else:
+                    print("failed to get file at index: ", i)
     
     def open_anim_file(self, name, read, index=0xFF):
         data = self.usb_send(self.dev, 
