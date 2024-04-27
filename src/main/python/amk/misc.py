@@ -21,14 +21,11 @@ class Misc(BasicEditor):
 
         # import/export setting from/to file
         self.ie_lbl = QLabel(tr("imp exp", "Import or export keyboard config file:"))
-        self.ie_lbl.hide()
         g_layout.addWidget(self.ie_lbl, line, 0)
         self.im_btn = QPushButton("Import ...")
-        self.im_btn.hide()
         self.im_btn.clicked.connect(self.on_im_btn)
         g_layout.addWidget(self.im_btn, line, 1)
         self.ex_btn = QPushButton("Export ...")
-        self.ex_btn.hide()
         self.ex_btn.clicked.connect(self.on_ex_btn)
         g_layout.addWidget(self.ex_btn, line, 2)
 
