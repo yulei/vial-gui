@@ -60,8 +60,8 @@ class AmkWidget(KeyboardWidget):
         for key in self.widgets:
             row = key.desc.row
             col = key.desc.col
-            #if rect.intersects(key.rect):
-            if rect.intersects(key.polygon.boundingRect()):
+            #if rect.intersects(QRectF(key.rect)):
+            if rect.intersects(key.polygon.boundingRect()) or rect.contains(QRectF(key.rect)):
                 self.active_keys[(row,col)] = key
         return bool(self.active_keys)
 

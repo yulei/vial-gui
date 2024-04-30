@@ -52,6 +52,12 @@ AMK_PROTOCOL_READ_FILE = 39
 AMK_PROTOCOL_CLOSE_FILE = 40
 AMK_PROTOCOL_DELETE_FILE = 41
 AMK_PROTOCOL_DISPLAY_CONTROL = 42
+AMK_PROTOCOL_GET_RGB_MATRIX_INFO = 43
+AMK_PROTOCOL_GET_RGB_MATRIX_ROW_INFO = 44
+AMK_PROTOCOL_GET_RGB_MATRIX_MODE = 45
+AMK_PROTOCOL_SET_RGB_MATRIX_MODE = 46
+AMK_PROTOCOL_GET_RGB_MATRIX_LED = 47
+AMK_PROTOCOL_SET_RGB_MATRIX_LED = 48
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -808,3 +814,78 @@ class ProtocolAmk(BaseProtocol):
             return True
         else:
             return False
+
+    def reload_amk_rgb_matrix(self):
+        self.amk_rgb_matrix = {}
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_INFO), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_rgb_matrix["start"] = data[3]
+            self.amk_rgb_matrix["count"] = data[4]
+
+            self.amk_rgb_matrix["mode"] = {}
+            data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_MODE), retries=20)
+            if data[2] == AMK_PROTOCOL_OK:
+                self.amk_rgb_matrix["mode"]["current"] = data[3]
+                self.amk_rgb_matrix["mode"]["custom"] = data[4]
+                self.amk_rgb_matrix["mode"]["total"] = data[5]
+                self.amk_rgb_matrix["mode"]["default"] = data[6]
+                print("RGB Matrix: current={}, custom={}, total={}, default={}".format(data[3], data[4], data[5], data[6]))
+
+            self.amk_rgb_matrix["data"] = {}
+            for i in range(self.rows):
+                data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_ROW_INFO, 0, i), retries=20)
+                if data[2] == AMK_PROTOCOL_OK:
+                    for j in range(self.cols):
+                        self.amk_rgb_matrix["data"][(i,j)] = data[4+j]
+
+            start = self.amk_rgb_matrix["start"]
+            count = self.amk_rgb_matrix["count"]
+            self.amk_rgb_matrix["leds"] = {}
+            for i in range(count):
+                self.reload_rgb_matrix_led(i)
+        
+    def reload_rgb_matrix_led(self, index):
+        start = self.amk_rgb_matrix["start"]
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBB", 
+                                        AMK_PROTOCOL_PREFIX, 
+                                        AMK_PROTOCOL_GET_RGB_MATRIX_LED, 
+                                        start+index), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            self.amk_rgb_matrix["leds"][index] = led
+
+    def apply_rgb_matrix_led(self, index, led):
+        start = self.amk_rgb_matrix["start"]
+        self.amk_rgb_matrix["leds"][index] = led
+        data = self.usb_send(self.dev,
+                            struct.pack("BBB", 
+                                        AMK_PROTOCOL_PREFIX, 
+                                        AMK_PROTOCOL_SET_RGB_MATRIX_LED, 
+                                        start+index) + led.pack(), retries=20)
+    
+    def apply_rgb_matrix_mode(self, index, mode):
+        data = self.usb_send(self.dev,
+                            struct.pack("BBBB", 
+                                        AMK_PROTOCOL_PREFIX, 
+                                        AMK_PROTOCOL_SET_RGB_MATRIX_MODE, 
+                                        index,
+                                        mode), retries=20)
+    
+    def get_rgb_matrix_led_index(self, row, col):
+        index = self.amk_rgb_matrix["data"].get((row, col)) - self.amk_rgb_matrix["start"]
+        if index is None:
+            print("get led index at row: {}, col: {}".format(row, col))
+            return None
+        if index >= len(self.amk_rgb_matrix["leds"]):
+            return None
+
+        return index
+
+    def get_rgb_matrix_led(self, row, col):
+        index = self.get_rgb_matrix_led_index(row, col)
+        if index is None:
+            return None
+
+        return self.amk_rgb_matrix["leds"][index]
+

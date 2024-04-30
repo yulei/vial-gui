@@ -155,6 +155,12 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             for anim in self.definition["animation"]:
                 self.animations["format"].append({"name":anim["name"], "mode":anim["mode"], "suffix":anim["suffix"]})
             self.reload_anim_file_list()
+        
+        self.amk_rgb_matrix = {}
+        if "amk_rgb_matrix" in self.definition:
+            self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
+            self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]
+            self.reload_amk_rgb_matrix()
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """
