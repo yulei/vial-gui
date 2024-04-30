@@ -746,7 +746,11 @@ class ProtocolAmk(BaseProtocol):
                         if data[3+d] == 0:
                             index = d
                             break
-                    name = data[3:3+index].decode("utf-8")
+                    try:
+                        name = data[3:3+index].decode("utf-8")
+                    except:
+                        name = data[3:3+index].decode("gbk")
+
                     size, = struct.unpack("<I", data[16:20])
                     self.animations["file"].append({"name":name.split("\0")[0], "size":size})
                 else:
