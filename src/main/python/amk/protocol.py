@@ -4,6 +4,10 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
+import libusb_package
+import usb.core
+import usb.backend.libusb1
+
 AMK_VERSION = "0.6.1"
 
 AMK_PROTOCOL_PREFIX = 0xFD
@@ -756,6 +760,58 @@ class ProtocolAmk(BaseProtocol):
                 else:
                     print("failed to get file at index: ", i)
     
+    def fast_init(self):
+        if self.dev is None:
+            print("hid device not initialized")
+            return 
+        be = usb.backend.libusb1.get_backend(find_library=libusb_package.find_library)
+        self.fastdev = usb.core.find(backend=be, idVendor=self.dev["vendor_id"], idProduct=self.dev["product_id"])
+        if self.fastdev is None:
+            print("can't find dev")
+
+    def fastopen_anim_file(self, name, read, index=0xFF):
+        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, index, 1 if read else 0) + bytearray(name, "utf-8")
+        self.fastdev.write(4, data)
+        data = self.fastdev.read(0x84, 64)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Open file at index:", data[3])
+            return data[3]
+        else:
+            #print("Failed to open file: ", name)
+            return 0xFF
+    
+    def fastwrite_anim_file(self, index, data, offset):
+        data = struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, len(data), offset) + data
+        self.fastdev.write(4, data)
+        data = self.fastdev.read(0x84, 64)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Write file at index:{}, size:{}".format(index, len(data)))
+            return True
+        else:
+            #print("Failed to write file: index=", index)
+            return False
+    
+    def fastread_anim_file(self, index, offset, size):
+        data = struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_READ_FILE, index, size, offset)
+        self.fastdev.write(4, data)
+        data = self.fastdev.read(0x84, 64)
+        if data[2] == AMK_PROTOCOL_OK:
+            size = data[3]
+            return data[8:8+size] 
+        else:
+            return None
+
+    def fastclose_anim_file(self, index):
+        data = struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_CLOSE_FILE, index)
+        self.fastdev.write(4, data)
+        data = self.fastdev.read(0x84, 64)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Close file at index:", index)
+            return True
+        else:
+            #print("Failed to close file: index=", index)
+            return False
+
     def open_anim_file(self, name, read, index=0xFF):
         data = self.usb_send(self.dev, 
                             struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, index, 1 if read else 0) + bytearray(name, "utf-8"),

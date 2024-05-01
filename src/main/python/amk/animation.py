@@ -68,6 +68,9 @@ DOWNLOAD_BTN_CONVERTING = "Converting 正在转换"
 DOWNLOAD_BTN_UPLOAD = "Uploading 正在上传"
 DOWNLOAD_BTN_NORMAL = "Upload to keyboard 上传到键盘"
 
+FASTDOWNLOAD_BTN_UPLOAD = "Fast Uploading 正在上传"
+FASTDOWNLOAD_BTN_NORMAL = "Fast Upload to keyboard 上传到键盘"
+
 COPY_BTN_DOWNLOAD = "Downloading 正在下载"
 COPY_BTN_NORMAL = "Download 下载"
 
@@ -342,6 +345,54 @@ class TaskThread(QThread):
             self.animation.keyboard.close_anim_file(index)
         self.notifyDone.emit(True)
     
+    def fastdownload_task(self):
+        if self.mode is None:
+            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
+            self.notifyDone.emit(False)
+            return
+
+        frames = self.animation.extract_frames(self.file, self.mode)
+        total = len(frames)
+        if total == 0:
+            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
+            self.notifyDone.emit(False)
+            return
+
+        #pack file header
+        data = pack_anim_header(self.mode["width"], self.mode["height"], self.mode["magic"], total)
+        #pack frame durations
+        for i in range(total):
+            data = data + struct.pack("<H", frames[i]["delay"])
+        #pack frame data
+        progress = 0
+        for i in range(total):
+            data = data + frames[i]["data"]
+            if int(i*100/total) > progress:
+                progress = int(i*100/total)
+                self.notifyProgress.emit(progress)
+        
+        self.notifyConvert.emit()
+
+        index = self.animation.keyboard.fastopen_anim_file(self.name, False)
+        if index != 0xFF:
+            total = len(data) 
+            progress = 0
+            remain = total
+            cur = 0
+            while remain > 0:
+                size = 56 if remain > 56 else remain
+                if self.animation.keyboard.fastwrite_anim_file(index, data[cur:cur+size], cur):
+                    remain = remain - size
+                    cur = cur + size
+                else:
+                    break
+                if int((total-remain)*100/ total) > progress:
+                    progress = int((total-remain)*100/total) 
+                    self.notifyProgress.emit(progress)
+
+            self.animation.keyboard.fastclose_anim_file(index)
+        self.notifyDone.emit(True)
+
     def upload_task(self):
         index = self.animation.keyboard.open_anim_file(self.name, True, self.index)
         total = self.file_size
@@ -371,6 +422,8 @@ class TaskThread(QThread):
             self.upload_task()
         elif self.operation == "download":
             self.download_task()
+        elif self.operation == "fastdownload":
+            self.fastdownload_task()
         elif self.operation == "convert":
             self.convert_task()
         else:
@@ -430,6 +483,10 @@ class Animation(BasicEditor):
         self.download_btn.setEnabled(False)
         self.download_btn.clicked.connect(self.on_download_btn_clicked)
         lyt.addWidget(self.download_btn)
+        self.fastdownload_btn = QPushButton(FASTDOWNLOAD_BTN_NORMAL)
+        self.fastdownload_btn.setEnabled(True)
+        self.fastdownload_btn.clicked.connect(self.on_fastdownload_btn_clicked)
+        lyt.addWidget(self.fastdownload_btn)
         lyt.addStretch(1)
 
         u_lyt.addLayout(lyt)
@@ -504,6 +561,7 @@ class Animation(BasicEditor):
         if self.valid():
             self.keyboard = device.keyboard
             self.rebuild_ui()
+            self.keyboard.fast_init()
 
     def valid(self):
         import sys
@@ -593,7 +651,7 @@ class Animation(BasicEditor):
             return
 
         if len(self.current_file) == 0:
-            QMessageBox.information(None, "", "Please select file to download 请先选择需要下载到键盘的文件")
+            QMessageBox.information(None, "", "Please select file to upload 请先选择需要上传到键盘的文件")
             return
         
         if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
@@ -604,6 +662,29 @@ class Animation(BasicEditor):
         self.worker.set_param(self, self.current_file, format["mode"], name)
         self.download_btn.setText(DOWNLOAD_BTN_CONVERTING)
         self.download_btn.setEnabled(False)
+        self.copy_btn.setEnabled(False)
+        self.convert_btn.setEnabled(False)
+        self.keyboard.display_anim_file(False)
+        self.worker.start()
+
+    def on_fastdownload_btn_clicked(self):
+        format = self.name_to_format(self.download_cbx.currentText())
+        if format is None:
+            QMessageBox.information(None, "", "Please select format 请选择正确的文件格式")
+            return
+
+        if len(self.current_file) == 0:
+            QMessageBox.information(None, "", "Please select file to upload 请先选择需要上传到键盘的文件")
+            return
+        
+        if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
+            QMessageBox.information(None, "", "Not enough space on disk for this file 键盘空间不足")
+            return
+
+        name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
+        self.worker.set_param(self, self.current_file, format["mode"], name, "fastdownload")
+        self.fastdownload_btn.setText(DOWNLOAD_BTN_CONVERTING)
+        self.fastdownload_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
         self.convert_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
