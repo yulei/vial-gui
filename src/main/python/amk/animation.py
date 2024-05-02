@@ -11,6 +11,8 @@ from vial_device import VialKeyboard
 import struct
 from pathlib import Path
 
+from amk.protocol import AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE
+
 ANIM_WIDTH = 80
 ANIM_HEIGHT = 80
 
@@ -373,6 +375,7 @@ class TaskThread(QThread):
         
         self.notifyConvert.emit()
 
+        count = int(2048/64)
         index = self.animation.keyboard.fastopen_anim_file(self.name, False)
         if index != 0xFF:
             total = len(data) 
@@ -380,12 +383,19 @@ class TaskThread(QThread):
             remain = total
             cur = 0
             while remain > 0:
-                size = 56 if remain > 56 else remain
-                if self.animation.keyboard.fastwrite_anim_file(index, data[cur:cur+size], cur):
+                num = count
+                packet_data = bytearray() 
+                while num > 0:
+                    size = 56 if remain > 56 else remain
+                    packet_data = packet_data + struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, size, cur) + data[cur:cur+size]
                     remain = remain - size
                     cur = cur + size
-                else:
+                    num = num - 1
+                    if remain == 0:
+                        break
+                if self.animation.keyboard.fastwrite_anim_file_vendor(packet_data) is not True:
                     break
+
                 if int((total-remain)*100/ total) > progress:
                     progress = int((total-remain)*100/total) 
                     self.notifyProgress.emit(progress)
@@ -484,7 +494,7 @@ class Animation(BasicEditor):
         self.download_btn.clicked.connect(self.on_download_btn_clicked)
         lyt.addWidget(self.download_btn)
         self.fastdownload_btn = QPushButton(FASTDOWNLOAD_BTN_NORMAL)
-        self.fastdownload_btn.setEnabled(True)
+        self.fastdownload_btn.setEnabled(False)
         self.fastdownload_btn.clicked.connect(self.on_fastdownload_btn_clicked)
         lyt.addWidget(self.fastdownload_btn)
         lyt.addStretch(1)
@@ -545,9 +555,11 @@ class Animation(BasicEditor):
                 self.download_cbx.addItem(f["name"])
             self.refresh_btn.setEnabled(True)
             self.download_btn.setEnabled(True)
+            self.fastdownload_btn.setEnabled(True)
         else:
             self.refresh_btn.setEnabled(False)
             self.download_btn.setEnabled(False)
+            self.fastdownload_btn.setEnabled(False)
         
         if len(self.keyboard.animations["file"]) > 0:
             for f in self.keyboard.animations["file"]:
@@ -561,7 +573,7 @@ class Animation(BasicEditor):
         if self.valid():
             self.keyboard = device.keyboard
             self.rebuild_ui()
-            self.keyboard.fast_init()
+            self.keyboard.fast_init(device)
 
     def valid(self):
         import sys
@@ -604,12 +616,15 @@ class Animation(BasicEditor):
 
     def on_task_convert(self):
         self.download_btn.setText(DOWNLOAD_BTN_UPLOAD)
+        self.fastdownload_btn.setText(FASTDOWNLOAD_BTN_UPLOAD)
         self.download_bar.setValue(0)
 
     def on_task_done(self, refresh):
         self.keyboard.display_anim_file(True)
         self.download_btn.setText(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(True)
+        self.fastdownload_btn.setText(FASTDOWNLOAD_BTN_NORMAL)
+        self.fastdownload_btn.setEnabled(True)
         self.copy_btn.setText(COPY_BTN_NORMAL)
         self.copy_btn.setEnabled(True)
         self.convert_btn.setText(CONVERT_BTN_NORMAL)
@@ -617,8 +632,8 @@ class Animation(BasicEditor):
         if self.file_lst.currentItem() is not None:
             self.copy_btn.setEnabled(True)
             self.delete_btn.setEnabled(True)
-        if refresh:
-            self.on_refresh_btn_clicked()
+        #if refresh:
+        #    self.on_refresh_btn_clicked()
 
     def is_space_available(self, frame_size):
         frame = 1
@@ -640,8 +655,10 @@ class Animation(BasicEditor):
             free_space = self.keyboard.animations["disk"].get("free_space")
 
         if free_space is None:
+            print("don't get free space")
             return False
 
+        print("Free sapce:{}, File size:{}".format(free_space, total))
         return free_space > total
     
     def on_download_btn_clicked(self):
@@ -662,9 +679,11 @@ class Animation(BasicEditor):
         self.worker.set_param(self, self.current_file, format["mode"], name)
         self.download_btn.setText(DOWNLOAD_BTN_CONVERTING)
         self.download_btn.setEnabled(False)
+        self.fastdownload_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
         self.convert_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
+        self.download_bar.setValue(0)
         self.worker.start()
 
     def on_fastdownload_btn_clicked(self):
@@ -685,10 +704,13 @@ class Animation(BasicEditor):
         self.worker.set_param(self, self.current_file, format["mode"], name, "fastdownload")
         self.fastdownload_btn.setText(DOWNLOAD_BTN_CONVERTING)
         self.fastdownload_btn.setEnabled(False)
+        self.download_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
         self.convert_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
+        self.download_bar.setValue(0)
         self.worker.start()
+        
 
     def on_delete_btn_clicked(self):
         if self.file_lst.count() == 0:
@@ -732,10 +754,12 @@ class Animation(BasicEditor):
         self.worker.set_param(self, dst_file, None, full_name, "upload", self.file_lst.currentRow(), file_size)
         self.copy_btn.setText(COPY_BTN_DOWNLOAD)
         self.copy_btn.setEnabled(False)
+        self.fastdownload_btn.setEnabled(False)
         self.download_btn.setEnabled(False)
         self.convert_btn.setEnabled(False)
         self.delete_btn.setEnabled(False)
         self.keyboard.display_anim_file(False)
+        self.download_bar.setValue(0)
         self.worker.start()
 
     def update_animation_display(self):
@@ -797,6 +821,7 @@ class Animation(BasicEditor):
                 dst_file, _ = QFileDialog.getSaveFileName(None, "Save File", "", format["filter"])
                 if dst_file:
                     self.worker.set_param(self, self.current_file, format["mode"], dst_file, "convert")
+                    self.fastdownload_btn.setEnabled(False)
                     self.download_btn.setEnabled(False)
                     self.copy_btn.setEnabled(False)
                     self.convert_btn.setText(CONVERT_BTN_CONVERT)
