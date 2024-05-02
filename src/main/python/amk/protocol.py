@@ -4,11 +4,14 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-import libusb_package
-import usb.core
-import usb.backend.libusb1
+import sys
 
-AMK_VERSION = "0.6.1"
+if sys.platform != "emscripten":
+    import libusb_package
+    import usb.core
+    import usb.backend.libusb1
+
+AMK_VERSION = "0.7.1"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
