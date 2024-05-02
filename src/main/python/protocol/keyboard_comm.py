@@ -154,9 +154,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         if "animation" in self.definition:
             for anim in self.definition["animation"]["format"]:
                 self.animations["format"].append({"name":anim["name"], "mode":anim["mode"], "suffix":anim["suffix"]})
-            transfer = self.definitions["animation"].get("transfer")
+            transfer = self.definition["animation"].get("transfer")
             if transfer is not None:
-                self.animations["transfer"] = "transfer"
+                self.animations["transfer"] = transfer
 
             self.reload_anim_file_list()
         

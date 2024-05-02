@@ -805,13 +805,6 @@ class ProtocolAmk(BaseProtocol):
     def fastwrite_anim_file_vendor(self, data):
         self.fastdev.write(4, data)
         return True
-        data = self.fastdev.read(0x84, 64)
-        if data[2] == AMK_PROTOCOL_OK:
-            #print("Write file at index:{}, size:{}".format(index, len(data)))
-            return True
-        else:
-            #print("Failed to write file: index=", index)
-            return False
 
     def fastread_anim_file(self, index, offset, size):
         data = struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_READ_FILE, index, size, offset)
