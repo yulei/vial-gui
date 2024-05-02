@@ -70,14 +70,23 @@ DOWNLOAD_BTN_CONVERTING = "Converting 正在转换"
 DOWNLOAD_BTN_UPLOAD = "Uploading 正在上传"
 DOWNLOAD_BTN_NORMAL = "Upload to keyboard 上传到键盘"
 
-FASTDOWNLOAD_BTN_UPLOAD = "Fast Uploading 正在上传"
-FASTDOWNLOAD_BTN_NORMAL = "Fast Upload to keyboard 上传到键盘"
+FASTDOWNLOAD_BTN_UPLOAD = "Quick uploading 正在上传"
+FASTDOWNLOAD_BTN_NORMAL = "Quick upload to keyboard 上传到键盘"
 
 COPY_BTN_DOWNLOAD = "Downloading 正在下载"
 COPY_BTN_NORMAL = "Download 下载"
 
 CONVERT_BTN_CONVERT = "Converting 正在转换"
 CONVERT_BTN_NORMAL = "Convert&&Save 转换保存"
+
+CONVERT_MSG_UNSUPPORTED = "Unsupported format 不支持的格式"
+CONVERT_MSG_FAILURE = "Failed to convert animation file 转换失败"
+
+SELECT_MSG_FORMAT = "Please select format 请选择正确的文件格式"
+SELECT_MSG_FILE = "Please select file 请先选择需要处理的文件"
+SELECT_MSG_FILE_FALURE = "Unsupport file 不支持的文件"
+
+DISK_MSG_OOM = "Not enough space on disk for this file 键盘空间不足"
 
 def convert_frame(image, dst_width, dst_height, file_name):
     image_width = image.rect().width()
@@ -269,14 +278,14 @@ class TaskThread(QThread):
     
     def convert_task(self):
         if self.mode is None:
-            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
+            QMessageBox.information(None, "", CONVERT_MSG_UNSUPPORTED)
             self.notifyDone.emit(False)
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
-            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
+            QMessageBox.information(None, "", CONVERT_MSG_FAILURE)
             self.notifyDone.emit(False)
             return
 
@@ -301,14 +310,14 @@ class TaskThread(QThread):
 
     def download_task(self):
         if self.mode is None:
-            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
+            QMessageBox.information(None, "", CONVERT_MSG_UNSUPPORTED)
             self.notifyDone.emit(False)
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
-            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
+            QMessageBox.information(None, "", CONVERT_MSG_FAILURE)
             self.notifyDone.emit(False)
             return
 
@@ -349,14 +358,14 @@ class TaskThread(QThread):
     
     def fastdownload_task(self):
         if self.mode is None:
-            QMessageBox.information(None, "", "Unsupported format 不支持的格式")
+            QMessageBox.information(None, "", CONVERT_MSG_UNSUPPORTED)
             self.notifyDone.emit(False)
             return
 
         frames = self.animation.extract_frames(self.file, self.mode)
         total = len(frames)
         if total == 0:
-            QMessageBox.information(None, "", "Failed to convert animation file 转换失败")
+            QMessageBox.information(None, "", CONVERT_MSG_FAILURE)
             self.notifyDone.emit(False)
             return
 
@@ -573,7 +582,10 @@ class Animation(BasicEditor):
         if self.valid():
             self.keyboard = device.keyboard
             self.rebuild_ui()
-            self.keyboard.fast_init(device)
+            if self.keyboard.animations["transfer"] == "fast":
+                self.keyboard.fast_init(device)
+            else:
+                self.fastdownload_btn.hide()
 
     def valid(self):
         import sys
@@ -664,15 +676,15 @@ class Animation(BasicEditor):
     def on_download_btn_clicked(self):
         format = self.name_to_format(self.download_cbx.currentText())
         if format is None:
-            QMessageBox.information(None, "", "Please select format 请选择正确的文件格式")
+            QMessageBox.information(None, "", SELECT_MSG_FORMAT)
             return
 
         if len(self.current_file) == 0:
-            QMessageBox.information(None, "", "Please select file to upload 请先选择需要上传到键盘的文件")
+            QMessageBox.information(None, "", SELECT_MSG_FILE)
             return
         
         if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
-            QMessageBox.information(None, "", "Not enough space on disk for this file 键盘空间不足")
+            QMessageBox.information(None, "", DISK_MSG_OOM)
             return
 
         name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
@@ -689,15 +701,15 @@ class Animation(BasicEditor):
     def on_fastdownload_btn_clicked(self):
         format = self.name_to_format(self.download_cbx.currentText())
         if format is None:
-            QMessageBox.information(None, "", "Please select format 请选择正确的文件格式")
+            QMessageBox.information(None, "", SELECT_MSG_FORMAT)
             return
 
         if len(self.current_file) == 0:
-            QMessageBox.information(None, "", "Please select file to upload 请先选择需要上传到键盘的文件")
+            QMessageBox.information(None, "", SELECT_MSG_FILE)
             return
         
         if self.is_space_available(ANIM_MODES[format["mode"]]["size"]) == False:
-            QMessageBox.information(None, "", "Not enough space on disk for this file 键盘空间不足")
+            QMessageBox.information(None, "", DISK_MSG_OOM)
             return
 
         name = self.generate_filename(Path(self.current_file).stem).upper() + format["suffix"].upper()
@@ -734,7 +746,7 @@ class Animation(BasicEditor):
     def on_copy_btn_clicked(self):
         file_item = self.file_lst.currentItem()
         if file_item is None:
-            QMessageBox.information(None, "", "Please select a file 请先选择动画文件")
+            QMessageBox.information(None, "", SELECT_MSG_FILE)
             return
         full_name = file_item.text()
         suffix = Path(full_name).suffix.upper()
@@ -748,7 +760,7 @@ class Animation(BasicEditor):
                 break
 
         if file_size == 0:
-            QMessageBox.information(None, "File Error", "The select file length was ZERO 文件错误")
+            QMessageBox.information(None, "File Error", SELECT_MSG_FILE_FALURE)
             return
 
         self.worker.set_param(self, dst_file, None, full_name, "upload", self.file_lst.currentRow(), file_size)

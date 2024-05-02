@@ -150,10 +150,14 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_rgb_indicators()
 
         #animation
-        self.animations = {"format":[], "file":{}, "disk":{}}
+        self.animations = {"format":[], "file":{}, "disk":{}, "transfer":""}
         if "animation" in self.definition:
-            for anim in self.definition["animation"]:
+            for anim in self.definition["animation"]["format"]:
                 self.animations["format"].append({"name":anim["name"], "mode":anim["mode"], "suffix":anim["suffix"]})
+            transfer = self.definitions["animation"].get("transfer")
+            if transfer is not None:
+                self.animations["transfer"] = "transfer"
+
             self.reload_anim_file_list()
         
         self.amk_rgb_matrix = {}
