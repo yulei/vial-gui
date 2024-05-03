@@ -743,7 +743,7 @@ class ProtocolAmk(BaseProtocol):
             total_file, free_space, total_space = struct.unpack("<BII", data[3:12])
             self.animations["disk"] = {"total_file":total_file, "free_space":free_space, "total_space":total_space}
             self.animations["file"] = []
-            print("total file: {}, free space: {}, total space: {}".format(total_file, free_space, total_space))
+            #print("total file: {}, free space: {}, total space: {}".format(total_file, free_space, total_space))
             for i in range(total_file):
                 data = self.usb_send(self.dev, 
                                     struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_FILE_INFO, i), 
@@ -769,13 +769,15 @@ class ProtocolAmk(BaseProtocol):
     def fast_init(self, keyboard):
         if keyboard is None:
             print("hid device not initialized")
-            return 
+            return False
         be = usb.backend.libusb1.get_backend(find_library=libusb_package.find_library)
         self.fastdev = usb.core.find(backend=be, idVendor=keyboard.desc["vendor_id"], idProduct=keyboard.desc["product_id"])
         if self.fastdev is None:
-            print("can't find dev")
-        else:
-            print(self.fastdev)
+            return False
+        return True
+
+    def fast_available(self):
+        return self.fastdev is not None
 
     def fastopen_anim_file(self, name, read, index=0xFF):
         data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_OPEN_FILE, index, 1 if read else 0) + bytearray(name, "utf-8")
@@ -783,12 +785,11 @@ class ProtocolAmk(BaseProtocol):
 
         self.fastdev.write(4, data)
         data = self.fastdev.read(0x84, 64)
-        print(data)
         if data[2] == AMK_PROTOCOL_OK:
-            print("Open file at index:", data[3])
+            #print("Open file at index:", data[3])
             return data[3]
         else:
-            print("Failed to open file: ", name)
+            #print("Failed to open file: ", name)
             return 0xFF
     
     def fastwrite_anim_file(self, index, data, offset):
@@ -904,7 +905,7 @@ class ProtocolAmk(BaseProtocol):
                 self.amk_rgb_matrix["mode"]["custom"] = data[4]
                 self.amk_rgb_matrix["mode"]["total"] = data[5]
                 self.amk_rgb_matrix["mode"]["default"] = data[6]
-                print("RGB Matrix: current={}, custom={}, total={}, default={}".format(data[3], data[4], data[5], data[6]))
+                #print("RGB Matrix: current={}, custom={}, total={}, default={}".format(data[3], data[4], data[5], data[6]))
 
             self.amk_rgb_matrix["data"] = {}
             for i in range(self.rows):
@@ -950,7 +951,7 @@ class ProtocolAmk(BaseProtocol):
     def get_rgb_matrix_led_index(self, row, col):
         index = self.amk_rgb_matrix["data"].get((row, col)) - self.amk_rgb_matrix["start"]
         if index is None:
-            print("get led index at row: {}, col: {}".format(row, col))
+            #print("get led index at row: {}, col: {}".format(row, col))
             return None
         if index >= len(self.amk_rgb_matrix["leds"]):
             return None

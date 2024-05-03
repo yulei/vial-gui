@@ -68,10 +68,10 @@ FILE_FILTER_AMK="Converted Files (*.anm *.sml *.bkg *.crs *.sts)"
 
 DOWNLOAD_BTN_CONVERTING = "Converting 正在转换"
 DOWNLOAD_BTN_UPLOAD = "Uploading 正在上传"
-DOWNLOAD_BTN_NORMAL = "Upload to keyboard 上传到键盘"
+DOWNLOAD_BTN_NORMAL = "Upload to keyboard (Standard Mode) 上传到键盘（标准模式）"
 
-FASTDOWNLOAD_BTN_UPLOAD = "Quick uploading 正在上传"
-FASTDOWNLOAD_BTN_NORMAL = "Quick upload to keyboard 上传到键盘"
+FASTDOWNLOAD_BTN_UPLOAD = "Uploading 正在上传"
+FASTDOWNLOAD_BTN_NORMAL = "Upload to keyboard (Advance Mode) 上传到键盘（高级模式）"
 
 COPY_BTN_DOWNLOAD = "Downloading 正在下载"
 COPY_BTN_NORMAL = "Download 下载"
@@ -583,7 +583,8 @@ class Animation(BasicEditor):
             self.keyboard = device.keyboard
             self.rebuild_ui()
             if self.keyboard.animations["transfer"] == "fast":
-                self.keyboard.fast_init(device)
+                if not self.keyboard.fast_init(device):
+                    self.fastdownload_btn.setEnabled(False)
             else:
                 self.fastdownload_btn.hide()
 
@@ -636,7 +637,8 @@ class Animation(BasicEditor):
         self.download_btn.setText(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(True)
         self.fastdownload_btn.setText(FASTDOWNLOAD_BTN_NORMAL)
-        self.fastdownload_btn.setEnabled(True)
+        if self.keyboard.fast_available():
+            self.fastdownload_btn.setEnabled(True)
         self.copy_btn.setText(COPY_BTN_NORMAL)
         self.copy_btn.setEnabled(True)
         self.convert_btn.setText(CONVERT_BTN_NORMAL)
@@ -667,10 +669,10 @@ class Animation(BasicEditor):
             free_space = self.keyboard.animations["disk"].get("free_space")
 
         if free_space is None:
-            print("don't get free space")
+            #print("don't get free space")
             return False
 
-        print("Free sapce:{}, File size:{}".format(free_space, total))
+        #print("Free sapce:{}, File size:{}".format(free_space, total))
         return free_space > total
     
     def on_download_btn_clicked(self):

@@ -405,7 +405,7 @@ class Misc(BasicEditor):
             pole = kbd.get("pole", None)
             if pole is not None:
                 self.keyboard.apply_pole(pole)
-                print("set pole as {}".format(pole))
+                #print("set pole as {}".format(pole))
             nkro = kbd.get("nkro", None)
             if nkro is not None:
                 self.keyboard.apply_nkro(nkro)
