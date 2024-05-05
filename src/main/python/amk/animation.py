@@ -573,6 +573,11 @@ class Animation(BasicEditor):
         if len(self.keyboard.animations["file"]) > 0:
             for f in self.keyboard.animations["file"]:
                 self.file_lst.addItem(f["name"])
+            
+        if len(self.current_file) == 0:
+            self.convert_btn.setEnabled(False)
+            self.download_btn.setEnabled(False)
+            self.fastdownload_btn.setEnabled(False)
 
         self.delete_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
@@ -793,9 +798,12 @@ class Animation(BasicEditor):
     def on_select_btn_clicked(self):
         filters = "{};;{};;{}".format(FILE_FILTER_ANIMATIONS, FILE_FILTER_IMAGES, FILE_FILTER_AMK)
         src_file, filter = QFileDialog.getOpenFileName(None, "Select File", "", filters, FILE_FILTER_ANIMATIONS)
-        if src_file and len(src_file)>0:
+        if src_file and len(src_file) > 0:
             self.current_file = src_file
             self.current_filter = filter
+            self.fastdownload_btn.setEnabled(True)
+            self.download_btn.setEnabled(True)
+            self.convert_btn.setEnabled(True)
 
             if self.current_filter == FILE_FILTER_ANIMATIONS:
                 self.player = QMovie(self.current_file)
@@ -823,26 +831,29 @@ class Animation(BasicEditor):
                     self.player.start()
     
     def on_convert_btn_clicked(self):
-        if self.current_file is not None:
-            name = self.convert_cbx.currentText()
-            filter = None
-            for format in KEYBOARD_FORMATS:
-                if name == format["name"]:
-                    filter = format["filter"]
-                    break
+        if len(self.current_file) == 0:
+            QMessageBox.information(None, "", SELECT_MSG_FILE)
+            return
 
-            if filter is not None:
-                dst_file, _ = QFileDialog.getSaveFileName(None, "Save File", "", format["filter"])
-                if dst_file:
-                    self.worker.set_param(self, self.current_file, format["mode"], dst_file, "convert")
-                    self.fastdownload_btn.setEnabled(False)
-                    self.download_btn.setEnabled(False)
-                    self.copy_btn.setEnabled(False)
-                    self.convert_btn.setText(CONVERT_BTN_CONVERT)
-                    self.convert_btn.setEnabled(False)
-                    self.delete_btn.setEnabled(False)
-                    self.keyboard.display_anim_file(False)
-                    self.worker.start()
+        name = self.convert_cbx.currentText()
+        filter = None
+        for format in KEYBOARD_FORMATS:
+            if name == format["name"]:
+                filter = format["filter"]
+                break
+
+        if filter is not None:
+            dst_file, _ = QFileDialog.getSaveFileName(None, "Save File", "", format["filter"])
+            if dst_file:
+                self.worker.set_param(self, self.current_file, format["mode"], dst_file, "convert")
+                self.fastdownload_btn.setEnabled(False)
+                self.download_btn.setEnabled(False)
+                self.copy_btn.setEnabled(False)
+                self.convert_btn.setText(CONVERT_BTN_CONVERT)
+                self.convert_btn.setEnabled(False)
+                self.delete_btn.setEnabled(False)
+                self.keyboard.display_anim_file(False)
+                self.worker.start()
 
     def extract_frames(self, src, mode):
         frames = []
