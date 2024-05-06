@@ -13,7 +13,7 @@ jobs:
         LD_LIBRARY_PATH: /__w/vial-gui/vial-gui/util/python36/prefix/lib/
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -42,7 +42,7 @@ jobs:
         ./pkg2appimage-*/pkg2appimage misc/Vial.yml
         mv out/Vial-*.AppImage out/Vial-x86_64.AppImage
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: vial-linux
         path: out/Vial-x86_64.AppImage
@@ -54,7 +54,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: 10.9
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Get Python
       run: curl https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-macosx${MACOSX_DEPLOYMENT_TARGET}.pkg -o "python.pkg"
@@ -78,7 +78,7 @@ jobs:
         fbs freeze
         hdiutil create -volname Vial -srcfolder "target/Vial.app" -ov -format UDZO vial-mac.dmg
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: vial-mac
         path: vial-mac.dmg
