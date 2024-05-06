@@ -87,8 +87,8 @@ jobs:
     runs-on: windows-2019
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.6.x'
 
@@ -110,7 +110,7 @@ jobs:
         fbs freeze
         Compress-Archive -Path "target\Vial" -DestinationPath vial-win.zip
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: vial-win
         path: vial-win.zip
@@ -121,7 +121,7 @@ jobs:
         . .\venv\Scripts\activate.ps1
         fbs installer
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: vial-win-installer
         path: target\VialSetup.exe
