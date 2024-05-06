@@ -97,7 +97,14 @@ jobs:
         python -m venv venv
         . .\venv\Scripts\activate.ps1
         pip install -r requirements.txt
-
+    - name: Install VS2012 redis
+      run: |
+        Install-Module -Name VcRedist -Force
+        New-Item -Path C:\Temp\VcRedist -ItemType Directory
+        $VcList = Get-VcList -Release "2012"
+        Save-VcRedist -VcList $VcList -Path C:\Temp\VcRedist
+        Install-VcRedist -Path C:\Temp\VcRedist -VcList $VcList -Silent
+        
     - name: Install NSIS
       run: |
         Invoke-WebRequest "https://github.com/vial-kb/vial-deps/releases/download/v1/nsis-3.06.1-setup.exe" -UserAgent "wget" -OutFile nsis-3.06.1-setup.exe
