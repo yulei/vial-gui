@@ -8,6 +8,7 @@ from editor.basic_editor import BasicEditor
 from util import tr
 from vial_device import VialKeyboard
 
+import sys
 import struct
 from pathlib import Path
 
@@ -385,7 +386,7 @@ class TaskThread(QThread):
         self.notifyConvert.emit()
 
         count = int(2048/64)
-        index = self.animation.keyboard.fastopen_anim_file(self.name, False)
+        index = self.animation.keyboard.fastopen_anim_file(self.animation.fastdev, self.name, False)
         if index != 0xFF:
             total = len(data) 
             progress = 0
@@ -402,14 +403,14 @@ class TaskThread(QThread):
                     num = num - 1
                     if remain == 0:
                         break
-                if self.animation.keyboard.fastwrite_anim_file_vendor(packet_data) is not True:
+                if not self.animation.keyboard.fastwrite_anim_file_vendor(self.animation.fastdev, packet_data):
                     break
 
                 if int((total-remain)*100/ total) > progress:
                     progress = int((total-remain)*100/total) 
                     self.notifyProgress.emit(progress)
 
-            self.animation.keyboard.fastclose_anim_file(index)
+            self.animation.keyboard.fastclose_anim_file(self.animation.fastdev, index)
         self.notifyDone.emit(True)
 
     def upload_task(self):
@@ -454,6 +455,7 @@ class Animation(BasicEditor):
         self.keyboard = None
         self.current_file = ""
         self.current_filter = ""
+        self.fastdev = None
         self.worker= TaskThread()
         self.worker.notifyProgress.connect(self.on_task_progress)
         self.worker.notifyConvert.connect(self.on_task_convert)
@@ -582,19 +584,47 @@ class Animation(BasicEditor):
         self.delete_btn.setEnabled(False)
         self.copy_btn.setEnabled(False)
 
+    def fastdev_init(self, vid, pid):
+        if sys.platform != "emscripten":
+            import libusb_package
+            import usb.core
+            import usb.util
+            from usb.backend import libusb1
+            if self.fastdev is not None:
+                usb.util.dispose_resources(self.fastdev)
+                self.fastdev = None
+            self.vendor_id = vid 
+            self.product_id = pid 
+            try:
+                be = libusb1.get_backend(find_library=libusb_package.find_library)
+                self.fastdev = usb.core.find(backend=be, idVendor=self.vendor_id, idProduct=self.product_id)
+            except Exception as e:
+                QMessageBox.information(None, "", "Faield to initialize usb device: error={}".format(str(e)))
+                self.fastdev = None
+            else:
+                pass
+                #print(self.fastdev)
+        
+        return self.fastdev_valid()
+            
+    def fastdev_valid(self):
+        return self.fastdev != None
+
     def rebuild(self, device):
         super().rebuild(device)
         if self.valid():
             self.keyboard = device.keyboard
+            self.current_file = ""
+            self.current_filter = ""
             self.rebuild_ui()
             if self.keyboard.animations["transfer"] == "fast":
-                if not self.keyboard.fast_init(device):
+                if not self.fastdev_init(device.desc["vendor_id"], device.desc["product_id"]):
                     self.fastdownload_btn.setEnabled(False)
+                self.fastdownload_btn.show()
             else:
                 self.fastdownload_btn.hide()
 
     def valid(self):
-        import sys
         return (sys.platform != "emscripten") and isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard)
     
@@ -642,7 +672,7 @@ class Animation(BasicEditor):
         self.download_btn.setText(DOWNLOAD_BTN_NORMAL)
         self.download_btn.setEnabled(True)
         self.fastdownload_btn.setText(FASTDOWNLOAD_BTN_NORMAL)
-        if self.keyboard.fast_available():
+        if self.fastdev_valid():
             self.fastdownload_btn.setEnabled(True)
         self.copy_btn.setText(COPY_BTN_NORMAL)
         self.copy_btn.setEnabled(True)
@@ -801,7 +831,8 @@ class Animation(BasicEditor):
         if src_file and len(src_file) > 0:
             self.current_file = src_file
             self.current_filter = filter
-            self.fastdownload_btn.setEnabled(True)
+            if self.fastdev_valid():
+                self.fastdownload_btn.setEnabled(True)
             self.download_btn.setEnabled(True)
             self.convert_btn.setEnabled(True)
 
