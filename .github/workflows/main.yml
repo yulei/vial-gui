@@ -42,7 +42,7 @@ jobs:
         ./pkg2appimage-*/pkg2appimage misc/Vial.yml
         mv out/Vial-*.AppImage out/Vial-x86_64.AppImage
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v3
       with:
         name: vial-linux
         path: out/Vial-x86_64.AppImage
