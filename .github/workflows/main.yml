@@ -92,6 +92,11 @@ jobs:
       with:
         python-version: '3.6.x'
 
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      with:
+        vs-version: '[16.4,16.11)'
+        
     - name: Setup venv
       run: |
         python -m venv venv
