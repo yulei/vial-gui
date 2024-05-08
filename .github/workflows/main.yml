@@ -102,6 +102,10 @@ jobs:
         python -m venv venv
         . .\venv\Scripts\activate.ps1
         pip install -r requirements.txt
+        git clone --recurse-submodules https://github.com/pyocd/libusb-package.git
+        cd libusb-package
+        git checkout v1.0.26.2
+        python setup.py
         
     - name: Install NSIS
       run: |
