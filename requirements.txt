@@ -12,4 +12,4 @@ sip==4.19.8
 pywin32==303; sys_platform == 'win32'
 certifi
 pyusb==1.2.1
-#libusb-package==1.0.26.0
+libusb-package==1.0.26.0
