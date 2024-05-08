@@ -13,4 +13,3 @@ pywin32==303; sys_platform == 'win32'
 certifi
 pyusb==1.2.1
 #libusb-package==1.0.26.0
-git+https://github.com/pyocd/libusb-package.git@v1.0.26.2
