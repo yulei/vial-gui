@@ -176,7 +176,7 @@ class DksCheckBox(QCheckBox):
         return self.index
 
 DKS_TRIGGER_LABELS = [tr("DKS A", "Event point 1:"), tr("DKS B", "Event point 2:"), 
-                tr("DKS C", "Event point 3:"), tr("DKS D", "Event point 3:")]
+                tr("DKS C", "Event point 3:"), tr("DKS D", "Event point 4:")]
 
 DKS_KEY_EVENT_LABELS = [tr("Down Event", "\u21A7"), tr("Up Event", "\u21A5")]
 
