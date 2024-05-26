@@ -22,6 +22,69 @@ RL_EFFECT_WIPE = 7
 RL_EFFECT_SCAN = 7
 RL_EFFECT_CIRCLE = 8
 
+def rgb_to_xyz(red, green, blue):
+    r = red/255.0
+    g = green/255.0
+    b = blue/255.0
+
+    r = pow(((r + 0.055) / 1.055), 2.4) * 100.0 if r > 0.04045 else r / 12.92
+    g = pow(((g + 0.055) / 1.055), 2.4) * 100.0 if g > 0.04045 else g / 12.92
+    b = pow(((b + 0.055) / 1.055), 2.4) * 100.0 if b > 0.04045 else b / 12.92
+
+    x = r * 0.4124 + g * 0.3576 + b * 0.1805
+    y = r * 0.2126 + g * 0.7152 + b * 0.0722
+    z = r * 0.0193 + g * 0.1192 + b * 0.9505
+
+    return (x,y,z)
+
+def xyz_to_xy(x, y, z):
+    res_x = x / (x+y+z)
+    res_y = y / (x+y+z)
+    return (res_x, res_y)
+
+def xy_to_pwm(x, y):
+    x_r = 0.69
+    y_r = 0.31
+    mcd_r = 50
+
+    x_g = 0.19
+    y_g = 0.61
+    mcd_g = 150
+
+    x_b = 0.153
+    y_b = 0.0278
+    mcd_b = 50
+
+    y_m = 50
+
+    d_r = ((y_g-y_b)*(x_b-x)+(y-y_b)*(x_g-x_b)) / ((y_g-y_b)*(x_b-x_r)+(y_r-y_b)*(x_g-x_b)) *(y_r*y_m) / (y*mcd_r)
+    d_g = ((y_b-y_r)*(x_r-x)+(y-y_r)*(x_b-x_r)) / ((y_b-y_r)*(x_r-x_g)+(y_g-y_r)*(x_b-x_r)) *(y_g*y_m) / (y*mcd_g)
+    d_b = ((y_g-y_r)*(x_r-x)+(y-y_r)*(x_g-x_r)) / ((y_g-y_r)*(x_r-x_b)+(y_b-y_r)*(x_g-x_r)) *(y_b*y_m) / (y*mcd_b)
+
+    max_d = max([d_r,d_g,d_b])
+
+    d_r = int(255*(abs(d_r/max_d)))
+    d_g = int(255*(abs(d_g/max_d)))
+    d_b = int(255*(abs(d_b/max_d)))
+
+    return (d_r, d_g, d_b)
+
+def adjust_color(color):
+    r,g,b,_ = color.getRgb()
+
+    x,y,z = rgb_to_xyz(r, g, b)
+
+    x_x, y_y = xyz_to_xy(x, y, z)
+
+    p_r, p_g, p_b = xy_to_pwm(x_x, y_y)
+
+    color.setRgb(p_r, p_g, p_b)
+
+    #print(r, g, b)
+    #print(p_r, p_g, p_b)
+
+    return color
+
 class RgbButton(QPushButton):
 
     def __init__(self, strip, index, parent=None):
@@ -271,6 +334,9 @@ class RgbStrip(BasicEditor):
         if not color.isValid():
             return
 
+        
+        color = adjust_color(color)
+
         h, s, v, a = color.getHsvF()
         if h < 0:
             h = 0
@@ -388,6 +454,8 @@ class RgbStrip(BasicEditor):
         if not color.isValid():
             return
 
+        color = adjust_color(color)
+        
         h, s, v, a = color.getHsvF()
         if h < 0:
             h = 0

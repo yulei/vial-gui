@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         self.matrix_tester = MatrixTest(self.layout_editor)
         self.rgb_configurator = RGBConfigurator()
         self.apc_rt = ApcRt(self.layout_editor)
-        self.dks = Dks(self.layout_editor)
+        self.dks = Dks(self.layout_editor, appctx)
         self.misc = Misc()
         self.rgb_strip = RgbStrip()
         self.animation = Animation()

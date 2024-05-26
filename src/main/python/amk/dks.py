@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QLabel, QCheckBox, QMessageBox
 from PyQt5.QtCore import QSize, Qt, QRect
-from PyQt5.QtGui import QPalette, QPainter, QBrush
+from PyQt5.QtGui import QPalette, QPainter, QBrush, QPixmap, QImage
 from PyQt5.QtWidgets import QApplication
 
 from themes import Theme
@@ -182,7 +182,7 @@ DKS_KEY_EVENT_LABELS = [tr("Down Event", "\u21A7"), tr("Up Event", "\u21A5")]
 
 class Dks(BasicEditor):
 
-    def __init__(self, layout_editor):
+    def __init__(self, layout_editor, appctx):
         super().__init__()
 
         self.layout_editor = layout_editor
@@ -190,6 +190,12 @@ class Dks(BasicEditor):
         self.active_dks = None
         self.dks_btns = []
         self.dks_ckbs = []
+
+        self.dks_lbl = QLabel()
+        self.dks_img = QImage(appctx.get_resource("dks.png"))
+        pixmap = QPixmap.fromImage(self.dks_img)
+        pixmap = pixmap.scaled(400, 400, aspectRatioMode=Qt.KeepAspectRatio)
+        self.dks_lbl.setPixmap(pixmap)
 
         g_layout = QGridLayout()
         index = 0
@@ -240,9 +246,13 @@ class Dks(BasicEditor):
         v_layout.setAlignment(h_layout, Qt.AlignRight)
         v_layout.addStretch(1)
 
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(self.dks_lbl)
+        h_layout.addLayout(v_layout)
+
         dks_layout = QHBoxLayout()
         dks_layout.addStretch(1)
-        dks_layout.addLayout(v_layout)
+        dks_layout.addLayout(h_layout)
 
         self.keyboardWidget = KeyboardWidget(layout_editor)
         self.keyboardWidget.set_enabled(True)
