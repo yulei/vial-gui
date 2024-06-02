@@ -194,7 +194,7 @@ class Dks(BasicEditor):
         self.dks_lbl = QLabel()
         self.dks_img = QImage(appctx.get_resource("dks.png"))
         pixmap = QPixmap.fromImage(self.dks_img)
-        pixmap = pixmap.scaled(400, 400, aspectRatioMode=Qt.KeepAspectRatio)
+        pixmap = pixmap.scaled(500, 500, aspectRatioMode=Qt.KeepAspectRatio)
         self.dks_lbl.setPixmap(pixmap)
 
         g_layout = QGridLayout()
