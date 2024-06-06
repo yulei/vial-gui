@@ -104,15 +104,24 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         #reload apc/rt/dks/sensitivity
-        if self.keyboard_type == "ms" or self.keyboard_type == "ec":
-            self.amk_apc = dict()
-            self.reload_apc()
-            self.amk_rt = dict()
-            self.reload_rt()
+        if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
+            self.amk_pole = False
+            self.amk_profile = 0
+            self.amk_dks_disable = False
+            self.keyboard_profile = 0
+            self.reload_ms_config()
+
+            self.amk_apc = [dict(), dict(), dict(), dict()]
+            self.amk_rt = [dict(), dict(), dict(), dict()]
+            self.amk_profile_count = 4 if self.keyboard_type == "ms_v2" else 1
+            for i in range(self.amk_profile_count):
+                self.reload_apc(i)
+                self.reload_rt(i)
+            
+            #self.dump_apcrt()
+
             self.amk_dks = dict()
             self.reload_dks()
-            self.amk_pole = False
-            self.reload_pole()
 
             self.amk_rt_sens = 80
             self.reload_rt_sensitivity()

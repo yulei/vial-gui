@@ -24,8 +24,8 @@ AMK_PROTOCOL_GET_UP_DEBOUNCE = 11
 AMK_PROTOCOL_SET_UP_DEBOUNCE = 12
 AMK_PROTOCOL_GET_NKRO = 13
 AMK_PROTOCOL_SET_NKRO = 14
-AMK_PROTOCOL_GET_POLE = 15
-AMK_PROTOCOL_SET_POLE = 16
+AMK_PROTOCOL_GET_MS_CONFIG = 15
+AMK_PROTOCOL_SET_MS_CONFIG = 16
 AMK_PROTOCOL_GET_RT_SENS = 17
 AMK_PROTOCOL_SET_RT_SENS = 18
 AMK_PROTOCOL_GET_TOP_SENS = 19
@@ -427,21 +427,21 @@ class ProtocolAmk(BaseProtocol):
         #print("AMK protocol:", data[2])
         return data[2]
 
-    def reload_apc(self):
+    def reload_apc(self, profile):
         """ Reload APC information from keyboard """
         for row, col in self.rowcol.keys():
             data = self.usb_send(self.dev, 
-                                struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_APC, row, col),
+                                struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_APC, row, col, profile),
                                 retries=20)
             val = struct.unpack(">H", data[3:5])
-            self.amk_apc[(row, col)] = val[0]
-            #print("AMK protocol: APC={}, row={}, col={}".format(val, row, col))
+            self.amk_apc[profile][(row, col)] = val[0]
+            #print("AMK protocol: APC={}, row={}, col={}, profile={}".format(self.amk_apc[profile][(row,col)], row, col, profile))
 
-    def reload_rt(self):
+    def reload_rt(self, profile):
         """ Reload RT information from keyboard """
         for row, col in self.rowcol.keys():
             data = self.usb_send(self.dev, 
-                                struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT, row, col),
+                                struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT, row, col, profile),
                                 retries=20)
             val = struct.unpack(">H", data[3:5])[0]
             cont = True if val & 0x8000 > 0 else False
@@ -449,8 +449,16 @@ class ProtocolAmk(BaseProtocol):
             up = val & 0x003F
             rt = {"cont": cont, "down": down, "up": up}
 
-            self.amk_rt[(row, col)] = rt
-            #print("AMK protocol: RT={}, row={}, col={}".format(val, row, col))
+            self.amk_rt[profile][(row, col)] = rt
+            #print("AMK protocol: RT={}, row={}, col={}, profile={}".format(self.amk_rt[profile][(row, col)], row, col, profile))
+
+    def dump_apcrt(self):
+        for i in range(self.amk_profile_count):
+            for row, col in self.rowcol.keys():
+                print("DUMP APCRT: apc={}, rt={}, row={}, col={}, profile={}".format(self.amk_apc[i][(row,col)],
+                                                                                     self.amk_rt[i][(row,col)],
+                                                                                     row,col,i))
+
 
     def reload_dks(self):
         """ Reload DKS information from keyboard """
@@ -489,10 +497,13 @@ class ProtocolAmk(BaseProtocol):
         self.amk_nkro = True if data[3] > 0 else False
         #print("AMK protocol: NKRO={}, result={}".format(self.amk_nkro, data[2]))
 
-    def reload_pole(self):
-        """ Reload Magnetic pole information from keyboard """
-        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_POLE))
-        self.amk_pole = True if data[3] > 0 else False
+    def reload_ms_config(self):
+        """ Reload Magnetic Switch information from keyboard """
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_MS_CONFIG))
+        self.amk_pole = True if (data[3] & 0x01) > 0 else False
+        #self.amk_profile = (data[3] & 0x06) >> 1
+        self.keyboard_profile = (data[3] & 0x06) >> 1
+        self.amk_dks_disable = True if (data[3] & 0x08) > 0 else False
 
     def reload_rt_sensitivity(self):
         """ Reload RT sensitivity setting from keyboard """
@@ -540,29 +551,29 @@ class ProtocolAmk(BaseProtocol):
         data = self.usb_send(self.dev, data, retries=20)
 
     def apply_apc(self, row, col, val):
-        if self.amk_apc[(row,col)] == val:
+        if self.amk_apc[self.amk_profile][(row,col)] == val:
             return
 
         #print("Update APC at({},{}), old({}), new({})".format(row, col, self.amk_apc[(row,col)], val))
-        self.amk_apc[(row,col)] = val
-        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC, row, col, val)
+        self.amk_apc[self.amk_profile][(row,col)] = val
+        data = struct.pack(">BBBBHB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC, row, col, val, self.amk_profile)
         data = self.usb_send(self.dev, data, retries=20)
 
     def apply_rt(self, row, col, val):
-        if self.amk_rt[(row,col)]["cont"] == val["cont"] and \
-            self.amk_rt[(row,col)]["down"] == val["down"] and \
-            self.amk_rt[(row,col)]["up"] == val["up"]:
+        if self.amk_rt[self.amk_profile][(row,col)]["cont"] == val["cont"] and \
+            self.amk_rt[self.amk_profile][(row,col)]["down"] == val["down"] and \
+            self.amk_rt[self.amk_profile][(row,col)]["up"] == val["up"]:
             return
 
         #print("Update RT at({},{}), old({}), new({})".format(row, col, self.amk_rt[(row,col)], val))
 
-        self.amk_rt[(row,col)]["cont"] = val["cont"] 
-        self.amk_rt[(row,col)]["down"] = val["down"] 
-        self.amk_rt[(row,col)]["up"] = val["up"] 
+        self.amk_rt[self.amk_profile][(row,col)]["cont"] = val["cont"] 
+        self.amk_rt[self.amk_profile][(row,col)]["down"] = val["down"] 
+        self.amk_rt[self.amk_profile][(row,col)]["up"] = val["up"] 
         rt = 0x8000 if val["cont"] else 0
         rt = rt + ((val["down"] & 0x3F) << 6)
         rt = rt + (val["up"] & 0x3F)
-        data = struct.pack(">BBBBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt)
+        data = struct.pack(">BBBBHB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt, self.amk_profile)
 
         data = self.usb_send(self.dev, data, retries=20)
 
@@ -599,13 +610,39 @@ class ProtocolAmk(BaseProtocol):
         self.amk_nkro = val
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_NKRO, val), retries=20)
 
+    def compose_config(self):
+        config = 1 if self.amk_pole else 0
+        config = config + (self.keyboard_profile*2)
+        config = config + (8 if self.amk_dks_disable else 0)
+        #print("Config is:{}, keyboard_profile is:{} ".format(config, self.keyboard_profile))
+        return config
+
     def apply_pole(self, val):
         if self.amk_pole == val:
             return
 
         #print("Update POLE: old({}), new({})".format(self.amk_pole, val))
         self.amk_pole = val
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_POLE, val), retries=20)
+        config = self.compose_config()
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_MS_CONFIG, config), retries=20)
+
+    def apply_profile(self, val):
+        if self.keyboard_profile == val:
+            return
+
+        #print("Update PROFILE: old({}), new({})".format(self.keyboard_profile, val))
+        self.keyboard_profile = val
+        config = self.compose_config()
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_MS_CONFIG, config), retries=20)
+
+    def apply_dks_disable(self, val):
+        if self.amk_dks_disable == val:
+            return
+
+        #print("Update DKS DISABLE: old({}), new({})".format(self.amk_pole, val))
+        self.amk_dks_disable = val
+        config = self.compose_config()
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_MS_CONFIG, config), retries=20)
 
     def apply_rt_sensitivity(self, val):
         if self.amk_rt_sens == val:

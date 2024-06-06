@@ -40,6 +40,26 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.mp_cbb, line, 1)
 
         line = line + 1
+        # apcrt profile setting
+        self.apcrt_lbl = QLabel(tr("APCRT", "Set keyboard's APCRT profile:"))
+        g_layout.addWidget(self.apcrt_lbl, line, 0)
+        self.apcrt_cbb = QComboBox()
+        self.apcrt_cbb.currentIndexChanged.connect(self.on_apcrt_cbb)
+        g_layout.addWidget(self.apcrt_cbb, line, 1)
+
+        line = line + 1
+        # dks state setting
+        self.dks_status_lbl = QLabel(tr("DKS", "Set keyboard's DKS status:"))
+        g_layout.addWidget(self.dks_status_lbl, line, 0)
+        self.dks_lbl = QLabel(tr("DKS State", "ON"))
+        g_layout.addWidget(self.dks_lbl, line, 1, alignment=Qt.AlignCenter)
+        self.dks_cbx = QCheckBox()
+        self.dks_cbx.setTristate(False)
+        self.dks_cbx.setEnabled(True)
+        self.dks_cbx.stateChanged.connect(self.on_dks_cbx)
+        g_layout.addWidget(self.dks_cbx, line, 2)
+
+        line = line + 1
         # nkro setting
         self.nk_lbl = QLabel(tr("NKRO", "Set the keyboard's nkro:"))
         g_layout.addWidget(self.nk_lbl, line, 0)
@@ -245,7 +265,7 @@ class Misc(BasicEditor):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard and \
-               (self.device.keyboard.keyboard_speed == "hs" or self.device.keyboard.keyboard_type == "ms" or self.device.keyboard.keyboard_type == "ec")) and \
+               (self.device.keyboard.keyboard_speed == "hs" or self.device.keyboard.keyboard_type.startswith("ms") or self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_ui(self):
@@ -266,14 +286,37 @@ class Misc(BasicEditor):
             self.pr_lbl.hide()
             self.pr_btn.hide()
 
-        if self.keyboard.keyboard_type == "ms":
+        if self.keyboard.keyboard_type.startswith("ms"):
             self.mp_lbl.show()
             self.mp_cbb.show()
         else:
             self.mp_lbl.hide()
             self.mp_cbb.hide()
 
-        if self.keyboard.keyboard_type == "ms" or self.keyboard.keyboard_type == "ec":
+        if self.keyboard.keyboard_type == "ms_v2":
+            self.apcrt_cbb.blockSignals(True)
+            self.apcrt_cbb.clear()
+            for i in range(self.keyboard.amk_profile_count):
+                self.apcrt_cbb.addItem(str(i))
+            self.apcrt_cbb.blockSignals(False)
+            self.apcrt_lbl.show()
+            self.apcrt_cbb.show()
+
+            self.dks_cbx.blockSignals(True)
+            self.dks_cbx.setCheckState(not self.keyboard.amk_dks_disable)
+            self.dks_lbl.setText("OFF" if self.keyboard.amk_dks_disable else "ON")
+            self.dks_cbx.blockSignals(False)
+            self.dks_status_lbl.show()
+            self.dks_lbl.show()
+            self.dks_cbx.show()
+        else:
+            self.apcrt_lbl.hide()
+            self.apcrt_cbb.hide()
+            self.dks_status_lbl.hide()
+            self.dks_lbl.hide()
+            self.dks_cbx.hide()
+
+        if self.keyboard.keyboard_type.startswith("ms") or self.keyboard.keyboard_type == "ec":
             self.dd_lbl.hide()
             self.dd_sld.hide()
             self.dd_sbx.hide()
@@ -376,6 +419,21 @@ class Misc(BasicEditor):
 
         self.keyboard.apply_debounce(val, False)
 
+    def on_apcrt_cbb(self):
+        #print("apcrt combobox changed")
+        val = self.apcrt_cbb.currentIndex()
+        self.keyboard.apply_profile(val)
+
+    def on_dks_cbx(self):
+        #print("dks checkbox changed")
+        val = True if self.dks_cbx.checkState() == Qt.Checked else False
+        if val:
+            self.dks_lbl.setText("ON")
+        else:
+            self.dks_lbl.setText("OFF")
+
+        self.keyboard.apply_dks_disable(not val)
+
     def on_nk_cbx(self):
         #print("nkro checkbox changed")
         val = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
@@ -402,10 +460,19 @@ class Misc(BasicEditor):
                                             buttons=QMessageBox.Ok,
                                             defaultButton=QMessageBox.Ok)
                 return
+
             pole = kbd.get("pole", None)
             if pole is not None:
                 self.keyboard.apply_pole(pole)
-                #print("set pole as {}".format(pole))
+
+            dks = kbd.get("dks", None)
+            if dks is not None:
+                self.keyboard.apply_dks_disable(dks == 0)
+
+            profile = kbd.get("profile", None)
+            if profile is not None:
+                self.keyboard.apply_profile(profile)
+
             nkro = kbd.get("nkro", None)
             if nkro is not None:
                 self.keyboard.apply_nkro(nkro)
@@ -433,13 +500,14 @@ class Misc(BasicEditor):
                 for key in keys:
                     row = key["row"]
                     col = key["col"]
+                    profile = key.get("profile", 0)
                     apc = key.get("apc", None)
                     if apc is not None:
-                        self.keyboard.apply_apc(row, col, apc)
+                        self.keyboard.apply_apc(row, col, apc, 0)
 
                     rt = key.get("rt", None)
                     if rt is not None:
-                        self.keyboard.apply_rt(row, col, rt)
+                        self.keyboard.apply_rt(row, col, rt, 0)
 
                     dks = key.get("dks", None)
                     if dks is not None:
@@ -460,6 +528,9 @@ class Misc(BasicEditor):
         kbd["type"] = self.keyboard.keyboard_type
         kbd["speed"] = self.keyboard.keyboard_speed
         kbd["pole"] = self.mp_cbb.currentIndex() 
+        if self.keyboard.keyboard_type == "ms_v2":
+            kbd["dks"] = 1 if self.dks_cbx.checkState() == Qt.Checked else 0
+            kbd["profile"] = self.keyboard.keyboard_profile
         kbd["nkro"] = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
         kbd["poll_rate"] = self.pr_cbb.currentIndex()
         kbd["rt_sens"] = self.rt_sld.value()
@@ -470,13 +541,17 @@ class Misc(BasicEditor):
         kbd["keys"] = []
 
         for row, col in self.keyboard.rowcol.keys():
-            key = {}
-            key["row"] = row
-            key["col"] = col
-            key["apc"] = self.keyboard.amk_apc[(row,col)]
-            key["rt"] = self.keyboard.amk_rt[(row,col)]
-            key["dks"] = self.keyboard.amk_dks[(row,col)].save()
-            kbd["keys"].append(key)
+            for profile in range(self.keyboard.amk_profile_count):
+                key = {}
+                key["row"] = row
+                key["col"] = col
+                key["profile"] = profile
+                key["apc"] = self.keyboard.amk_apc[profile][(row,col)]
+                key["rt"] = self.keyboard.amk_rt[profile][(row,col)]
+                if profile == 0:
+                    key["dks"] = self.keyboard.amk_dks[(row,col)].save()
+
+                kbd["keys"].append(key)
         
         with open(export_file, "w", encoding="utf-8") as fp:
             #json.dump(kbd, fp, indent=4)

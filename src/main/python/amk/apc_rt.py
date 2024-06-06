@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout, QPushButton
 from PyQt5.QtCore import Qt
 
 from PyQt5.QtGui import QPalette
@@ -7,10 +7,12 @@ from PyQt5.QtWidgets import QApplication
 
 from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
+from widgets.square_button import SquareButton
 from util import tr
 from vial_device import VialKeyboard
 
 def apc_rt_display(widget, apc, rt):
+    #print("Current APC={}, RT={}".format(apc, rt))
     apc_text = ""
     if rt["cont"]:
         apc_text = "{:.1f}\u2193\u2713".format(apc/10.0)
@@ -38,6 +40,21 @@ class ApcRt(BasicEditor):
     def __init__(self, layout_editor):
         super().__init__()
 
+        h_layout = QHBoxLayout()
+        profile_lbl = QLabel(tr("Profile", "Profiles: "))
+        h_layout.addWidget(profile_lbl)
+        self.profile_btns = []
+        for x in range(4):
+            btn = SquareButton(str(x))
+            btn.setFocusPolicy(Qt.NoFocus)
+            btn.setRelSize(1.667)
+            btn.setCheckable(True)
+            btn.hide()
+            h_layout.addWidget(btn)
+            btn.clicked.connect(lambda state, idx=x: self.switch_profile(idx))
+            self.profile_btns.append(btn)
+        h_layout.addStretch(1)
+
         self.layout_editor = layout_editor
 
         self.keyboardWidget = AmkWidget(layout_editor) #KeyboardWidget(layout_editor)
@@ -46,14 +63,16 @@ class ApcRt(BasicEditor):
         self.keyboardWidget.clicked.connect(self.on_key_clicked)
 
         layout = QVBoxLayout()
+        layout.addLayout(h_layout)
         layout.addWidget(self.keyboardWidget)
         layout.setAlignment(self.keyboardWidget, Qt.AlignCenter)
+        layout.addStretch(1)
         w = ClickableWidget()
         w.setLayout(layout)
         w.clicked.connect(self.on_empty_space_clicked)
 
         #self.addLayout(w)
-        self.addWidget(w)
+        #self.addWidget(w)
 
         apc_rt_layout = QGridLayout()
 
@@ -142,10 +161,18 @@ class ApcRt(BasicEditor):
         layout.addStretch(1)
         layout.addLayout(apc_rt_layout)
         layout.addStretch(1)
-        self.addLayout(layout)
+
+        v_layout = QVBoxLayout()
+        v_layout.addWidget(w)
+        v_layout.addStretch(1)
+        v_layout.addLayout(layout)
+        v_layout.addStretch(4)
+
+        self.addLayout(v_layout)
 
         self.keyboard = None
         self.device = None
+        self.current_profile = 0
 
     def rebuild(self, device):
         super().rebuild(device)
@@ -158,7 +185,7 @@ class ApcRt(BasicEditor):
     def valid(self):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard and (self.device.keyboard.keyboard_type == "ms" or self.device.keyboard.keyboard_type == "ec")) and \
+               (self.device.keyboard and (self.device.keyboard.keyboard_type.startswith("ms") or self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_keyboard_widget(self):
@@ -166,15 +193,21 @@ class ApcRt(BasicEditor):
             self.keyboardWidget.update_layout()
 
             for widget in self.keyboardWidget.widgets:
-                code = self.keyboard.layout[(0, widget.desc.row, widget.desc.col)]
-                #KeycodeDisplay.display_keycode(widget, code)
-                apc_rt_display(widget, self.keyboard.amk_apc[(widget.desc.row, widget.desc.col)],
-                            self.keyboard.amk_rt[(widget.desc.row, widget.desc.col)])
+                apc_rt_display(widget, self.keyboard.amk_apc[self.keyboard.amk_profile][(widget.desc.row, widget.desc.col)],
+                            self.keyboard.amk_rt[self.keyboard.amk_profile][(widget.desc.row, widget.desc.col)])
 
                 widget.setOn(False)
 
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
+
+            for btn in self.profile_btns:
+                btn.hide()
+
+            for i in range(self.keyboard.amk_profile_count):
+                self.profile_btns[i].show()
+                self.profile_btns[i].setChecked(False)
+            self.profile_btns[self.keyboard.amk_profile].setChecked(True)
 
     def reset_active_apcrt(self):
         if not self.keyboardWidget.active_keys:
@@ -183,7 +216,7 @@ class ApcRt(BasicEditor):
         for idex, key in self.keyboardWidget.active_keys.items():
             row = key.desc.row
             col = key.desc.col
-            apc_rt_display(key, self.keyboard.amk_apc[(row,col)], self.keyboard.amk_rt[(row,col)])
+            apc_rt_display(key, self.keyboard.amk_apc[self.keyboard.amk_profile][(row,col)], self.keyboard.amk_rt[self.keyboard.amk_profile][(row,col)])
 
         self.keyboardWidget.update()
 
@@ -196,8 +229,8 @@ class ApcRt(BasicEditor):
                 row = self.keyboardWidget.active_key.desc.row
                 col = self.keyboardWidget.active_key.desc.col
 
-                apc = self.keyboard.amk_apc.get((row, col), 20)
-                rt  = self.keyboard.amk_rt.get((row,col), None)
+                apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), 20)
+                rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
 
             self.refresh_apc(apc)
             self.refresh_rt(rt)
@@ -302,10 +335,10 @@ class ApcRt(BasicEditor):
         row = widget.desc.row
         col = widget.desc.col
 
-        apc = self.keyboard.amk_apc.get((row, col), 20)
+        apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), 20)
         self.refresh_apc(apc)
 
-        rt  = self.keyboard.amk_rt.get((row,col), None)
+        rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
         self.refresh_rt(rt)
         #print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
 
@@ -320,7 +353,7 @@ class ApcRt(BasicEditor):
                 key = list(self.keyboardWidget.active_keys.values())[0]
                 row = key.desc.row
                 col = key.desc.col
-                rt = self.keyboard.amk_rt.get((row, col), 0)
+                rt = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row, col), 0)
                 if rt == 0:
                     self.update_group_rt(self.keyboardWidget.active_keys, 1)
                     #self.keyboard.apply_rt(row, col, 1)
@@ -331,7 +364,7 @@ class ApcRt(BasicEditor):
                 key = list(self.keyboardWidget.active_keys.values())[0]
                 row = key.desc.row
                 col = key.desc.col
-                rt = self.keyboard.amk_rt.get((row, col), 0)
+                rt = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row, col), 0)
                 if rt > 0:
                     self.update_group_rt(self.keyboardWidget.active_keys, 0)
                     #self.keyboard.apply_rt(row, col, 0)
@@ -541,3 +574,12 @@ class ApcRt(BasicEditor):
         for idx, key in keys.items():
             #print("apply rt for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
             self.keyboard.apply_rt(key.desc.row, key.desc.col, val)
+
+    def switch_profile(self, idx):
+        #print("Activate profile:", idx)
+        self.keyboard.amk_profile = idx
+        self.reset_keyboard_widget()
+        for i in range(self.keyboard.amk_profile_count):
+            self.profile_btns[i].setChecked(False)
+
+        self.profile_btns[self.keyboard.amk_profile].setChecked(True)

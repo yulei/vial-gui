@@ -288,7 +288,7 @@ class Dks(BasicEditor):
     def valid(self):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard and (self.device.keyboard.keyboard_type == "ms" or self.device.keyboard.keyboard_type == "ec")) and \
+               (self.device.keyboard and (self.device.keyboard.keyboard_type.startswith("ms") or self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_keyboard_widget(self):
