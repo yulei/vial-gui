@@ -235,7 +235,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.cols = payload["matrix"]["cols"]
 
         self.custom_keycodes = payload.get("customKeycodes", None)
-        self.keyboard_type = payload.get("keyboardType", None)
+        self.keyboard_type = payload.get("keyboardType", "")
         self.keyboard_speed = payload.get("keyboardSpeed", None)
 
         serial = KleSerial()
