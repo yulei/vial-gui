@@ -58,6 +58,9 @@ AMK_PROTOCOL_GET_RGB_MATRIX_MODE = 45
 AMK_PROTOCOL_SET_RGB_MATRIX_MODE = 46
 AMK_PROTOCOL_GET_RGB_MATRIX_LED = 47
 AMK_PROTOCOL_SET_RGB_MATRIX_LED = 48
+AMK_PROTOCOL_GET_SNAPTAP = 49
+AMK_PROTOCOL_SET_SNAPTAP = 50
+AMK_PROTOCOL_GET_SNAPTAP_COUNT = 51
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -415,6 +418,33 @@ class RgbIndicator:
 
     def set_index(self, index):
         self.led = index 
+    
+    def get_index(self):
+        return self.index
+
+class SnaptapKey:
+    def __init__(self, index, first_row=0, first_col=0, second_row=0, second_col=0, mode=0):
+        self.index = index
+        self.first_row = first_row
+        self.first_col = first_col
+        self.second_row = second_row
+        self.second_col = second_col
+        self.mode = mode
+    
+    def get_first_row(self):
+        return self.first_row
+
+    def get_first_col(self):
+        return self.first_col
+
+    def get_second_row(self):
+        return self.second_row
+
+    def get_second_col(self):
+        return self.second_col
+
+    def get_mode(self):
+        return self.mode
     
     def get_index(self):
         return self.index
@@ -981,4 +1011,44 @@ class ProtocolAmk(BaseProtocol):
             return None
 
         return self.amk_rgb_matrix["leds"][index]
+
+    def reload_snaptap(self):
+        data = self.usb_send(self.dev,
+                            struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_SNAPTAP_COUNT), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_snaptap_count = data[3]
+            self.amk_snaptap_keys = []
+            for i in range(self.amk_snaptap_count):
+                data = self.usb_send(self.dev,
+                                    struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_SNAPTAP, i), retries=20)
+                if data[2] == AMK_PROTOCOL_OK:
+                    key = SnaptapKey(i, data[3], data[4], data[5], data[6], data[7])
+                    self.amk_snaptap_keys.append(key)
+
+    def apply_snaptap(self, index, key):
+        cur = self.amk_snaptap_keys[index]
+        if cur.get_first_row() != key["first_row"] or \
+            cur.get_first_col() != key["first_col"] or \
+            cur.get_second_row() != key["second_row"] or \
+            cur.get_second_col() != key["second_col"] or \
+            cur.get_mode() != key["mode"]:
+            new_key = SnaptapKey(index, key["first_row"], key["first_col"], key["second_row"], key["second_col"], key["mode"]) 
+
+            data = self.usb_send(self.dev,
+                                struct.pack("BBBBBBBB", 
+                                            AMK_PROTOCOL_PREFIX, 
+                                            AMK_PROTOCOL_SET_SNAPTAP,
+                                            index,
+                                            new_key.get_first_row(),
+                                            new_key.get_first_col(),
+                                            new_key.get_second_row(),
+                                            new_key.get_second_col(),
+                                            new_key.get_mode()), retries=20)
+
+            if data[2] == AMK_PROTOCOL_OK:
+                self.amk_snaptap_keys[index] = new_key
+            else:
+                print("failed to set snaptap at ", index)
+    
+
 

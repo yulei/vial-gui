@@ -117,8 +117,18 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             for i in range(self.amk_profile_count):
                 self.reload_apc(i)
                 self.reload_rt(i)
-            
+
             #self.dump_apcrt()
+            
+            self.amk_snaptap = False
+            self.amk_snaptap_count = 0
+            self.amk_snaptap_index = 0
+            self.amk_snaptap_keys = []
+            if "amkFeature" in self.definition:
+                for feature in self.definition["amkFeature"]:
+                    if feature == "snaptap":
+                        self.reload_snaptap()
+                        self.amk_snaptap = True
 
             self.amk_dks = dict()
             self.reload_dks()

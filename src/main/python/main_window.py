@@ -32,6 +32,7 @@ from vial_device import VialKeyboard
 from editor.matrix_test import MatrixTest
 from amk.apc_rt import ApcRt
 from amk.dks import Dks 
+from amk.snaptap import Snaptap
 from amk.misc import Misc
 from amk.rgb import RgbStrip 
 from amk.animation import Animation
@@ -89,6 +90,7 @@ class MainWindow(QMainWindow):
         self.rgb_configurator = RGBConfigurator()
         self.apc_rt = ApcRt(self.layout_editor)
         self.dks = Dks(self.layout_editor, appctx)
+        self.snaptap = Snaptap(self.layout_editor)
         self.misc = Misc()
         self.rgb_strip = RgbStrip()
         self.animation = Animation()
@@ -99,7 +101,8 @@ class MainWindow(QMainWindow):
                         (self.key_override, "Key Overrides"), (self.qmk_settings, "QMK Settings"),
                         (self.matrix_tester, "Matrix tester"), (self.firmware_flasher, "Firmware updater"),
                         (self.apc_rt, "APC/RT Settings"), (self.dks, "DKS Settings"), (self.misc, "Misc settings"),
-                        (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix")]
+                        (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix"),
+                        (self.snaptap, "Snap Tap Settings")]
 
         Unlocker.global_layout_editor = self.layout_editor
         Unlocker.global_main_window = self
@@ -326,7 +329,7 @@ class MainWindow(QMainWindow):
         for e in [self.layout_editor, self.keymap_editor, self.firmware_flasher, self.macro_recorder,
                   self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester,
                   self.rgb_configurator,
-                  self.apc_rt, self.dks, self.misc, self.rgb_strip, self.animation, self.rgb_matrix]:
+                  self.apc_rt, self.dks, self.misc, self.rgb_strip, self.animation, self.rgb_matrix, self.snaptap]:
             e.rebuild(self.autorefresh.current_device)
 
     def refresh_tabs(self):
