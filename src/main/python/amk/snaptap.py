@@ -478,21 +478,30 @@ class Snaptap(BasicEditor):
             self.apply_btn.setEnabled(True)
 
     def on_apply_clicked(self):
-        if self.current_first_col >= 0 and  \
-            self.current_first_row >= 0 and \
-            self.current_second_row >= 0 and \
-            self.current_second_row >= 0 and \
-            self.current_mode > 0:
-            key = {"first_row":self.current_first_row,
-                    "first_col":self.current_first_col,
-                    "second_row":self.current_second_row,
-                    "second_col":self.current_second_col,
-                    "mode":self.current_mode}
+        if self.current_mode == 0:
+            key = {"first_row": 0,
+                    "first_col": 0,
+                    "second_row": 0,
+                    "second_col": 0,
+                    "mode":0}
             self.keyboard.apply_snaptap(self.keyboard.amk_snaptap_index, key)
             self.dirty = False
             self.apply_btn.setEnabled(False)
         else:
-            QMessageBox.information(None, "", "Not a valid snaptap")
+            if self.current_first_row < 0 or \
+                self.current_first_col < 0 or \
+                self.current_second_row < 0 or \
+                self.current_second_col < 0:
+                QMessageBox.information(None, "", "Not a valid snaptap")
+            else:
+                key = {"first_row":self.current_first_row,
+                        "first_col":self.current_first_col,
+                        "second_row":self.current_second_row,
+                        "second_col":self.current_second_col,
+                        "mode":self.current_mode}
+                self.keyboard.apply_snaptap(self.keyboard.amk_snaptap_index, key)
+                self.dirty = False
+                self.apply_btn.setEnabled(False)
 
     def save_or_discard(self, dks):
         button = QMessageBox.warning(None, "Snap Tap",
