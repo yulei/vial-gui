@@ -50,7 +50,8 @@ ANIM_MODES = {
 }
 
 KEYBOARD_FORMATS = [
-    {"name": "MRTAXI", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Taxi Files (*.CRS)"},
+    {"name": "MRTAXI", "mode": "anim_128_128", "suffix": ".CRS", "filter": "MrTaxi Files (*.CRS)"},
+    {"name": "Taxi", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Taxi Files (*.CRS)"},
     {"name": "Navi", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Navi Files (*.CRS)"},
     {"name": "Corsa", "mode": "anim_128_128", "suffix": ".CRS", "filter": "Corsa Files (*.CRS)"},
     {"name": "Meta Background", "mode": "abkg_160_80", "suffix": ".BKG", "filter": "Meta Backaground Files (*.BKG)"},
