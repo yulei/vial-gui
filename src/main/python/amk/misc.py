@@ -62,9 +62,9 @@ class Misc(BasicEditor):
         line = line + 1
 
         #datetime sync
-        self.dt_lbl = QLabel(tr("DATETIME", "Synchronize the datetime/时间同步"))
+        self.dt_lbl = QLabel(tr("DATETIME", "Synchronize the datetime with keyboard:"))
         g_layout.addWidget(self.dt_lbl, line, 0)
-        self.dt_btn = QPushButton("Sync/同步")
+        self.dt_btn = QPushButton("Sync")
         self.dt_btn.clicked.connect(self.on_dt_btn)
         g_layout.addWidget(self.dt_btn, line, 1)
 
