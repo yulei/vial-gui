@@ -103,6 +103,12 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_nkro = False
         self.reload_nkro()
 
+        self.amk_datetime = False
+        if "amkFeature" in self.definition:
+            for feature in self.definition["amkFeature"]:
+                if feature == "datetime":
+                    self.amk_datetime = True
+
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
             self.amk_pole = False
@@ -129,6 +135,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                     if feature == "snaptap":
                         self.reload_snaptap()
                         self.amk_snaptap = True
+                    if feature == "datetime":
+                        self.amk_datetime = True
 
             self.amk_dks = dict()
             self.reload_dks()

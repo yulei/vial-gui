@@ -61,6 +61,10 @@ AMK_PROTOCOL_SET_RGB_MATRIX_LED = 48
 AMK_PROTOCOL_GET_SNAPTAP = 49
 AMK_PROTOCOL_SET_SNAPTAP = 50
 AMK_PROTOCOL_GET_SNAPTAP_COUNT = 51
+AMK_PROTOCOL_GET_SNAPTAP_CONFIG = 52
+AMK_PROTOCOL_SET_SNAPTAP_CONFIG = 53
+AMK_PROTOCOL_SET_DATETIME = 54
+AMK_PROTOCOL_GET_DATETIME = 55
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -1049,6 +1053,14 @@ class ProtocolAmk(BaseProtocol):
                 self.amk_snaptap_keys[index] = new_key
             else:
                 print("failed to set snaptap at ", index)
-    
 
+    def apply_datetime(self, year, month, day, weekday, hour, minute, second):
+        data = self.usb_send(self.dev,
+                             struct.pack(">BBHBBBBBB",
+                                AMK_PROTOCOL_PREFIX,
+                                AMK_PROTOCOL_SET_DATETIME,
+                                year, month, day, weekday,
+                                hour, minute, second), retries=20)
+        if data[2] != AMK_PROTOCOL_OK:
+            print("failed to sychronize datetime with keyboard")
 
