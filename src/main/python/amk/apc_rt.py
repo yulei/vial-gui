@@ -443,7 +443,7 @@ class ApcRt(BasicEditor):
         self.apc_dpb.blockSignals(True)
         val = self.apcrt_round(self.apc_dpb.value())
         #print("APC DPB value ", val)
-        self.apc_sld.setValue(self.apcrt_scale(val*100))
+        self.apc_sld.setValue(int(self.apcrt_scale(val*100)))
         self.apc_dpb.setValue(val)
         if self.keyboardWidget.active_keys:
             self.update_group_apc(self.keyboardWidget.active_keys, int(self.apcrt_scale(self.apc_sld.value(), False)))
@@ -492,7 +492,7 @@ class ApcRt(BasicEditor):
         self.rt_sld.blockSignals(True)
         self.rt_dpb.blockSignals(True)
         val = self.apcrt_round(self.rt_dpb.value())
-        self.rt_sld.setValue(self.apcrt_scale(val*100))
+        self.rt_sld.setValue(int(self.apcrt_scale(val*100)))
         self.rt_dpb.setValue(val)
         if self.keyboardWidget.active_keys:
             #row = self.keyboardWidget.active_key.desc.row
@@ -530,7 +530,7 @@ class ApcRt(BasicEditor):
         self.rt_down_sld.blockSignals(True)
         self.rt_down_dpb.blockSignals(True)
         val = self.apcrt_round(self.rt_down_dpb.value())
-        self.rt_down_sld.setValue(self.apcrt_scale(val*100))
+        self.rt_down_sld.setValue(int(self.apcrt_scale(val*100)))
         self.rt_down_dpb.setValue(val)
 
         if self.keyboardWidget.active_keys:
