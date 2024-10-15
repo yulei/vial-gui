@@ -11,13 +11,23 @@ from widgets.square_button import SquareButton
 from util import tr
 from vial_device import VialKeyboard
 
+AMK_APC_MIN = 1
+AMK_APC_MAX = 400
+AMK_APC_DEFAULT = 160
+
+AMK_RT_MIN = 1
+AMK_RT_MAX = 120
+AMK_RT_DEFAULT = 30
+
+AMK_APCRT_SCALE_DOWN = 100.0
+
 def apc_rt_display(widget, apc, rt):
     #print("Current APC={}, RT={}".format(apc, rt))
     apc_text = ""
     if rt["cont"]:
-        apc_text = "{:.1f}\u2193\u2713".format(apc/10.0)
+        apc_text = "{:.2f}\u2193\u2713".format(apc/100.0)
     else:
-        apc_text = "{:.1f}\u2193".format(apc/10.0)
+        apc_text = "{:.2f}\u2193".format(apc/100.0)
 
     tooltip = "APC/RT setting"
     widget.setText(apc_text)
@@ -26,9 +36,9 @@ def apc_rt_display(widget, apc, rt):
     if rt["up"] > 0:
         widget.masked = True 
         if rt["down"] > 0:
-            apc_text = "{:.1f}\u2193\n{:.1f}\u2191".format(rt["down"]/10.0, rt["up"]/10.0)
+            apc_text = "{:.2f}\u2193\n{:.2f}\u2191".format(rt["down"]/100.0, rt["up"]/100.0)
         else:
-            apc_text = "{:.1f}\u2191".format(rt["up"]/10.0)
+            apc_text = "{:.2f}\u2191".format(rt["up"]/100.0)
 
         widget.setMaskText(apc_text)
         widget.setMaskColor(QApplication.palette().color(QPalette.Link))
@@ -78,16 +88,17 @@ class ApcRt(BasicEditor):
 
         self.apc_lbl = QLabel(tr("APC setting", "Set the actuation point:"))
         self.apc_dpb = QDoubleSpinBox()
-        self.apc_dpb.setRange(0.1, 4.0)
-        self.apc_dpb.setValue(1.2)
-        self.apc_dpb.setSingleStep(0.1)
+        #self.apc_dpb.setReadOnly(True)
+        #self.apc_dpb.setRange(0.01*self.keyboard.amk_apcrt_scale, 4.0)
+        #self.apc_dpb.setValue(1.2)
+        #self.apc_dpb.setSingleStep(0.01*self.keyboard.amk_apcrt_scale)
         self.apc_dpb.valueChanged.connect(self.on_apc_dpb) 
         self.apc_sld = QSlider(Qt.Horizontal)
         self.apc_sld.setMaximumWidth(300)
         self.apc_sld.setMinimumWidth(200)
-        self.apc_sld.setRange(1, 40)
-        self.apc_sld.setSingleStep(1)
-        self.apc_sld.setValue(12)
+        #self.apc_sld.setRange(1, 400)
+        #self.apc_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
+        #self.apc_sld.setValue(120)
         self.apc_sld.setTickPosition(QSlider.TicksAbove)
         self.apc_sld.setTracking(False)
         self.apc_sld.valueChanged.connect(self.on_apc_sld) 
@@ -102,18 +113,19 @@ class ApcRt(BasicEditor):
         self.rt_cbx.stateChanged.connect(self.on_rt_check)
         self.rt_lbl = QLabel(tr("RT setting", "Set the rappid trigger:"))
         self.rt_dpb = QDoubleSpinBox()
+        #self.rt_dpb.setReadOnly(True)
         self.rt_dpb.setEnabled(False)
-        self.rt_dpb.setRange(0.1, 2.5)
-        self.rt_dpb.setValue(1.0)
-        self.rt_dpb.setSingleStep(0.1)
+        #self.rt_dpb.setRange(0.01*self.keyboard.amk_apcrt_scale, 1.2)
+        #self.rt_dpb.setValue(0.5)
+        #self.rt_dpb.setSingleStep(0.01*self.keyboard.amk_apcrt_scale)
         self.rt_dpb.valueChanged.connect(self.on_rt_dpb) 
         self.rt_sld= QSlider(Qt.Horizontal)
         self.rt_sld.setEnabled(False)
         self.rt_sld.setMaximumWidth(300)
         self.rt_sld.setMinimumWidth(200)
-        self.rt_sld.setRange(1, 25)
-        self.rt_sld.setSingleStep(1)
-        self.rt_sld.setValue(10)
+        #self.rt_sld.setRange(1*self.keyboard.amk_apcrt_scale, 120)
+        #self.rt_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
+        #self.rt_sld.setValue(50)
         self.rt_sld.setTickPosition(QSlider.TicksAbove)
         self.rt_sld.setTracking(False)
         self.rt_sld.valueChanged.connect(self.on_rt_sld) 
@@ -137,18 +149,19 @@ class ApcRt(BasicEditor):
         self.rt_down_cbx.stateChanged.connect(self.on_rt_down_check)
         self.rt_down_lbl = QLabel(tr("RT press", "Set the rappid trigger press:"))
         self.rt_down_dpb = QDoubleSpinBox()
+        #self.rt_down_dpb.setReadOnly(True)
         self.rt_down_dpb.setEnabled(False)
-        self.rt_down_dpb.setRange(0.1, 2.5)
-        self.rt_down_dpb.setValue(1.0)
-        self.rt_down_dpb.setSingleStep(0.1)
+        #self.rt_down_dpb.setRange(0.01*self.keyboard.amk_apcrt_scale, 1.2)
+        #self.rt_down_dpb.setValue(0.5)
+        #self.rt_down_dpb.setSingleStep(0.01*self.keyboard.amk_apcrt_scale)
         self.rt_down_dpb.valueChanged.connect(self.on_rt_down_dpb) 
         self.rt_down_sld= QSlider(Qt.Horizontal)
         self.rt_down_sld.setEnabled(False)
         self.rt_down_sld.setMaximumWidth(300)
         self.rt_down_sld.setMinimumWidth(200)
-        self.rt_down_sld.setRange(1, 25)
-        self.rt_down_sld.setSingleStep(1)
-        self.rt_down_sld.setValue(10)
+        #self.rt_down_sld.setRange(1*self.keyboard.amk_apcrt_scale, 120)
+        #self.rt_down_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
+        #self.rt_down_sld.setValue(50)
         self.rt_down_sld.setTickPosition(QSlider.TicksAbove)
         self.rt_down_sld.setTracking(False)
         self.rt_down_sld.valueChanged.connect(self.on_rt_down_sld) 
@@ -188,9 +201,47 @@ class ApcRt(BasicEditor):
                (self.device.keyboard and (self.device.keyboard.keyboard_type.startswith("ms") or self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
+    def reset_apcrt_widget(self):
+        apc_min = AMK_APC_MIN/AMK_APCRT_SCALE_DOWN
+        apc_max = AMK_APC_MAX/AMK_APCRT_SCALE_DOWN
+
+        self.apc_dpb.setRange(self.apcrt_scale(apc_min, False), apc_max)
+        self.apc_dpb.setValue(AMK_APC_DEFAULT/AMK_APCRT_SCALE_DOWN)
+        self.apc_dpb.setSingleStep(self.apcrt_scale(apc_min, False))
+
+        self.apc_sld.setRange(AMK_APC_MIN, int(self.apcrt_scale(AMK_APC_MAX)))
+        self.apc_sld.setSingleStep(1)
+        self.apc_sld.setPageStep(1)
+        self.apc_sld.setTickInterval(1)
+        self.apc_sld.setValue(int(self.apcrt_scale(AMK_APC_DEFAULT)))
+
+        rt_min = AMK_RT_MIN/AMK_APCRT_SCALE_DOWN
+        rt_max = AMK_RT_MAX/AMK_APCRT_SCALE_DOWN
+
+        self.rt_dpb.setRange(self.apcrt_scale(rt_min, False), rt_max)
+        self.rt_dpb.setValue(AMK_RT_DEFAULT/AMK_APCRT_SCALE_DOWN)
+        self.rt_dpb.setSingleStep(self.apcrt_scale(rt_min, False))
+
+        self.rt_sld.setRange(AMK_RT_MIN, int(self.apcrt_scale(AMK_RT_MAX)))
+        self.rt_sld.setSingleStep(AMK_RT_MIN)
+        self.rt_sld.setPageStep(AMK_RT_MIN)
+        self.rt_sld.setTickInterval(AMK_RT_MIN)
+        self.rt_sld.setValue(int(self.apcrt_scale(AMK_RT_DEFAULT)))
+
+        self.rt_down_dpb.setRange(self.apcrt_scale(rt_min, False), rt_max)
+        self.rt_down_dpb.setValue(AMK_RT_DEFAULT/AMK_APCRT_SCALE_DOWN)
+        self.rt_down_dpb.setSingleStep(self.apcrt_scale(rt_min, False))
+
+        self.rt_down_sld.setRange(AMK_RT_MIN, int(self.apcrt_scale(AMK_RT_MAX)))
+        self.rt_down_sld.setSingleStep(AMK_RT_MIN)
+        self.rt_down_sld.setPageStep(AMK_RT_MIN)
+        self.rt_down_sld.setTickInterval(AMK_RT_MIN)
+        self.rt_down_sld.setValue(int(self.apcrt_scale(AMK_RT_DEFAULT)))
+
     def reset_keyboard_widget(self):
         if self.valid():
             self.keyboardWidget.update_layout()
+            self.reset_apcrt_widget()
 
             for widget in self.keyboardWidget.widgets:
                 apc_rt_display(widget, self.keyboard.amk_apc[self.keyboard.amk_profile][(widget.desc.row, widget.desc.col)],
@@ -229,7 +280,7 @@ class ApcRt(BasicEditor):
                 row = self.keyboardWidget.active_key.desc.row
                 col = self.keyboardWidget.active_key.desc.col
 
-                apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), 20)
+                apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), AMK_APC_DEFAULT)
                 rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
 
             self.refresh_apc(apc)
@@ -238,6 +289,18 @@ class ApcRt(BasicEditor):
     def deactivate(self):
         pass
     
+    def apcrt_scale(self, val, down=True):
+        if down:
+            return val/self.keyboard.amk_apcrt_scale
+        else:
+            return val*self.keyboard.amk_apcrt_scale
+    
+    def apcrt_round(self, value):
+        val = int(value*100)
+        val = (val // self.keyboard.amk_apcrt_scale) * self.keyboard.amk_apcrt_scale
+
+        return value
+
     def refresh_apc(self, apc = None):
         self.apc_sld.blockSignals(True)
         self.apc_dpb.blockSignals(True)
@@ -245,11 +308,11 @@ class ApcRt(BasicEditor):
         self.rt_dpb.blockSignals(True)
 
         if apc is None:
-            self.apc_sld.setValue(16)
-            self.apc_dpb.setValue(1.6)
+            self.apc_sld.setValue(int(self.apcrt_scale(AMK_APC_DEFAULT)))
+            self.apc_dpb.setValue(AMK_APC_DEFAULT/AMK_APCRT_SCALE_DOWN)
         else:
-            self.apc_sld.setValue(apc)
-            self.apc_dpb.setValue(apc/10.0)
+            self.apc_sld.setValue(int(self.apcrt_scale(apc)))
+            self.apc_dpb.setValue(apc/100.0)
 
         self.rt_dpb.blockSignals(False)
         self.rt_sld.blockSignals(False)
@@ -281,8 +344,8 @@ class ApcRt(BasicEditor):
             if rt["up"] > 0:
                 self.rt_sld.setEnabled(True)
                 self.rt_dpb.setEnabled(True)
-                self.rt_sld.setValue(rt["up"])
-                self.rt_dpb.setValue(rt["up"]/10.0)
+                self.rt_sld.setValue(int(self.apcrt_scale(rt["up"])))
+                self.rt_dpb.setValue(rt["up"]/100.0)
                 self.rt_cbx.setEnabled(True)
                 self.rt_cbx.setCheckState(Qt.Checked)
                 self.rt_cont_cbx.setEnabled(True)
@@ -298,8 +361,8 @@ class ApcRt(BasicEditor):
 
                     self.rt_down_sld.setEnabled(True)
                     self.rt_down_dpb.setEnabled(True)
-                    self.rt_down_sld.setValue(rt["down"])
-                    self.rt_down_dpb.setValue(rt["down"]/10.0)
+                    self.rt_down_sld.setValue(int(self.apcrt_scale(rt["down"])))
+                    self.rt_down_dpb.setValue(rt["down"]/100.0)
                 else:
                     self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
                     self.rt_down_sld.setEnabled(False)
@@ -335,7 +398,7 @@ class ApcRt(BasicEditor):
         row = widget.desc.row
         col = widget.desc.col
 
-        apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), 20)
+        apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), AMK_APC_DEFAULT)
         self.refresh_apc(apc)
 
         rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
@@ -355,9 +418,9 @@ class ApcRt(BasicEditor):
                 col = key.desc.col
                 rt = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row, col), 0)
                 if rt == 0:
-                    self.update_group_rt(self.keyboardWidget.active_keys, 1)
+                    self.update_group_rt(self.keyboardWidget.active_keys, AMK_RT_DEFAULT)
                     #self.keyboard.apply_rt(row, col, 1)
-                    self.rt_sld.setValue(rt)
+                    self.rt_sld.setValue(int(self.apcrt_scale(rt)))
                     self.rt_dpb.setValue(rt/10.0)
         else:
             if self.keyboardWidget.active_keys:
@@ -378,10 +441,12 @@ class ApcRt(BasicEditor):
     def on_apc_dpb(self):
         self.apc_sld.blockSignals(True)
         self.apc_dpb.blockSignals(True)
-        val = int(self.apc_dpb.value()*10)
-        self.apc_sld.setValue(val)
+        val = self.apcrt_round(self.apc_dpb.value())
+        #print("APC DPB value ", val)
+        self.apc_sld.setValue(self.apcrt_scale(val*100))
+        self.apc_dpb.setValue(val)
         if self.keyboardWidget.active_keys:
-            self.update_group_apc(self.keyboardWidget.active_keys, val)
+            self.update_group_apc(self.keyboardWidget.active_keys, int(self.apcrt_scale(self.apc_sld.value(), False)))
             #row = self.keyboardWidget.active_key.desc.row
             #col = self.keyboardWidget.active_key.desc.col
             #self.keyboard.apply_apc(row, col, val)
@@ -393,10 +458,10 @@ class ApcRt(BasicEditor):
     def on_apc_sld(self):
         self.apc_sld.blockSignals(True)
         self.apc_dpb.blockSignals(True)
-        val = self.apc_sld.value()/10.0
+        val = self.apcrt_scale(self.apc_sld.value()/100.0, False)
         self.apc_dpb.setValue(val)
         if self.keyboardWidget.active_keys:
-            self.update_group_apc(self.keyboardWidget.active_keys, self.apc_sld.value())
+            self.update_group_apc(self.keyboardWidget.active_keys, int(self.apcrt_scale(self.apc_sld.value(), False)))
             #row = self.keyboardWidget.active_key.desc.row
             #col = self.keyboardWidget.active_key.desc.col
             #self.keyboard.apply_apc(row, col, self.apc_sld.value())
@@ -413,12 +478,12 @@ class ApcRt(BasicEditor):
         rt["up"] = 0
         if self.rt_cbx.isEnabled():
             if self.rt_cbx.isChecked():
-                rt["up"] = self.rt_sld.value()
+                rt["up"] = int(self.apcrt_scale(self.rt_sld.value(), False))
 
         rt["down"] = 0 
         if self.rt_down_cbx.isEnabled():
             if self.rt_down_cbx.isChecked():
-                rt["down"] = self.rt_down_sld.value()
+                rt["down"] = int(self.apcrt_scale(self.rt_down_sld.value(), False))
 
         return rt
 
@@ -426,8 +491,9 @@ class ApcRt(BasicEditor):
     def on_rt_dpb(self):
         self.rt_sld.blockSignals(True)
         self.rt_dpb.blockSignals(True)
-        val = int(self.rt_dpb.value()*10)
-        self.rt_sld.setValue(val)
+        val = self.apcrt_round(self.rt_dpb.value())
+        self.rt_sld.setValue(self.apcrt_scale(val*100))
+        self.rt_dpb.setValue(val)
         if self.keyboardWidget.active_keys:
             #row = self.keyboardWidget.active_key.desc.row
             #col = self.keyboardWidget.active_key.desc.col
@@ -441,8 +507,8 @@ class ApcRt(BasicEditor):
     def on_rt_sld(self):
         self.rt_sld.blockSignals(True)
         self.rt_dpb.blockSignals(True)
-        val = self.rt_sld.value()/10.0
-        self.rt_dpb.setValue(val)
+        val = self.rt_sld.value()/100.0
+        self.rt_dpb.setValue(self.apcrt_scale(self.rt_sld.value()/100.0, False))
         if self.keyboardWidget.active_keys:
             #row = self.keyboardWidget.active_key.desc.row
             #col = self.keyboardWidget.active_key.desc.col
@@ -455,13 +521,17 @@ class ApcRt(BasicEditor):
     def update_group_apc(self, keys, val):
         for idx, key in keys.items():
             #print("apply apc for key({},{}):value:{}".format(key.desc.row, key.desc.col, val))
-            self.keyboard.apply_apc(key.desc.row, key.desc.col, val)
+            if self.keyboard.amk_apcrt_version == 1:
+                self.keyboard.apply_apc(key.desc.row, key.desc.col, int(self.apcrt_scale(val)))
+            else:
+                self.keyboard.apply_apc(key.desc.row, key.desc.col, val)
 
     def on_rt_down_dpb(self):
         self.rt_down_sld.blockSignals(True)
         self.rt_down_dpb.blockSignals(True)
-        val = int(self.rt_down_dpb.value()*10)
-        self.rt_down_sld.setValue(val)
+        val = self.apcrt_round(self.rt_down_dpb.value())
+        self.rt_down_sld.setValue(self.apcrt_scale(val*100))
+        self.rt_down_dpb.setValue(val)
 
         if self.keyboardWidget.active_keys:
             self.update_group_rt(self.keyboardWidget.active_keys, self.get_current_rt())
@@ -473,8 +543,8 @@ class ApcRt(BasicEditor):
     def on_rt_down_sld(self):
         self.rt_down_sld.blockSignals(True)
         self.rt_down_dpb.blockSignals(True)
-        val = self.rt_down_sld.value()/10.0
-        self.rt_down_dpb.setValue(val)
+        val = self.rt_down_sld.value()/100.0
+        self.rt_down_dpb.setValue(self.apcrt_scale(self.rt_down_sld.value()/100.0, False))
 
         if self.keyboardWidget.active_keys:
             self.update_group_rt(self.keyboardWidget.active_keys, self.get_current_rt())
@@ -505,8 +575,8 @@ class ApcRt(BasicEditor):
             self.rt_down_dpb.setEnabled(True)
             self.rt_down_sld.setEnabled(True)
 
-            self.rt_sld.setValue(1)
-            self.rt_dpb.setValue(0.1)
+            self.rt_sld.setValue(int(self.apcrt_scale(AMK_RT_DEFAULT)))
+            self.rt_dpb.setValue(AMK_RT_DEFAULT/AMK_APCRT_SCALE_DOWN)
 
             if self.keyboardWidget.active_keys:
                 self.update_group_rt(self.keyboardWidget.active_keys, self.get_current_rt())
@@ -548,8 +618,8 @@ class ApcRt(BasicEditor):
             self.rt_lbl.setText(tr("RT release", "Set the rappid trigger release:"))
             self.rt_down_dpb.setEnabled(True)
             self.rt_down_sld.setEnabled(True)
-            self.rt_down_sld.setValue(1)
-            self.rt_down_dpb.setValue(0.1)
+            self.rt_down_sld.setValue(int(self.apcrt_scale(AMK_RT_DEFAULT)))
+            self.rt_down_dpb.setValue(AMK_RT_DEFAULT/AMK_APCRT_SCALE_DOWN)
         else:
             self.rt_lbl.setText(tr("RT setting", "Set the rappid trigger:"))
             self.rt_down_sld.setValue(0)

@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.7.1"
+AMK_VERSION = "0.8.1"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -468,7 +468,10 @@ class ProtocolAmk(BaseProtocol):
                                 struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_APC, row, col, profile),
                                 retries=20)
             val = struct.unpack(">H", data[3:5])
-            self.amk_apc[profile][(row, col)] = val[0]
+            if self.amk_apcrt_version == 1:
+                self.amk_apc[profile][(row, col)] = val[0] * self.amk_apcrt_scale
+            else:
+                self.amk_apc[profile][(row, col)] = val[0]
             #print("AMK protocol: APC={}, row={}, col={}, profile={}".format(self.amk_apc[profile][(row,col)], row, col, profile))
 
     def reload_rt(self, profile):
@@ -478,10 +481,21 @@ class ProtocolAmk(BaseProtocol):
                                 struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RT, row, col, profile),
                                 retries=20)
             val = struct.unpack(">H", data[3:5])[0]
-            cont = True if val & 0x8000 > 0 else False
-            down = (val & 0x0FC0) >> 6
-            up = val & 0x003F
-            rt = {"cont": cont, "down": down, "up": up}
+            rt = {}
+            if self.amk_apcrt_version == 1:
+                cont = True if val & 0x8000 > 0 else False
+                down = (val >> 6) & 0x3F
+                up = val & 0x003F
+                rt["cont"] = cont * self.amk_apcrt_scale
+                rt["down"] = down * self.amk_apcrt_scale
+                rt["up"] = up
+            else:
+                cont = True if val & 0x8000 > 0 else False
+                down = (val >> 7) & 0x007F
+                up = val & 0x007F
+                rt["cont"] = cont
+                rt["down"] = down
+                rt["up"] = up
 
             self.amk_rt[profile][(row, col)] = rt
             #print("AMK protocol: RT={}, row={}, col={}, profile={}".format(self.amk_rt[profile][(row, col)], row, col, profile))
@@ -590,6 +604,9 @@ class ProtocolAmk(BaseProtocol):
 
         #print("Update APC at({},{}), old({}), new({})".format(row, col, self.amk_apc[(row,col)], val))
         self.amk_apc[self.amk_profile][(row,col)] = val
+        if self.amk_apcrt_version == 1:
+            val = val // self.amk_apcrt_scale
+
         data = struct.pack(">BBBBHB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_APC, row, col, val, self.amk_profile)
         data = self.usb_send(self.dev, data, retries=20)
 
@@ -605,8 +622,13 @@ class ProtocolAmk(BaseProtocol):
         self.amk_rt[self.amk_profile][(row,col)]["down"] = val["down"] 
         self.amk_rt[self.amk_profile][(row,col)]["up"] = val["up"] 
         rt = 0x8000 if val["cont"] else 0
-        rt = rt + ((val["down"] & 0x3F) << 6)
-        rt = rt + (val["up"] & 0x3F)
+        if self.amk_apcrt_version == 1:
+            rt = rt + (((val["down"]//self.amk_apcrt_scale) & 0x3F) << 6)
+            rt = rt + ((val["up"]//self.amk_apcrt_scale) & 0x3F)
+        else:
+            rt = rt + ((val["down"] & 0x7F) << 7)
+            rt = rt + (val["up"] & 0x7F)
+
         data = struct.pack(">BBBBHB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RT, row, col, rt, self.amk_profile)
 
         data = self.usb_send(self.dev, data, retries=20)

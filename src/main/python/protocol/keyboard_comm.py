@@ -115,7 +115,20 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_profile = 0
             self.amk_dks_disable = False
             self.keyboard_profile = 0
+            self.amk_apcrt_scale = 10
+            self.amk_apcrt_version = 1
             self.reload_ms_config()
+
+            self.amk_snaptap = False
+            if "amkFeature" in self.definition:
+                for feature in self.definition["amkFeature"]:
+                    if feature == "snaptap":
+                        self.amk_snaptap = True
+                    
+                    if isinstance(feature, dict):
+                        self.amk_apcrt_scale = feature.get("apcrtScale", 10)
+                        self.amk_apcrt_version = 2
+                    print("APCRT SCALE: ", self.amk_apcrt_scale)
 
             self.amk_apc = [dict(), dict(), dict(), dict()]
             self.amk_rt = [dict(), dict(), dict(), dict()]
@@ -126,17 +139,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
             #self.dump_apcrt()
             
-            self.amk_snaptap = False
             self.amk_snaptap_count = 0
             self.amk_snaptap_index = 0
             self.amk_snaptap_keys = []
-            if "amkFeature" in self.definition:
-                for feature in self.definition["amkFeature"]:
-                    if feature == "snaptap":
-                        self.reload_snaptap()
-                        self.amk_snaptap = True
-                    if feature == "datetime":
-                        self.amk_datetime = True
+            if self.amk_snaptap:
+                self.reload_snaptap()
 
             self.amk_dks = dict()
             self.reload_dks()
