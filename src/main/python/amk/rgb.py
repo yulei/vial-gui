@@ -335,7 +335,7 @@ class RgbStrip(BasicEditor):
             return
 
         
-        color = adjust_color(color)
+        #color = adjust_color(color)
 
         h, s, v, a = color.getHsvF()
         if h < 0:

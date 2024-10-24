@@ -128,7 +128,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                     if isinstance(feature, dict):
                         self.amk_apcrt_scale = feature.get("apcrtScale", 10)
                         self.amk_apcrt_version = 2
-                    print("APCRT SCALE: ", self.amk_apcrt_scale)
+                    print("APCRT SCALE:{}, Version:{}".format(self.amk_apcrt_scale, self.amk_apcrt_version))
 
             self.amk_apc = [dict(), dict(), dict(), dict()]
             self.amk_rt = [dict(), dict(), dict(), dict()]
