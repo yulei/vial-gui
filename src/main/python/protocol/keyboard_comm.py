@@ -102,12 +102,40 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         #reload nkro
         self.amk_nkro = False
         self.reload_nkro()
+        self.amk_rgb = []
+        self.amk_rgb_matrix = {}
 
         self.amk_datetime = False
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
                     self.amk_datetime = True
+                if isinstance(feature, dict):
+                    if "rgb" in feature:
+                        for r in feature["rgb"]:
+                            rgb_inst = {"type": r["type"]}
+                            rgb_inst["index"] = r["index"]
+                            rgb_inst["start"] = r["start"]
+                            rgb_inst["count"] = r["count"]
+                            rgb_inst["leds"] = []
+                            serial = KleSerial()
+                            leds = serial.deserialize(r["leds"])
+                            for led in leds.keys:
+                                led.row = led.col = None
+                                led.encoder_idx = led.encoder_dir = None
+                                row, col = 0, 0
+                                if led.labels[0] and "," in led.labels[0]:
+                                    row, col = led.labels[0].split(",")
+                                    row, col = int(row), int(col)
+                                    led.row = row
+                                    led.col = col
+                                    #self.rowcol[(row, col)] = True
+                                    led.layout_index = -1
+                                    led.layout_option = -1
+                                rgb_inst["leds"].append(led)
+                            if rgb_inst["type"] == "matrix":
+                                self.reload_amk_rgb_matrix()
+                            self.amk_rgb.append(rgb_inst)
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
@@ -126,9 +154,10 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_snaptap = True
                     
                     if isinstance(feature, dict):
-                        self.amk_apcrt_scale = feature.get("apcrtScale", 10)
-                        self.amk_apcrt_version = 2
-                    print("APCRT SCALE:{}, Version:{}".format(self.amk_apcrt_scale, self.amk_apcrt_version))
+                        if "apcrtScale" in feature:
+                            self.amk_apcrt_scale = feature.get("apcrtScale")
+                            self.amk_apcrt_version = 2
+            #print("APCRT SCALE:{}, Version:{}".format(self.amk_apcrt_scale, self.amk_apcrt_version))
 
             self.amk_apc = [dict(), dict(), dict(), dict()]
             self.amk_rt = [dict(), dict(), dict(), dict()]
@@ -194,7 +223,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
             self.reload_anim_file_list()
         
-        self.amk_rgb_matrix = {}
         if "amk_rgb_matrix" in self.definition:
             self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
             self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]

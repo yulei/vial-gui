@@ -1038,6 +1038,11 @@ class ProtocolAmk(BaseProtocol):
 
         return self.amk_rgb_matrix["leds"][index]
 
+    def get_rgb_matrix_led_by_index(self, index):
+        if index < len(self.amk_rgb_matrix["leds"]):
+            return self.amk_rgb_matrix["leds"][index]
+        return None
+
     def reload_snaptap(self):
         data = self.usb_send(self.dev,
                             struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_SNAPTAP_COUNT), retries=20)
