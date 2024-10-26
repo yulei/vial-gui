@@ -387,32 +387,38 @@ class TaskThread(QThread):
         
         self.notifyConvert.emit()
 
-        count = int(2048/64)
-        index = self.animation.keyboard.fastopen_anim_file(self.animation.fastdev, self.name, False)
-        if index != 0xFF:
-            total = len(data) 
-            progress = 0
-            remain = total
-            cur = 0
-            while remain > 0:
-                num = count
-                packet_data = bytearray() 
-                while num > 0:
-                    size = 56 if remain > 56 else remain
-                    packet_data = packet_data + struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, size, cur) + data[cur:cur+size]
-                    remain = remain - size
-                    cur = cur + size
-                    num = num - 1
-                    if remain == 0:
+        try:
+            count = int(2048/64)
+            index = self.animation.keyboard.fastopen_anim_file(self.animation.fastdev, self.name, False)
+            if index != 0xFF:
+                total = len(data) 
+                progress = 0
+                remain = total
+                cur = 0
+                while remain > 0:
+                    num = count
+                    packet_data = bytearray() 
+                    while num > 0:
+                        size = 56 if remain > 56 else remain
+                        packet_data = packet_data + struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_WRITE_FILE, index, size, cur) + data[cur:cur+size]
+                        remain = remain - size
+                        cur = cur + size
+                        num = num - 1
+                        if remain == 0:
+                            break
+                    if not self.animation.keyboard.fastwrite_anim_file_vendor(self.animation.fastdev, packet_data):
                         break
-                if not self.animation.keyboard.fastwrite_anim_file_vendor(self.animation.fastdev, packet_data):
-                    break
 
-                if int((total-remain)*100/ total) > progress:
-                    progress = int((total-remain)*100/total) 
-                    self.notifyProgress.emit(progress)
+                    if int((total-remain)*100/ total) > progress:
+                        progress = int((total-remain)*100/total) 
+                        self.notifyProgress.emit(progress)
 
-            self.animation.keyboard.fastclose_anim_file(self.animation.fastdev, index)
+                self.animation.keyboard.fastclose_anim_file(self.animation.fastdev, index)
+        except Exception as e:
+            QMessageBox.information(None, "", "Faield to download files: error={}".format(str(e)))
+        else:
+            pass
+
         self.notifyDone.emit(True)
 
     def upload_task(self):
