@@ -275,7 +275,10 @@ class Misc(BasicEditor):
         # Check if vial protocol is v3 or later
         return isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard and \
-               (self.device.keyboard.keyboard_speed == "hs" or self.device.keyboard.keyboard_type.startswith("ms") or self.device.keyboard.keyboard_type == "ec")) and \
+               (self.device.keyboard.keyboard_speed == "hs" or \
+                self.device.keyboard.keyboard_type.startswith("mx_state") or \
+                self.device.keyboard.keyboard_type.startswith("ms") or \
+                self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_ui(self):
@@ -361,7 +364,7 @@ class Misc(BasicEditor):
             self.adv_btn.hide()
             self.show_advance(False)
 
-        if self.keyboard.keyboard_type == "mx":
+        if self.keyboard.keyboard_type.startswith("mx"):
             self.dd_sld.blockSignals(True)
             self.dd_sbx.blockSignals(True)
             self.dd_sld.setValue(self.keyboard.amk_down_debounce)

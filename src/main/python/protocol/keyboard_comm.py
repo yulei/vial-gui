@@ -201,6 +201,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                 self.amk_up_debounce = 5
                 self.reload_debounce()
 
+        if self.keyboard_type == "mx_state":
+            self.amk_down_debounce = 0
+            self.amk_up_debounce = 5
+            self.reload_debounce()
+
         #print("amk: rgb light", self.lighting_amk_rgblight)
         if self.lighting_amk_rgblight:
             self.amk_rgb_strip_count = 0
