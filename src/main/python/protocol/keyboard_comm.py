@@ -109,6 +109,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_rgb = []
         self.amk_rgb_matrix = {}
         self.amk_has_datetime = False
+        self.amk_has_switch_type = False
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
@@ -151,7 +152,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.reload_ms_config()
 
             self.amk_snaptap = False
-            self.amk_has_switch_type = False
             if "amkFeature" in self.definition:
                 for feature in self.definition["amkFeature"]:
                     if isinstance(feature, dict):
