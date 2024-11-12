@@ -96,6 +96,20 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.pr_btn, line, 2)
 
         line = line + 1
+        # switch type setting
+        self.st_lbl = QLabel(tr("Switch Type", "Set the current switch:"))
+        g_layout.addWidget(self.st_lbl, line, 0)
+        self.st_cbb = QComboBox()
+        self.st_cbb.addItem("Common Switch")
+        self.st_cbb.addItem("Gateron Magnetic Jade")
+        self.st_cbb.addItem("TTC King of Magnetic")
+        g_layout.addWidget(self.st_cbb, line, 1)
+        self.st_btn = QPushButton("Apply")
+        self.st_btn.clicked.connect(self.on_st_btn)
+        g_layout.addWidget(self.st_btn, line, 2)
+
+        line = line + 1
+
         # down debounce setting
         self.dd_lbl = QLabel(tr("Down Debounce", "Set the debounce time(ms) when press key:"))
         g_layout.addWidget(self.dd_lbl, line, 0)
@@ -383,12 +397,25 @@ class Misc(BasicEditor):
             self.ud_sbx.setEnabled(True)
             self.ud_sld.setEnabled(True)
         
-        if self.keyboard.amk_datetime:
+        if self.keyboard.amk_has_datetime:
             self.dt_lbl.show()
             self.dt_btn.show()
         else:
             self.dt_lbl.hide()
             self.dt_btn.hide()
+        
+        if self.keyboard.amk_has_switch_type:
+            self.st_cbb.blockSignals(True)
+            self.st_cbb.setCurrentIndex(self.keyboard.amk_switch_type)
+            self.st_cbb.blockSignals(False)
+            self.st_lbl.show()
+            self.st_cbb.show()
+            self.st_btn.show()
+        else:
+            self.st_lbl.hide()
+            self.st_cbb.hide()
+            self.st_btn.hide()
+
 
     def activate(self):
         pass
@@ -399,9 +426,14 @@ class Misc(BasicEditor):
         #print("hs windows deactivated")
 
     def on_pr_btn(self):
-        #print("Apply poll rate cliecked")
+        #print("Apply poll rate clicked")
         val = self.pr_cbb.currentIndex()
         self.keyboard.apply_poll_rate(val)
+
+    def on_st_btn(self):
+        #print("Apply switch type clicked")
+        val = self.st_cbb.currentIndex()
+        self.keyboard.apply_switch_type(val)
 
     def on_dd_sld(self):
         #print("Down debounce slider changed")
@@ -537,6 +569,10 @@ class Misc(BasicEditor):
             if poll_rate is not None:
                 self.keyboard.apply_poll_rate(poll_rate)
 
+            switch_type = kbd.get("switch_type", None)
+            if switch_type is not None:
+                self.keyboard.apply_switch_type(switch_type)
+
             self.reset_ui()
 
     def on_ex_btn(self):
@@ -553,6 +589,7 @@ class Misc(BasicEditor):
             kbd["profile"] = self.keyboard.keyboard_profile
         kbd["nkro"] = 1 if self.nk_cbx.checkState() == Qt.Checked else 0
         kbd["poll_rate"] = self.pr_cbb.currentIndex()
+        kbd["switch_type"] = self.st_cbb.currentIndex()
         kbd["rt_sens"] = self.rt_sld.value()
         kbd["top_sens"] = self.top_sld.value()
         kbd["btm_sens"] = self.btm_sld.value()

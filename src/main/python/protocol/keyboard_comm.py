@@ -99,17 +99,20 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_combo()
         self.reload_key_override()
 
+        self.reload_amk()
+
+    def reload_amk(self):
         #reload nkro
         self.amk_nkro = False
         self.reload_nkro()
+
         self.amk_rgb = []
         self.amk_rgb_matrix = {}
-
-        self.amk_datetime = False
+        self.amk_has_datetime = False
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
-                    self.amk_datetime = True
+                    self.amk_has_datetime = True
                 if isinstance(feature, dict):
                     if "rgb" in feature:
                         for r in feature["rgb"]:
@@ -148,16 +151,20 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.reload_ms_config()
 
             self.amk_snaptap = False
+            self.amk_has_switch_type = False
             if "amkFeature" in self.definition:
                 for feature in self.definition["amkFeature"]:
-                    if feature == "snaptap":
-                        self.amk_snaptap = True
-                    
                     if isinstance(feature, dict):
                         if "apcrtScale" in feature:
                             self.amk_apcrt_scale = feature.get("apcrtScale")
                             self.amk_apcrt_version = 2
-            #print("APCRT SCALE:{}, Version:{}".format(self.amk_apcrt_scale, self.amk_apcrt_version))
+                    else:
+                        if feature == "snaptap":
+                            self.amk_snaptap = True
+                        elif feature == "switchType":
+                            self.amk_has_switch_type = True
+                        else:
+                            print("unknown feature: {}".format(feature))
 
             self.amk_apc = [dict(), dict(), dict(), dict()]
             self.amk_rt = [dict(), dict(), dict(), dict()]
@@ -166,8 +173,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                 self.reload_apc(i)
                 self.reload_rt(i)
 
-            #self.dump_apcrt()
-            
             self.amk_snaptap_count = 0
             self.amk_snaptap_index = 0
             self.amk_snaptap_keys = []
@@ -192,7 +197,10 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_noise_sens = 50
             self.reload_noise_sensitivity()
 
-        #reload keyboard misc settings
+            if self.amk_has_switch_type:
+                self.reload_switch_type()
+
+        #reload poll rate and debounce setting
         if self.keyboard_speed == "hs":
             self.amk_poll_rate = 0
             self.reload_poll_rate()
@@ -206,7 +214,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_up_debounce = 5
             self.reload_debounce()
 
-        #print("amk: rgb light", self.lighting_amk_rgblight)
+        #reload rgb 
         if self.lighting_amk_rgblight:
             self.amk_rgb_strip_count = 0
             self.amk_rgb_strips = []
@@ -217,7 +225,12 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.rgb_indicators = {}
         self.reload_rgb_indicators()
 
-        #animation
+        if "amk_rgb_matrix" in self.definition:
+            self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
+            self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]
+            self.reload_amk_rgb_matrix()
+
+        #reload animation
         self.animations = {"format":[], "file":{}, "disk":{}, "transfer":""}
         if "animation" in self.definition:
             for anim in self.definition["animation"]["format"]:
@@ -228,10 +241,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
             self.reload_anim_file_list()
         
-        if "amk_rgb_matrix" in self.definition:
-            self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
-            self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]
-            self.reload_amk_rgb_matrix()
 
     def reload_layers(self):
         """ Get how many layers the keyboard has """

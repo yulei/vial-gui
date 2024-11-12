@@ -63,8 +63,10 @@ AMK_PROTOCOL_SET_SNAPTAP = 50
 AMK_PROTOCOL_GET_SNAPTAP_COUNT = 51
 AMK_PROTOCOL_GET_SNAPTAP_CONFIG = 52
 AMK_PROTOCOL_SET_SNAPTAP_CONFIG = 53
-AMK_PROTOCOL_SET_DATETIME = 54
-AMK_PROTOCOL_GET_DATETIME = 55
+AMK_PROTOCOL_GET_DATETIME = 54
+AMK_PROTOCOL_SET_DATETIME = 55
+AMK_PROTOCOL_GET_SWITCHTYPE = 56
+AMK_PROTOCOL_SET_SWITCHTYPE = 57
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -1091,3 +1093,22 @@ class ProtocolAmk(BaseProtocol):
         if data[2] != AMK_PROTOCOL_OK:
             print("failed to sychronize datetime with keyboard")
 
+    def reload_switch_type(self):
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_SWITCHTYPE), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_switch_type = data[3]
+        else:
+            print("Failed to reload switch type")
+
+    def apply_switch_type(self, switch_type):
+        if self.amk_switch_type == switch_type:
+            return
+        
+        self.amk_switch_type = switch_type
+
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_SWITCHTYPE, switch_type),
+                            retries=20)
+
+        if data[2] != AMK_PROTOCOL_OK:
+            print("failed to set switch type")
