@@ -486,9 +486,9 @@ class ProtocolAmk(BaseProtocol):
                 cont = True if val & 0x8000 > 0 else False
                 down = (val >> 6) & 0x3F
                 up = val & 0x003F
-                rt["cont"] = cont * self.amk_apcrt_scale
+                rt["cont"] = cont
                 rt["down"] = down * self.amk_apcrt_scale
-                rt["up"] = up
+                rt["up"] = up * self.amk_apcrt_scale
             else:
                 cont = True if val & 0x8000 > 0 else False
                 down = (val >> 7) & 0x007F
