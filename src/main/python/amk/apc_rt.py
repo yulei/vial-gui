@@ -282,12 +282,15 @@ class ApcRt(BasicEditor):
 
                 apc = self.keyboard.amk_apc[self.keyboard.amk_profile].get((row, col), AMK_APC_DEFAULT)
                 rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
+                print("current APC-{},RT-{}".format(apc,rt))
+            else:
+                print("No active Key")
 
             self.refresh_apc(apc)
             self.refresh_rt(rt)
 
     def deactivate(self):
-        pass
+        self.keyboardWidget.clear_active_keys()
     
     def apcrt_scale(self, val, down=True):
         if down:
