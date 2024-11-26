@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.8.1"
+AMK_VERSION = "0.9.1"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
