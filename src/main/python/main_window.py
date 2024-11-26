@@ -38,6 +38,7 @@ from amk.rgb import RgbStrip
 from amk.animation import Animation
 from amk.rgb_matrix import RgbMatrix
 from amk.rgb_config import RgbConfig
+from amk.aux_display import AuxDsiplay
 from amk.protocol import AMK_VERSION
 
 import themes
@@ -97,13 +98,15 @@ class MainWindow(QMainWindow):
         self.animation = Animation()
         self.rgb_matrix = RgbMatrix(self.layout_editor)
         self.rgb_config = RgbConfig(self.layout_editor)
+        self.aux_display = AuxDsiplay(self.layout_editor)
 
         self.editors = [(self.keymap_editor, "Keymap"), (self.layout_editor, "Layout"), (self.macro_recorder, "Macros"),
                         (self.rgb_configurator, "Lighting"), (self.tap_dance, "Tap Dance"), (self.combos, "Combos"),
                         (self.key_override, "Key Overrides"), (self.qmk_settings, "QMK Settings"),
                         (self.matrix_tester, "Matrix tester"), (self.firmware_flasher, "Firmware updater"),
                         (self.apc_rt, "APC/RT Settings"), (self.dks, "DKS Settings"), (self.snaptap, "Snap Tap Settings"), (self.misc, "Misc settings"),
-                        (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix"), (self.rgb_config, "RGB Config")]
+                        (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix"), (self.rgb_config, "RGB Config"),
+                        (self.aux_display, "Auxiliary Display")]
 
         Unlocker.global_layout_editor = self.layout_editor
         Unlocker.global_main_window = self
@@ -331,7 +334,8 @@ class MainWindow(QMainWindow):
                   self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester,
                   self.rgb_configurator,
                   self.apc_rt, self.dks, self.snaptap, self.misc,
-                  self.rgb_strip, self.animation, self.rgb_matrix, self.rgb_config]:
+                  self.rgb_strip, self.animation, self.rgb_matrix, self.rgb_config,
+                  self.aux_display]:
             e.rebuild(self.autorefresh.current_device)
 
     def refresh_tabs(self):

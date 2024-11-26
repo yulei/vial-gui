@@ -67,6 +67,8 @@ AMK_PROTOCOL_GET_DATETIME = 54
 AMK_PROTOCOL_SET_DATETIME = 55
 AMK_PROTOCOL_GET_SWITCHTYPE = 56
 AMK_PROTOCOL_SET_SWITCHTYPE = 57
+AMK_PROTOCOL_GET_AUX_MODE = 58
+AMK_PROTOCOL_SET_AUX_MODE = 59
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -1112,3 +1114,23 @@ class ProtocolAmk(BaseProtocol):
 
         if data[2] != AMK_PROTOCOL_OK:
             print("failed to set switch type")
+
+    def reload_aux_mode(self):
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_AUX_MODE), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_aux_mode = data[3]
+        else:
+            print("Failed to reload aux mode")
+
+    def apply_aux_mode(self, aux_mode):
+        #if self.amk_aux_mode == aux_mode:
+        #    return
+        
+        self.amk_aux_mode = aux_mode 
+
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_AUX_MODE, aux_mode),
+                            retries=20)
+
+        if data[2] != AMK_PROTOCOL_OK:
+            print("failed to set aux mode")

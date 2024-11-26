@@ -110,10 +110,15 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_rgb_matrix = {}
         self.amk_has_datetime = False
         self.amk_has_switch_type = False
+        self.amk_has_aux_display = False
+
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
                     self.amk_has_datetime = True
+                if feature == "aux_display":
+                    self.amk_has_aux_display = True
+                    self.amk_aux_mode = 0
                 if isinstance(feature, dict):
                     if "rgb" in feature:
                         for r in feature["rgb"]:

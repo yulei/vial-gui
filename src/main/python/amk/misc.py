@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt, QDateTime
+from PyQt5.QtCore import Qt
 
 import os, json
 
@@ -58,15 +58,6 @@ class Misc(BasicEditor):
         self.dks_cbx.setEnabled(True)
         self.dks_cbx.stateChanged.connect(self.on_dks_cbx)
         g_layout.addWidget(self.dks_cbx, line, 2)
-
-        line = line + 1
-
-        #datetime sync
-        self.dt_lbl = QLabel(tr("DATETIME", "Synchronize the datetime with keyboard:"))
-        g_layout.addWidget(self.dt_lbl, line, 0)
-        self.dt_btn = QPushButton("Sync")
-        self.dt_btn.clicked.connect(self.on_dt_btn)
-        g_layout.addWidget(self.dt_btn, line, 1)
 
         line = line + 1
 
@@ -396,13 +387,6 @@ class Misc(BasicEditor):
             self.ud_sld.blockSignals(False)
             self.ud_sbx.setEnabled(True)
             self.ud_sld.setEnabled(True)
-        
-        if self.keyboard.amk_has_datetime:
-            self.dt_lbl.show()
-            self.dt_btn.show()
-        else:
-            self.dt_lbl.hide()
-            self.dt_btn.hide()
         
         if self.keyboard.amk_has_switch_type:
             self.st_cbb.blockSignals(True)
@@ -772,15 +756,3 @@ class Misc(BasicEditor):
         self.keyboard.apply_btm_sensitivity(self.btm_sld.value())
         self.btm_sld.blockSignals(False)
         self.btm_dpb.blockSignals(False)
-
-    def on_dt_btn(self):
-        datetime = QDateTime.currentDateTime()
-        year = datetime.date().year()
-        month = datetime.date().month()
-        day = datetime.date().day()
-        weekday = datetime.date().dayOfWeek()
-        hour = datetime.time().hour()
-        minute = datetime.time().minute()
-        second = datetime.time().second()
-        self.keyboard.apply_datetime(year, month, day, weekday, hour, minute, second)
-
