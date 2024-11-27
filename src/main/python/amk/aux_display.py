@@ -96,6 +96,7 @@ class AuxWidget(QWidget):
                 data.append(img.pixelColor(x,y))
         return data
 
+import sys
 class AuxDsiplay(BasicEditor):
     def __init__(self, layout_editor, appctx):
         super().__init__()
@@ -106,7 +107,11 @@ class AuxDsiplay(BasicEditor):
 
         line = 0
 
-        self.dt_lbl = QLabel(tr("DATETIME", "时间同步 Synchronize the datetime"))
+        if sys.platform != "emscripten":
+            self.dt_lbl = QLabel(tr("DATETIME", "时间同步 Synchronize the datetime"))
+        else:
+            self.dt_lbl = QLabel(tr("DATETIME", "Synchronize the datetime"))
+
         g_layout.addWidget(self.dt_lbl, line, 0)
         self.dt_btn = QPushButton("Sync")
         self.dt_btn.clicked.connect(self.on_dt_btn)
@@ -114,20 +119,26 @@ class AuxDsiplay(BasicEditor):
 
         line = line + 1
 
-        lbl = QLabel("My-2K 黑白屏设置 Monochrome Screen Setting")
+        if sys.platform != "emscripten":
+            lbl = QLabel("My-2K 黑白屏设置 Monochrome Screen Setting")
+        else:
+            lbl = QLabel("My-2K Monochrome Screen Setting")
         g_layout.addWidget(lbl, line, 0)
         self.ad_btn = QPushButton("Update")
         self.ad_btn.clicked.connect(self.on_sync_clicked)
         g_layout.addWidget(self.ad_btn, line, 1)
 
         line = line + 1
-        lbl = QLabel("文本编辑 Text Editor")
+        if sys.platform != "emscripten":
+            lbl = QLabel("文本编辑 Text Editor")
+        else:
+            lbl = QLabel("Text Editor")
         g_layout.addWidget(lbl, line, 0, Qt.AlignRight)
 
         h_lyt = QHBoxLayout()
         h_lyt.addStretch(1)
         h_lyt.addWidget(QLabel("Select Font"))
-        QFontDatabase.addApplicationFont(appctx.get_resource("wqy-zenhei.ttc"))
+        #QFontDatabase.addApplicationFont(appctx.get_resource("wqy-zenhei.ttc"))
 
         fontDatabase = QFontDatabase()
         families = fontDatabase.families()
