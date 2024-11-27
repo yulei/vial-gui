@@ -97,7 +97,7 @@ class AuxWidget(QWidget):
         return data
 
 class AuxDsiplay(BasicEditor):
-    def __init__(self, layout_editor):
+    def __init__(self, layout_editor, appctx):
         super().__init__()
         self.keyboard = None
         self.device = None
@@ -127,6 +127,8 @@ class AuxDsiplay(BasicEditor):
         h_lyt = QHBoxLayout()
         h_lyt.addStretch(1)
         h_lyt.addWidget(QLabel("Select Font"))
+        QFontDatabase.addApplicationFont(appctx.get_resource("wqy-zenhei.ttc"))
+
         fontDatabase = QFontDatabase()
         families = fontDatabase.families()
         self.ad_fonts = QComboBox()

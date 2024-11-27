@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         self.animation = Animation()
         self.rgb_matrix = RgbMatrix(self.layout_editor)
         self.rgb_config = RgbConfig(self.layout_editor)
-        self.aux_display = AuxDsiplay(self.layout_editor)
+        self.aux_display = AuxDsiplay(self.layout_editor, appctx)
 
         self.editors = [(self.keymap_editor, "Keymap"), (self.layout_editor, "Layout"), (self.macro_recorder, "Macros"),
                         (self.rgb_configurator, "Lighting"), (self.tap_dance, "Tap Dance"), (self.combos, "Combos"),
