@@ -246,7 +246,7 @@ class AuxDsiplay(BasicEditor):
         QApplication.restoreOverrideCursor()
         QApplication.processEvents()
 
-        self.keyboard.apply_aux_mode(1)
+        self.keyboard.apply_aux_mode(0)
 
     def on_font_change(self):
         family = self.ad_fonts.currentText()
@@ -268,3 +268,5 @@ class AuxDsiplay(BasicEditor):
         minute = datetime.time().minute()
         second = datetime.time().second()
         self.keyboard.apply_datetime(year, month, day, weekday, hour, minute, second)
+
+        self.keyboard.apply_aux_mode(1)
