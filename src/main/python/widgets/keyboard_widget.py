@@ -1,8 +1,9 @@
 from collections import defaultdict
 
-from PyQt5.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
-from PyQt5.QtWidgets import QWidget, QToolTip, QApplication
-from PyQt5.QtCore import Qt, QSize, QRect, QPointF, pyqtSignal, QEvent, QRectF
+from PySide6.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
+from PySide6.QtWidgets import QWidget, QToolTip, QApplication
+from PySide6.QtCore import Qt, QSize, QRect, QPointF, QEvent, QRectF
+from PySide6.QtCore import Signal as pyqtSignal
 
 from constants import KEY_SIZE_RATIO, KEY_SPACING_RATIO, KEYBOARD_WIDGET_PADDING, \
     KEYBOARD_WIDGET_MASK_HEIGHT, KEY_ROUNDNESS, SHADOW_SIDE_PADDING, SHADOW_TOP_PADDING, SHADOW_BOTTOM_PADDING, \

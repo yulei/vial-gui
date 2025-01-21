@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout, QPushButton
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout, QPushButton
+from PySide6.QtCore import Qt
 
-from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import QApplication
 
 from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget

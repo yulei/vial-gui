@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QLabel
+from PySide6 import QtCore
+from PySide6.QtCore import QObject
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QLabel
 
 from protocol.constants import VIAL_PROTOCOL_DYNAMIC
 from widgets.key_widget import KeyWidget

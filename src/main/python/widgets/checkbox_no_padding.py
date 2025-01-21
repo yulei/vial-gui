@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QCheckBox
+from PySide6.QtWidgets import QCheckBox
 
 
 class CheckBoxNoPadding(QCheckBox):

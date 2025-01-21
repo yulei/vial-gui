@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox, QComboBox
-from PyQt5.QtCore import QSize, QRect, QPoint, Qt, pyqtSignal, QObject, QTimer, QThread
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFileDialog, QListWidget, QProgressBar, QMessageBox, QComboBox
+from PySide6.QtCore import QSize, QRect, QPoint, Qt, QObject, QTimer, QThread
+from PySide6.QtCore import Signal as pyqtSignal
 
-from PyQt5.QtGui import QPainter, QColor, QImage, QPixmap, QImageReader, QMovie
+from PySide6.QtGui import QPainter, QColor, QImage, QPixmap, QImageReader, QMovie
 
 from themes import Theme
 from editor.basic_editor import BasicEditor

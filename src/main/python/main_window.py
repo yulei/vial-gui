@@ -3,9 +3,12 @@ import logging
 import platform
 from json import JSONDecodeError
 
-from PyQt5.QtCore import Qt, QSettings, QStandardPaths, QTimer, QRect, QT_VERSION_STR
-from PyQt5.QtWidgets import QWidget, QComboBox, QToolButton, QHBoxLayout, QVBoxLayout, QMainWindow, QAction, qApp, \
-    QFileDialog, QDialog, QTabWidget, QActionGroup, QMessageBox, QLabel
+from PySide6.QtCore import Qt, QSettings, QStandardPaths, QTimer, QRect, qVersion
+#, QT_VERSION_STR
+from PySide6.QtWidgets import QWidget, QComboBox, QToolButton, QHBoxLayout, QVBoxLayout, QMainWindow, \
+    QFileDialog, QDialog, QTabWidget, QMessageBox, QLabel, QApplication
+
+from PySide6.QtGui import QAction, QActionGroup
 
 import os
 import sys
@@ -60,8 +63,9 @@ class MainWindow(QMainWindow):
 
         _pos = self.settings.value("pos", None)
         # NOTE: QDesktopWidget is obsolete, but QApplication.screenAt only usable in Qt 5.10+
-        if _pos and qApp.desktop().geometry().contains(QRect(_pos, self.size())):
+        #if _pos and qApp.desktop().geometry().contains(QRect(_pos, self.size())):
         #if _pos and qApp.screenAt(_pos) and qApp.screenAt(_pos + (self.rect().bottomRight())):
+        if _pos and QApplication.instance().screenAt(_pos) and QApplication.screenAt(_pos + (self.rect().bottomRight())):
             self.move(self.settings.value("pos"))
 
         themes.Theme.set_theme(self.get_theme())
@@ -440,7 +444,7 @@ class MainWindow(QMainWindow):
                'Licensed under the terms of the<br>GNU General Public License (version 2 or later)<br><br>' \
                '<a href="https://get.vial.today/">https://get.vial.today/</a>' \
                .format(qApp.applicationVersion(), AMK_VERSION,
-                       platform.python_version(), QT_VERSION_STR)
+                       platform.python_version(), qVersion())#QT_VERSION_STR)
 
         if sys.platform == "emscripten":
             self.msg_about = QMessageBox()

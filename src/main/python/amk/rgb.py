@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QSlider, QLabel, QCheckBox, QMessageBox, QColorDialog
-from PyQt5.QtCore import QSize, Qt, QRect
-from PyQt5.QtGui import QPalette, QPainter, QBrush, QColor
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QSlider, QLabel, QCheckBox, QMessageBox, QColorDialog
+from PySide6.QtCore import QSize, Qt, QRect
+from PySide6.QtGui import QPalette, QPainter, QBrush, QColor
+from PySide6.QtWidgets import QApplication
 
 from themes import Theme
 

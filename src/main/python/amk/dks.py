@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QLabel, QCheckBox, QMessageBox
-from PyQt5.QtCore import QSize, Qt, QRect
-from PyQt5.QtGui import QPalette, QPainter, QBrush, QPixmap, QImage
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QLabel, QCheckBox, QMessageBox
+from PySide6.QtCore import QSize, Qt, QRect
+from PySide6.QtGui import QPalette, QPainter, QBrush, QPixmap, QImage
+from PySide6.QtWidgets import QApplication
 
 from themes import Theme
 
@@ -192,9 +192,10 @@ class Dks(BasicEditor):
         self.dks_ckbs = []
 
         self.dks_lbl = QLabel()
-        self.dks_img = QImage(appctx.get_resource("dks.png"))
+        #self.dks_img = QImage(appctx.get_resource("dks.png"))
+        self.dks_img = QImage("../resources/base/dks.png")
         pixmap = QPixmap.fromImage(self.dks_img)
-        pixmap = pixmap.scaled(500, 500, aspectRatioMode=Qt.KeepAspectRatio)
+        pixmap = pixmap.scaled(500, 500)#, aspectRatioMode=Qt.KeepAspectRatio)
         self.dks_lbl.setPixmap(pixmap)
 
         g_layout = QGridLayout()

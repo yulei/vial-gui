@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QButtonGroup, QMessageBox 
-from PyQt5.QtCore import Qt, QSize, QRect
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QButtonGroup, QMessageBox 
+from PySide6.QtCore import Qt, QSize, QRect
 
-from PyQt5.QtGui import QPalette, QPainter, QBrush 
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtGui import QPalette, QPainter, QBrush 
+from PySide6.QtWidgets import QApplication
 
 from editor.basic_editor import BasicEditor
 from widgets.keyboard_widget import KeyboardWidget

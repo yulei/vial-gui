@@ -7,9 +7,10 @@ import time
 import threading
 import sys
 
-from PyQt5.QtCore import pyqtSignal, QCoreApplication
-from PyQt5.QtGui import QFontDatabase
-from PyQt5.QtWidgets import QHBoxLayout, QLineEdit, QToolButton, QPlainTextEdit, QProgressBar, QFileDialog, QDialog, \
+from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtGui import QFontDatabase
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QToolButton, QPlainTextEdit, QProgressBar, QFileDialog, QDialog, \
     QCheckBox
 
 from editor.basic_editor import BasicEditor

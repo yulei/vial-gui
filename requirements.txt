@@ -1,15 +1,17 @@
 altgraph==0.17
-fbs==0.9.0
-future==0.18.2
-git+https://github.com/vial-kb/cython-hidapi@88d8983b3dc65b9ef84238abe3f46004b0ef2fd0#egg=hidapi
+#fbs==1.2.7
+future==1.0.0
+#git+https://github.com/vial-kb/cython-hidapi@88d8983b3dc65b9ef84238abe3f46004b0ef2fd0#egg=hidapi
 keyboard==0.13.5
-macholib==1.14
-pefile==2019.4.18
-PyInstaller==3.4
-PyQt5==5.9.2
-https://github.com/danthedeckie/simpleeval/archive/41c99b8e224a7a0ae0ac59c773598fe79a4470db.zip
-sip==4.19.8
-pywin32==303; sys_platform == 'win32'
+macholib==1.16
+pefile==2023.2.7
+PyInstaller==6.11.1
+#PyQt5==5.9.2
+PySide6==6.8.1.1
+#https://github.com/danthedeckie/simpleeval/archive/41c99b8e224a7a0ae0ac59c773598fe79a4470db.zip
+simpleeval==1.0.3
+sip==6.9.1
+pywin32==308; sys_platform == 'win32'
 certifi
-pyusb==1.2.1
-libusb-package==1.0.26.0
+pyusb==1.3.1
+libusb-package==1.0.26.2

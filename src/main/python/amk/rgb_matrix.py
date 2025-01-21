@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog
+from PySide6.QtCore import Qt
 
-from PyQt5.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
+from PySide6.QtWidgets import QApplication
 
 from themes import Theme
 

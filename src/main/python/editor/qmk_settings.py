@@ -2,9 +2,10 @@
 import json
 from collections import defaultdict
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QVBoxLayout, QCheckBox, QGridLayout, QLabel, QWidget, QSizePolicy, QTabWidget, QSpinBox, \
+from PySide6 import QtCore
+from PySide6.QtCore import QObject
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QVBoxLayout, QCheckBox, QGridLayout, QLabel, QWidget, QSizePolicy, QTabWidget, QSpinBox, \
     QHBoxLayout, QPushButton, QMessageBox
 
 from editor.basic_editor import BasicEditor
@@ -235,7 +236,8 @@ class QmkSettings(BasicEditor):
     @classmethod
     def initialize(cls, appctx):
         cls.qsid_fields = defaultdict(list)
-        with open(appctx.get_resource("qmk_settings.json"), "r") as inf:
+        #with open(appctx.get_resource("qmk_settings.json"), "r") as inf:
+        with open("../resources/base/qmk_settings.json", "r") as inf:
             cls.settings_defs = json.load(inf)
         for tab in cls.settings_defs["tabs"]:
             for field in tab["fields"]:

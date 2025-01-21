@@ -6,9 +6,9 @@ import sys
 import time
 from logging.handlers import RotatingFileHandler
 
-from PyQt5.QtCore import QCoreApplication, QStandardPaths
-from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QApplication, QWidget, QScrollArea, QFrame
+from PySide6.QtCore import QCoreApplication, QStandardPaths
+from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import QApplication, QWidget, QScrollArea, QFrame
 
 from hidproxy import hid
 from keycodes.keycodes import Keycode

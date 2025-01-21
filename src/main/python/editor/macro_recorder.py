@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import sys
 
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QWidget, QLabel
+from PySide6.QtWidgets import QPushButton, QHBoxLayout, QWidget, QLabel
 
 from editor.basic_editor import BasicEditor
 from macro.macro_action import ActionText, ActionTap, ActionDown, ActionUp

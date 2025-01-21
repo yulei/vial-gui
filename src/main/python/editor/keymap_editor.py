@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import json
 
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QMessageBox, QWidget
-from PyQt5.QtCore import Qt, pyqtSignal
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QMessageBox, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal as pyqtSignal
 
 from any_keycode_dialog import AnyKeycodeDialog
 from editor.basic_editor import BasicEditor

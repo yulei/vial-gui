@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout
+from PySide6.QtWidgets import QVBoxLayout
 
 
 class BasicEditor(QVBoxLayout):

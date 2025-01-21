@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QPalette, QColor
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPalette, QColor
 
 themes = [
     ("Light", {
@@ -153,7 +153,7 @@ for name, colors in themes:
     for role, color in colors.items():
         if not hasattr(type(role), '__iter__'):
             role = [role]
-        palette.setColor(*role, QColor(color))
+        #palette.setColor(*role, QColor(color))
     palettes[name] = palette
 
 

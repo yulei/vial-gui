@@ -2,10 +2,11 @@
 import sys
 import os
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QProcess
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QApplication
-from fbs_runtime.application_context import is_frozen
+from PySide6 import QtCore
+from PySide6.QtCore import QProcess
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QApplication
+#from fbs_runtime.application_context import is_frozen
 
 from keycodes.keycodes import Keycode
 from macro.macro_key import KeyUp, KeyDown
@@ -41,8 +42,8 @@ class LinuxRecorder(QWidget):
         args = [sys.executable]
         if os.getenv("APPIMAGE"):
             args = [os.getenv("APPIMAGE")]
-        elif is_frozen():
-            args += sys.argv[1:]
+#        elif is_frozen():
+#            args += sys.argv[1:]
         else:
             args += sys.argv
         args += ["--linux-recorder"]

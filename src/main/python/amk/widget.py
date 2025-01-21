@@ -1,7 +1,8 @@
 
-from PyQt5.QtGui import QPainter, QPalette
-from PyQt5.QtWidgets import QWidget, QApplication
-from PyQt5.QtCore import Qt, QRect, QRectF, pyqtSignal
+from PySide6.QtGui import QPainter, QPalette
+from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtCore import Qt, QRect, QRectF
+from PySide6.QtCore import Signal as pyqtSignal
 
 from widgets.keyboard_widget import KeyboardWidget
 

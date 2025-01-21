@@ -8,11 +8,11 @@ if ssl.get_default_verify_paths().cafile is None:
 
 import traceback
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtCore import Signal as pyqtSignal
 
-from fbs_runtime.application_context import cached_property
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
+#from fbs_runtime.application_context import cached_property
+#from fbs_runtime.application_context.PySide6 import ApplicationContext
 
 import sys
 
@@ -55,8 +55,9 @@ class UncaughtHook(QtCore.QObject):
             self._exception_caught.emit(log_msg)
         sys._excepthook(exc_type, exc_value, exc_traceback)
 
-class VialApplicationContext(ApplicationContext):
-    @cached_property
+#class VialApplicationContext(ApplicationContext):
+class VialApplicationContext():
+    #@cached_property
     def app(self):
         # Override the app definition in order to set WM_CLASS.
         result = QtWidgets.QApplication(sys.argv)
@@ -76,10 +77,13 @@ if __name__ == '__main__':
 
         linux_keystroke_recorder()
     else:
+        from PySide6.QtWidgets import QApplication
+        app = QApplication(sys.argv)
         appctxt = VialApplicationContext()       # 1. Instantiate ApplicationContext
         init_logger()
         qt_exception_hook = UncaughtHook()
         window = MainWindow(appctxt)
         window.show()
-        exit_code = appctxt.app.exec_()      # 2. Invoke appctxt.app.exec_()
-        sys.exit(exit_code)
+        sys.exit(app.exec())
+        #exit_code = appctxt.app.exec_()      # 2. Invoke appctxt.app.exec_()
+        #sys.exit(exit_code)

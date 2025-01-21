@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import json
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QPushButton, QGridLayout, QHBoxLayout, QToolButton, QVBoxLayout, \
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QPushButton, QGridLayout, QHBoxLayout, QToolButton, QVBoxLayout, \
     QWidget, QMenu, QScrollArea, QFrame
 
 from keycodes.keycodes import Keycode

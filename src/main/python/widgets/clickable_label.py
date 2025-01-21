@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QLabel
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QLabel
 
 
 class ClickableLabel(QLabel):

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSignal, QObject
-from PyQt5.QtWidgets import QWidget, QSizePolicy, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QCheckBox, QScrollArea, QFrame, QToolButton
+from PySide6 import QtCore
+from PySide6.QtCore import Qt, QObject
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QCheckBox, QScrollArea, QFrame, QToolButton
 
 from protocol.constants import VIAL_PROTOCOL_DYNAMIC
 from util import make_scrollable, tr

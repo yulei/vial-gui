@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QSpinBox, QPushButton, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QComboBox
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QPainter, QBrush, QPixmap, QFont, QFontDatabase
-from PyQt5.QtCore import Qt, QSize, QPoint, QDateTime
+from PySide6.QtWidgets import QSpinBox, QPushButton, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QComboBox
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPainter, QBrush, QPixmap, QFont, QFontDatabase
+from PySide6.QtCore import Qt, QSize, QPoint, QDateTime
 
 import math
 

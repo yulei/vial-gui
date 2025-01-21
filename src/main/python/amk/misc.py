@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
+from PySide6.QtCore import Qt
 
 import os, json
 
@@ -288,7 +288,7 @@ class Misc(BasicEditor):
 
     def reset_ui(self):
         self.nk_cbx.blockSignals(True)
-        self.nk_cbx.setCheckState(self.keyboard.amk_nkro)
+        self.nk_cbx.setCheckState(Qt.Checked if self.keyboard.amk_nkro else Qt.Unchecked)
         self.ns_lbl.setText("ON" if self.keyboard.amk_nkro else "OFF")
         self.nk_cbx.blockSignals(False)
 
@@ -321,7 +321,7 @@ class Misc(BasicEditor):
             self.apcrt_cbb.show()
 
             self.dks_cbx.blockSignals(True)
-            self.dks_cbx.setCheckState(not self.keyboard.amk_dks_disable)
+            self.dks_cbx.setCheckState(Qt.Unchecked if self.keyboard.amk_dks_disable else Qt.Checked)
             self.dks_lbl.setText("OFF" if self.keyboard.amk_dks_disable else "ON")
             self.dks_cbx.blockSignals(False)
             self.dks_status_lbl.show()
