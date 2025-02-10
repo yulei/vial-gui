@@ -108,6 +108,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
         self.amk_rgb = []
         self.amk_rgb_matrix = {}
+        self.amk_rgb_data = []
         self.amk_has_datetime = False
         self.amk_has_switch_type = False
         self.amk_has_aux_display = False
@@ -145,6 +146,16 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             if rgb_inst["type"] == "matrix":
                                 self.reload_amk_rgb_matrix()
                             self.amk_rgb.append(rgb_inst)
+
+                    if "rgb_matrix" in feature:
+                        self.amk_rgb_matrix["start"] = feature["rgb_matrix"]["start"]
+                        self.amk_rgb_matrix["count"] = feature["rgb_matrix"]["count"]
+                        #print(feature["rgb_matrix"]["effects"])
+                        self.amk_rgb_matrix["effects"] = feature["rgb_matrix"]["effects"]
+                        self.reload_amk_rgb_matrix()
+                        #print(self.amk_rgb_matrix["start"], self.amk_rgb_matrix["count"])
+                        self.amk_rgb_data = [0] * self.amk_rgb_matrix["count"]
+                        self.reload_amk_rgb_params()
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
@@ -230,10 +241,10 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.rgb_indicators = {}
         self.reload_rgb_indicators()
 
-        if "amk_rgb_matrix" in self.definition:
-            self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
-            self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]
-            self.reload_amk_rgb_matrix()
+        #if "amk_rgb_matrix" in self.definition:
+        #    self.amk_rgb_matrix["start"] = self.definition["amk_rgb_matrix"]["start"]
+        #    self.amk_rgb_matrix["count"] = self.definition["amk_rgb_matrix"]["count"]
+        #    self.reload_amk_rgb_matrix()
 
         #reload animation
         self.animations = {"format":[], "file":{}, "disk":{}, "transfer":""}

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget
+from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
 from PyQt5.QtWidgets import QApplication
@@ -11,19 +11,25 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RgbColor
 
 def rgb_display(widget, is_custom, led):
     apc_text =""
     widget.setMaskColor(None)
 
-    if (led is not None) and is_custom and led.get_on():
-        color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
-        dynamic = "\u2b12" if led.get_dynamic() else " "
-        blink = "\u2b16" if led.get_blink() else " "
-        breath = "\u2b14" if led.get_breath() else " "
-        speed = "\u2942{}".format(led.get_speed())
-        apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
-        widget.setMaskColor(color)
+    if led is not None:
+        if is_custom:
+            if led.get_on():
+                color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
+                dynamic = "\u2b12" if led.get_dynamic() else " "
+                blink = "\u2b16" if led.get_blink() else " "
+                breath = "\u2b14" if led.get_breath() else " "
+                speed = "\u2942{}".format(led.get_speed())
+                apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
+                widget.setMaskColor(color)
+        else:
+            color = QColor.fromRgbF(led.get_red()/255.0, led.get_green()/255.0, led.get_blue()/255.0)
+            widget.setMaskColor(color)
 
     widget.setText(apc_text)
 
@@ -68,7 +74,9 @@ class RgbMatrix(BasicEditor):
         self.layout_editor = layout_editor
         self.keyboard = None
         self.device = None
-        self.custom_mode = False
+        self.mode = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.on_rgb_matrix_poller)
 
         self.keyboardWidget = RgbWidget(layout_editor, self)
         self.keyboardWidget.set_enabled(True)
@@ -88,11 +96,9 @@ class RgbMatrix(BasicEditor):
 
         layout = QVBoxLayout()
         layout.addStretch(3)
-        self.custom_cbx = QCheckBox("Custom Mode")
-        self.custom_cbx.setTristate(False)
-        self.custom_cbx.setEnabled(True)
-        self.custom_cbx.stateChanged.connect(self.on_custom_check)
-        layout.addWidget(self.custom_cbx)
+        self.mode_lst = QListWidget()
+        self.mode_lst.currentRowChanged.connect(self.on_mode_changed)
+        layout.addWidget(self.mode_lst)
         layout.addStretch(1)
         self.color_btn = QPushButton("Color...")
         self.color_btn.clicked.connect(self.on_color_btn_clicked)
@@ -139,19 +145,39 @@ class RgbMatrix(BasicEditor):
     def valid(self):
         return isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard and len(self.device.keyboard.amk_rgb_matrix) > 0)
+    
+    def reset_custom_widget(self):
+        if self.is_custom_mode():
+            self.on_cbx.setEnabled(True)
+            self.dynamic_cbx.setEnabled(True)
+            self.blink_cbx.setEnabled(True)
+            self.breath_cbx.setEnabled(True)
+        else:
+            self.on_cbx.setEnabled(False)
+            self.dynamic_cbx.setEnabled(False)
+            self.blink_cbx.setEnabled(False)
+            self.breath_cbx.setEnabled(False)
 
     def reset_keyboard_widget(self):
         if self.valid():
-            if self.keyboard.amk_rgb_matrix["mode"]["current"] == self.keyboard.amk_rgb_matrix["mode"]["custom"]:
-                self.custom_cbx.setCheckState(Qt.Checked)
-
+            self.mode_lst.clear()
+            #print(self.keyboard.amk_rgb_matrix["effects"])
+            self.mode_lst.addItems(self.keyboard.amk_rgb_matrix["effects"])
+            #print("Current: ",  self.keyboard.amk_rgb_matrix["mode"]["current"])
+            #print("Custom: ", self.keyboard.amk_rgb_matrix["mode"]["custom"])
+            #self.mode = self.keyboard.amk_rgb_matrix["mode"]["current"]
+            #self.mode_lst.setCurrentRow(self.mode)
             self.keyboardWidget.update_layout()
+
             for widget in self.keyboardWidget.widgets:
                 widget.masked = True
-                led = self.keyboard.get_rgb_matrix_led(widget.desc.row, widget.desc.col)
-                rgb_display(widget, self.is_custom_mode(), led)
+                if self.is_custom_mode():
+                    led = self.get_led(widget.desc.row, widget.desc.col)
+                    rgb_display(widget, self.is_custom_mode(), led)
 
                 widget.setOn(False)
+            
+            self.reset_custom_widget()
 
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
@@ -160,8 +186,11 @@ class RgbMatrix(BasicEditor):
         if self.valid():
             self.reset_keyboard_widget()
 
+        self.timer.start(50)
+
+
     def deactivate(self):
-        pass
+        self.timer.stop()
     
     def on_empty_space_clicked(self):
         self.keyboardWidget.clear_active_keys()
@@ -171,7 +200,7 @@ class RgbMatrix(BasicEditor):
         if not self.keyboardWidget.active_keys:
             return
 
-        if self.custom_cbx.checkState() != Qt.Checked:
+        if not self.is_custom_mode():
             return
 
         key = list(self.keyboardWidget.active_keys.values())[0]
@@ -198,25 +227,26 @@ class RgbMatrix(BasicEditor):
         self.on_cbx.blockSignals(False)
 
     def is_custom_mode(self):
-        return self.custom_cbx.checkState() == Qt.Checked
+        return self.mode == self.keyboard.amk_rgb_matrix["mode"]["custom"]
 
-    def on_custom_check(self):
-        if self.custom_cbx.checkState() == Qt.Checked:
-            self.keyboard.apply_rgb_matrix_mode(0, self.keyboard.amk_rgb_matrix["mode"]["custom"])
-        else:
-            if self.keyboard.amk_rgb_matrix["mode"]["current"] != self.keyboard.amk_rgb_matrix["mode"]["custom"]:
-                self.keyboard.apply_rgb_matrix_mode(0, self.keyboard.amk_rgb_matrix["mode"]["current"])
-            else:
-                self.keyboard.apply_rgb_matrix_mode(0, self.keyboard.amk_rgb_matrix["mode"]["default"])
-            
-        for widget in self.keyboardWidget.widgets:
-            widget.masked = True
-            led = self.keyboard.get_rgb_matrix_led(widget.desc.row, widget.desc.col)
-            rgb_display(widget, self.is_custom_mode(), led)
+    def on_mode_changed(self, cur):
+        if cur != -1:
+            print("Mode changed: ", cur)
+            self.keyboard.apply_rgb_matrix_mode(0, cur)
 
-            widget.setOn(False)
+            if cur == self.keyboard.amk_rgb_matrix["mode"]["custom"]:
+                self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_matrix["start"], self.keyboard.amk_rgb_matrix["count"])
 
-        self.keyboardWidget.update()
+            self.mode = cur
+
+            for widget in self.keyboardWidget.widgets:
+                widget.masked = True
+                led = self.get_led(widget.desc.row, widget.desc.col)
+                rgb_display(widget, self.is_custom_mode(), led)
+                widget.setOn(False)
+
+            self.reset_custom_widget()
+            self.keyboardWidget.update()
 
     def on_color_btn_clicked(self):
         self.dlg_color = QColorDialog()
@@ -229,23 +259,30 @@ class RgbMatrix(BasicEditor):
         if not color.isValid():
             return
 
-        h, s, v, a = color.getHsvF()
-        if h < 0:
-            h = 0
+        if self.is_custom_mode():
+            h, s, v, a = color.getHsvF()
+            if h < 0:
+                h = 0
 
-        hue = int(255*h)
-        sat = int(255*s)
-        val = int(255*v)
+            hue = int(255*h)
+            sat = int(255*s)
+            val = int(255*v)
 
-        for idx, key in self.keyboardWidget.active_keys.items():
-            index = self.keyboard.get_rgb_matrix_led_index(key.desc.row, key.desc.col)
-            led = self.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
-            if led is not None:
-                led.set_hue(hue)
-                led.set_sat(sat)
-                led.set_val(val)
-                self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
+            for idx, key in self.keyboardWidget.active_keys.items():
+                index = self.keyboard.get_rgb_matrix_led_index(key.desc.row, key.desc.col)
+                led = self.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
+                if led is not None:
+                    led.set_hue(hue)
+                    led.set_sat(sat)
+                    led.set_val(val)
+                    self.keyboard.apply_rgb_matrix_led(index, led)
+                    rgb_display(key, self.is_custom_mode(), led)
+        else:
+            r, g, b, a = color.getRgbF()
+            red = int(255*r)
+            green = int(255*g)
+            blue = int(255*b)
+            self.keyboard.apply_rgb_param(RGB_PARAM_COLOR, RgbColor(red, green, blue))
 
         self.keyboardWidget.update()
 
@@ -309,3 +346,21 @@ class RgbMatrix(BasicEditor):
                 rgb_display(key, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
+
+    def on_rgb_matrix_poller(self):
+        self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_matrix["start"], self.keyboard.amk_rgb_matrix["count"])
+        for widget in self.keyboardWidget.widgets:
+            led = self.get_led(widget.desc.row, widget.desc.col)
+            rgb_display(widget, self.is_custom_mode(), led)
+
+        self.keyboardWidget.update()
+    
+    def get_led(self, row, col):
+        if self.is_custom_mode():
+            return self.keyboard.get_rgb_matrix_led(row, col)
+        else:
+            index = self.keyboard.get_rgb_matrix_led_index(row, col)
+            if index is not None:
+                return self.keyboard.amk_rgb_data[index]
+            else:
+                return RgbColor(0, 0, 0)
