@@ -86,6 +86,9 @@ RGB_PARAM_COLOR = 0
 RGB_PARAM_HSV = 1
 RGB_PARAM_SPEED = 2
 
+RGB_TYPE_MATRIX = 0
+RGB_TYPE_STRIP  = 1
+RGB_TYPE_INDICATOR  = 2
 class DksKey:
     def __init__(self):
         self.down_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
@@ -1170,67 +1173,80 @@ class ProtocolAmk(BaseProtocol):
             cur = cur + size
     
 
-    def reload_rgb_param(self, param):
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_PARAM, param), retries=20)
+    def reload_rgb_param(self, rgb_type, param, index=0):
+        data = self.usb_send(self.dev, struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_PARAM, rgb_type, param, index), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            if param == RGB_PARAM_COLOR:
-                self.amk_rgb_matrix["color"] = RgbColor(data[3], data[4], data[5])
-            elif param == RGB_PARAM_HSV:
-                from PyQt5.QtGui import QColor
-                color = QColor.fromHsvF(data[3]/255.0, data[4]/255.0, data[5]/255.0)
-                self.amk_rgb_matrix["color"] = RgbColor(color.Red(), color.Green(), color.Blue())
-            elif param == RGB_PARAM_SPEED:
-                self.amk_rgb_matrix["speed"] = data[3]
+            if rgb_type == RGB_TYPE_MATRIX:
+                if param == RGB_PARAM_COLOR:
+                    self.amk_rgb_matrix["color"] = RgbColor(data[4], data[5], data[6])
+                elif param == RGB_PARAM_HSV:
+                    from PyQt5.QtGui import QColor
+                    color = QColor.fromHsvF(data[4]/255.0, data[5]/255.0, data[6]/255.0)
+                    self.amk_rgb_matrix["color"] = RgbColor(color.Red(), color.Green(), color.Blue())
+                elif param == RGB_PARAM_SPEED:
+                    self.amk_rgb_matrix["speed"] = data[4]
+            elif rgb_type == RGB_TYPE_STRIP:
+                pass
         else:
             print("Failed to reload rgb param: ", param)
 
-    def apply_rgb_param(self, param, data):
-        if param == RGB_PARAM_COLOR:
-            if self.amk_rgb_matrix["color"].get_red() == data.get_red() and \
-                self.amk_rgb_matrix["color"].get_green() == data.get_green() and \
-                self.amk_rgb_matrix["color"].get_blue() == data.get_blue():
-                return
+    def apply_rgb_param(self, rgb_type, param, data, index=0):
+        if rgb_type == RGB_TYPE_MATRIX:
+            if param == RGB_PARAM_COLOR:
+                if self.amk_rgb_matrix["color"].get_red() == data.get_red() and \
+                    self.amk_rgb_matrix["color"].get_green() == data.get_green() and \
+                    self.amk_rgb_matrix["color"].get_blue() == data.get_blue():
+                    return
 
-            self.amk_rgb_matrix["color"] = data
-            data = self.usb_send(self.dev, struct.pack("BBBBBB", 
-                                            AMK_PROTOCOL_PREFIX, 
-                                            AMK_PROTOCOL_SET_RGB_PARAM, 
-                                            param, 
-                                            data.get_red(), 
-                                            data.get_green(), 
-                                            data.get_blue(), 
-                                            ), retries=20)
-        elif param == RGB_PARAM_HSV:
-            if self.amk_rgb_matrix["color"].get_red() == data.get_red() and \
-                self.amk_rgb_matrix["color"].get_green() == data.get_green() and \
-                self.amk_rgb_matrix["color"].get_blue() == data.get_blue():
-                return
+                self.amk_rgb_matrix["color"] = data
+                data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
+                                                AMK_PROTOCOL_PREFIX, 
+                                                AMK_PROTOCOL_SET_RGB_PARAM, 
+                                                rgb_type,
+                                                param, 
+                                                index,
+                                                data.get_red(), 
+                                                data.get_green(), 
+                                                data.get_blue(), 
+                                                ), retries=20)
+            elif param == RGB_PARAM_HSV:
+                if self.amk_rgb_matrix["color"].get_red() == data.get_red() and \
+                    self.amk_rgb_matrix["color"].get_green() == data.get_green() and \
+                    self.amk_rgb_matrix["color"].get_blue() == data.get_blue():
+                    return
 
-            self.amk_rgb_matrix["color"] = data
-            from PyQt5.QtGui import QColor
-            color = QColor.fromRgbF(data.get_red()/255.0, data.get_green()/255.0, data.get_blue()/255.0)
-            h, s, v, a = color.getHsvF()
-            if h < 0:
-                h = 0
+                self.amk_rgb_matrix["color"] = data
+                from PyQt5.QtGui import QColor
+                color = QColor.fromRgbF(data.get_red()/255.0, data.get_green()/255.0, data.get_blue()/255.0)
+                h, s, v, a = color.getHsvF()
+                if h < 0:
+                    h = 0
 
-            hue = int(255*h)
-            sat = int(255*s)
-            val = int(255*v)
+                hue = int(255*h)
+                sat = int(255*s)
+                val = int(255*v)
 
-            data = self.usb_send(self.dev, struct.pack("BBBBBB", 
-                                            AMK_PROTOCOL_PREFIX, 
-                                            AMK_PROTOCOL_SET_RGB_PARAM, 
-                                            param, 
-                                            hue,sat,val), retries=20)
-        elif param == RGB_PARAM_SPEED:
-            if self.amk_rgb_matrix["speed"] == data:
-                return
+                data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
+                                                AMK_PROTOCOL_PREFIX, 
+                                                AMK_PROTOCOL_SET_RGB_PARAM, 
+                                                rgb_type,
+                                                param, 
+                                                index,
+                                                hue,sat,val), retries=20)
+            elif param == RGB_PARAM_SPEED:
+                if self.amk_rgb_matrix["speed"] == data:
+                    return
 
-            self.amk_rgb_matrix["speed"] = data
-            data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, param, data), retries=20)
+                self.amk_rgb_matrix["speed"] = data
+                data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
         else:
             print("Invalid RGB param: ", param)
 
-    def reload_amk_rgb_params(self):
-        self.reload_rgb_param(RGB_PARAM_COLOR)
-        self.reload_rgb_param(RGB_PARAM_SPEED)
+    def reload_amk_rgb_params(self, rgb_type):
+        if rgb_type == RGB_TYPE_MATRIX:
+            self.reload_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_COLOR)
+            self.reload_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_SPEED)
+        elif rgb_type == RGB_TYPE_STRIP:
+            pass
+        else:
+            print("unknown rgb type: ", rgb_type)

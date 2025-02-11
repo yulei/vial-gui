@@ -20,7 +20,7 @@ from protocol.dynamic import ProtocolDynamic
 from protocol.key_override import ProtocolKeyOverride
 from protocol.macro import ProtocolMacro
 from protocol.tap_dance import ProtocolTapDance
-from amk.protocol import ProtocolAmk
+from amk.protocol import ProtocolAmk, RGB_TYPE_MATRIX, RGB_TYPE_STRIP, RGB_TYPE_INDICATOR
 from unlocker import Unlocker
 from util import MSG_LEN, hid_send
 
@@ -155,7 +155,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.reload_amk_rgb_matrix()
                         #print(self.amk_rgb_matrix["start"], self.amk_rgb_matrix["count"])
                         self.amk_rgb_data = [0] * self.amk_rgb_matrix["count"]
-                        self.reload_amk_rgb_params()
+                        self.reload_amk_rgb_params(RGB_TYPE_MATRIX)
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":

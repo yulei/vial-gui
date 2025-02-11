@@ -11,7 +11,7 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
-from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RgbColor
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_MATRIX, RgbColor
 
 def rgb_display(widget, is_custom, led):
     apc_text =""
@@ -167,6 +167,8 @@ class RgbMatrix(BasicEditor):
             #print("Custom: ", self.keyboard.amk_rgb_matrix["mode"]["custom"])
             #self.mode = self.keyboard.amk_rgb_matrix["mode"]["current"]
             #self.mode_lst.setCurrentRow(self.mode)
+            self.speed_sld.setValue(self.keyboard.amk_rgb_matrix["speed"]*self.speed_sld.maximum() // 255)
+            #print("Speed: ", self.speed_sld.value())
             self.keyboardWidget.update_layout()
 
             for widget in self.keyboardWidget.widgets:
@@ -282,7 +284,7 @@ class RgbMatrix(BasicEditor):
             red = int(255*r)
             green = int(255*g)
             blue = int(255*b)
-            self.keyboard.apply_rgb_param(RGB_PARAM_COLOR, RgbColor(red, green, blue))
+            self.keyboard.apply_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_COLOR, RgbColor(red, green, blue))
 
         self.keyboardWidget.update()
 
@@ -336,19 +338,31 @@ class RgbMatrix(BasicEditor):
         self.keyboardWidget.update()
 
     def on_speed_sld(self):
-        for idx, key in self.keyboardWidget.active_keys.items():
-            index = self.keyboard.get_rgb_matrix_led_index(key.desc.row, key.desc.col)
-            led = self.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
-            if led is not None:
-                speed = self.speed_sld.value()
-                led.set_speed(speed)
-                self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
+        if self.is_custom_mode():
+            for idx, key in self.keyboardWidget.active_keys.items():
+                index = self.keyboard.get_rgb_matrix_led_index(key.desc.row, key.desc.col)
+                led = self.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
+                if led is not None:
+                    speed = self.speed_sld.value()
+                    led.set_speed(speed)
+                    self.keyboard.apply_rgb_matrix_led(index, led)
+                    rgb_display(key, self.is_custom_mode(), led)
+        else:
+            speed = (self.speed_sld.value() * 255) // self.speed_sld.maximum()
+            self.keyboard.apply_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_SPEED, speed)
 
         self.keyboardWidget.update()
 
     def on_rgb_matrix_poller(self):
-        self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_matrix["start"], self.keyboard.amk_rgb_matrix["count"])
+        if not self.valid():
+            self.timer.stop()
+            return
+        try:
+            self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_matrix["start"], self.keyboard.amk_rgb_matrix["count"])
+        except (RuntimeError, ValueError):
+            self.timer.stop()
+            return
+
         for widget in self.keyboardWidget.widgets:
             led = self.get_led(widget.desc.row, widget.desc.col)
             rgb_display(widget, self.is_custom_mode(), led)
