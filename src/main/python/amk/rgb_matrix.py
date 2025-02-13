@@ -171,13 +171,13 @@ class RgbMatrix(BasicEditor):
             #print("Speed: ", self.speed_sld.value())
             self.keyboardWidget.update_layout()
 
-            for widget in self.keyboardWidget.widgets:
-                widget.masked = True
-                if self.is_custom_mode():
-                    led = self.get_led(widget.desc.row, widget.desc.col)
-                    rgb_display(widget, self.is_custom_mode(), led)
+            #for widget in self.keyboardWidget.widgets:
+            #    widget.masked = True
+            #    if self.is_custom_mode():
+            #        led = self.get_led(widget.desc.row, widget.desc.col)
+            #        rgb_display(widget, self.is_custom_mode(), led)
 
-                widget.setOn(False)
+            #    widget.setOn(False)
             
             self.reset_custom_widget()
 
@@ -233,7 +233,7 @@ class RgbMatrix(BasicEditor):
 
     def on_mode_changed(self, cur):
         if cur != -1:
-            print("Mode changed: ", cur)
+            #print("Mode changed: ", cur)
             self.keyboard.apply_rgb_matrix_mode(0, cur)
 
             if cur == self.keyboard.amk_rgb_matrix["mode"]["custom"]:
@@ -241,11 +241,11 @@ class RgbMatrix(BasicEditor):
 
             self.mode = cur
 
-            for widget in self.keyboardWidget.widgets:
-                widget.masked = True
-                led = self.get_led(widget.desc.row, widget.desc.col)
-                rgb_display(widget, self.is_custom_mode(), led)
-                widget.setOn(False)
+            #for widget in self.keyboardWidget.widgets:
+            #    widget.masked = True
+            #    led = self.get_led(widget.desc.row, widget.desc.col)
+            #    rgb_display(widget, self.is_custom_mode(), led)
+            #    widget.setOn(False)
 
             self.reset_custom_widget()
             self.keyboardWidget.update()
@@ -365,7 +365,8 @@ class RgbMatrix(BasicEditor):
 
         for widget in self.keyboardWidget.widgets:
             led = self.get_led(widget.desc.row, widget.desc.col)
-            rgb_display(widget, self.is_custom_mode(), led)
+            if led is not None:
+                rgb_display(widget, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
     

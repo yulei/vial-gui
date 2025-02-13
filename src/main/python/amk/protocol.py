@@ -780,8 +780,7 @@ class ProtocolAmk(BaseProtocol):
                         strip["enabled"] = data[5]
                         strip["mode"] = data[6]
                         strip["custom"] = data[7]
-                        print("AMK protocol: get rgb strip: index={}, config={}, enabled={}, mode={}, custom={}".
-                              format(data[3], data[4], data[5], data[6], data[7]))
+                        #print("AMK protocol: get rgb strip: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
             for i in range(self.amk_rgb_strip["count"]):
                 self.reload_rgb_strip_led(self.amk_rgb_strip["start"]+i)
 
