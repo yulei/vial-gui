@@ -34,9 +34,10 @@ from amk.apc_rt import ApcRt
 from amk.dks import Dks 
 from amk.snaptap import Snaptap
 from amk.misc import Misc
-from amk.rgb import RgbStrip 
+#from amk.rgb import RgbStrip 
 from amk.animation import Animation
 from amk.rgb_matrix import RgbMatrix
+from amk.rgb_strip import RgbStrip 
 from amk.rgb_config import RgbConfig
 from amk.aux_display import AuxDsiplay
 from amk.protocol import AMK_VERSION
@@ -94,7 +95,7 @@ class MainWindow(QMainWindow):
         self.dks = Dks(self.layout_editor, appctx)
         self.snaptap = Snaptap(self.layout_editor)
         self.misc = Misc()
-        self.rgb_strip = RgbStrip()
+        self.rgb_strip = RgbStrip(self.layout_editor)
         self.animation = Animation()
         self.rgb_matrix = RgbMatrix(self.layout_editor)
         self.rgb_config = RgbConfig(self.layout_editor)

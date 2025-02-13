@@ -107,7 +107,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         self.amk_rgb = []
+        self.amk_rgb_led = {}
         self.amk_rgb_matrix = {}
+        self.amk_rgb_strip = {}
         self.amk_rgb_data = []
         self.amk_has_datetime = False
         self.amk_has_switch_type = False
@@ -147,15 +149,41 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                                 self.reload_amk_rgb_matrix()
                             self.amk_rgb.append(rgb_inst)
 
+                    if "rgb_led" in feature:
+                        self.amk_rgb_led["total"] = feature["rgb_led"]["total"]
+                        self.amk_rgb_data = [0] * self.amk_rgb_led["total"]
+
                     if "rgb_matrix" in feature:
                         self.amk_rgb_matrix["start"] = feature["rgb_matrix"]["start"]
                         self.amk_rgb_matrix["count"] = feature["rgb_matrix"]["count"]
-                        #print(feature["rgb_matrix"]["effects"])
                         self.amk_rgb_matrix["effects"] = feature["rgb_matrix"]["effects"]
                         self.reload_amk_rgb_matrix()
-                        #print(self.amk_rgb_matrix["start"], self.amk_rgb_matrix["count"])
-                        self.amk_rgb_data = [0] * self.amk_rgb_matrix["count"]
                         self.reload_amk_rgb_params(RGB_TYPE_MATRIX)
+
+                    if "rgb_strip" in feature:
+                        self.amk_rgb_strip["config_start"] = feature["rgb_strip"]["config_start"]
+                        self.amk_rgb_strip["start"] = feature["rgb_strip"]["start"]
+                        self.amk_rgb_strip["count"] = feature["rgb_strip"]["count"]
+                        self.amk_rgb_strip["strips"] = feature["rgb_strip"]["strips"]
+                        self.amk_rgb_strip["effects"] = feature["rgb_strip"]["effects"]
+                        self.amk_rgb_strip["layout"] = []
+                        serial = KleSerial()
+                        leds = serial.deserialize(feature["rgb_strip"]["layout"])
+                        for led in leds.keys:
+                            led.row = led.col = None
+                            led.encoder_idx = led.encoder_dir = None
+                            row, col = 0, 0
+                            if led.labels[0] and "," in led.labels[0]:
+                                row, col = led.labels[0].split(",")
+                                row, col = int(row), int(col)
+                                led.row = row
+                                led.col = col
+                                led.layout_index = -1
+                                led.layout_option = -1
+                            self.amk_rgb_strip["layout"].append(led)
+                        self.amk_rgb_strip["leds"] = {}
+                        self.reload_amk_rgb_strip()
+                        self.reload_amk_rgb_params(RGB_TYPE_STRIP)
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
@@ -229,14 +257,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_down_debounce = 0
             self.amk_up_debounce = 5
             self.reload_debounce()
-
-        #reload rgb 
-        if self.lighting_amk_rgblight:
-            self.amk_rgb_strip_count = 0
-            self.amk_rgb_strips = []
-            self.reload_rgb_strips()
-            for i in range(self.amk_rgb_strip_count):
-                self.reload_rgb_strip_led(i)
 
         self.rgb_indicators = {}
         self.reload_rgb_indicators()
