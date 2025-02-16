@@ -97,7 +97,7 @@ class RgbMatrix(BasicEditor):
         layout = QVBoxLayout()
         layout.addStretch(3)
         self.mode_lst = QListWidget()
-        self.mode_lst.currentRowChanged.connect(self.on_mode_changed)
+        self.mode_lst.itemSelectionChanged.connect(self.on_mode_changed)
         layout.addWidget(self.mode_lst)
         layout.addStretch(1)
         self.color_btn = QPushButton("Color...")
@@ -159,14 +159,14 @@ class RgbMatrix(BasicEditor):
             self.breath_cbx.setEnabled(False)
 
     def reset_keyboard_widget(self):
-        if self.valid():
+        if self.valid():    
+            #self.mode_lst.blockSignals(True)
+            #self.mode_lst.setEnabled(False)
             self.mode_lst.clear()
-            #print(self.keyboard.amk_rgb_matrix["effects"])
             self.mode_lst.addItems(self.keyboard.amk_rgb_matrix["effects"])
-            #print("Current: ",  self.keyboard.amk_rgb_matrix["mode"]["current"])
-            #print("Custom: ", self.keyboard.amk_rgb_matrix["mode"]["custom"])
-            #self.mode = self.keyboard.amk_rgb_matrix["mode"]["current"]
-            #self.mode_lst.setCurrentRow(self.mode)
+            #self.mode_lst.setEnabled(True)
+            #self.mode_lst.blockSignals(False)
+
             self.speed_sld.setValue(self.keyboard.amk_rgb_matrix["speed"]*self.speed_sld.maximum() // 255)
             #print("Speed: ", self.speed_sld.value())
             self.keyboardWidget.update_layout()
@@ -231,7 +231,8 @@ class RgbMatrix(BasicEditor):
     def is_custom_mode(self):
         return self.mode == self.keyboard.amk_rgb_matrix["mode"]["custom"]
 
-    def on_mode_changed(self, cur):
+    def on_mode_changed(self):
+        cur = self.mode_lst.currentRow()
         if cur != -1:
             #print("Mode changed: ", cur)
             self.keyboard.apply_rgb_matrix_mode(0, cur)
@@ -241,11 +242,11 @@ class RgbMatrix(BasicEditor):
 
             self.mode = cur
 
-            #for widget in self.keyboardWidget.widgets:
-            #    widget.masked = True
-            #    led = self.get_led(widget.desc.row, widget.desc.col)
-            #    rgb_display(widget, self.is_custom_mode(), led)
-            #    widget.setOn(False)
+            for widget in self.keyboardWidget.widgets:
+                widget.masked = True
+                led = self.get_led(widget.desc.row, widget.desc.col)
+                rgb_display(widget, self.is_custom_mode(), led)
+                widget.setOn(False)
 
             self.reset_custom_widget()
             self.keyboardWidget.update()

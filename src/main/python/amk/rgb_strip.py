@@ -100,10 +100,10 @@ class RgbStrip(BasicEditor):
         layout.addStretch(3)
         lyt = QHBoxLayout()
         self.strip_lst = QListWidget()
-        self.strip_lst.currentRowChanged.connect(self.on_strip_changed)
+        self.strip_lst.itemSelectionChanged.connect(self.on_strip_changed)
         lyt.addWidget(self.strip_lst)
         self.mode_lst = QListWidget()
-        self.mode_lst.currentRowChanged.connect(self.on_mode_changed)
+        self.mode_lst.itemSelectionChanged.connect(self.on_mode_changed)
         lyt.addWidget(self.mode_lst)
         layout.addLayout(lyt)
         layout.addStretch(1)
@@ -396,7 +396,8 @@ class RgbStrip(BasicEditor):
 
         self.keyboardWidget.update()
 
-    def on_strip_changed(self, cur):
+    def on_strip_changed(self):
+        cur = self.strip_lst.currentRow()
         if cur == -1:
             return
 
@@ -404,7 +405,8 @@ class RgbStrip(BasicEditor):
         self.mode = self.keyboard.amk_rgb_strip["strips"][cur]["mode"]
         self.mode_lst.setCurrentRow(self.mode)
 
-    def on_mode_changed(self, cur):
+    def on_mode_changed(self):
+        cur = self.mode_lst.currentRow()
         if cur == -1:
             return
 

@@ -1034,6 +1034,7 @@ class ProtocolAmk(BaseProtocol):
                                         start+index) + led.pack(), retries=20)
     
     def apply_rgb_matrix_mode(self, index, mode):
+        #print("apply rgb matrix mode: index={}, mode={}".format(index, mode))
         data = self.usb_send(self.dev,
                             struct.pack("BBBB", 
                                         AMK_PROTOCOL_PREFIX, 
