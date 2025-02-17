@@ -13,24 +13,20 @@ from util import tr
 from vial_device import VialKeyboard
 from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_MATRIX, RgbColor
 
-def rgb_display(widget, is_custom, led):
+def rgb_display(widget, is_custom, color, led = None):
     apc_text =""
     widget.setMaskColor(None)
 
-    if led is not None:
-        if is_custom:
-            if led.get_on():
-                color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
-                dynamic = "\u2b12" if led.get_dynamic() else " "
-                blink = "\u2b16" if led.get_blink() else " "
-                breath = "\u2b14" if led.get_breath() else " "
-                speed = "\u2942{}".format(led.get_speed())
-                apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
-                widget.setMaskColor(color)
-        else:
-            color = QColor.fromRgbF(led.get_red()/255.0, led.get_green()/255.0, led.get_blue()/255.0)
-            widget.setMaskColor(color)
+    if is_custom:
+        if led is not None and led.get_on():
+            dynamic = "\u2b12" if led.get_dynamic() else " "
+            blink = "\u2b16" if led.get_blink() else " "
+            breath = "\u2b14" if led.get_breath() else " "
+            speed = "\u2942{}".format(led.get_speed())
+            apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
 
+    led_color = QColor.fromRgbF(color.get_red()/255.0, color.get_green()/255.0, color.get_blue()/255.0)
+    widget.setMaskColor(led_color)
     widget.setText(apc_text)
 
 class RgbWidget(AmkWidget):
@@ -160,24 +156,15 @@ class RgbMatrix(BasicEditor):
 
     def reset_keyboard_widget(self):
         if self.valid():    
-            #self.mode_lst.blockSignals(True)
-            #self.mode_lst.setEnabled(False)
             self.mode_lst.clear()
             self.mode_lst.addItems(self.keyboard.amk_rgb_matrix["effects"])
-            #self.mode_lst.setEnabled(True)
-            #self.mode_lst.blockSignals(False)
 
             self.speed_sld.setValue(self.keyboard.amk_rgb_matrix["speed"]*self.speed_sld.maximum() // 255)
-            #print("Speed: ", self.speed_sld.value())
             self.keyboardWidget.update_layout()
 
-            #for widget in self.keyboardWidget.widgets:
-            #    widget.masked = True
-            #    if self.is_custom_mode():
-            #        led = self.get_led(widget.desc.row, widget.desc.col)
-            #        rgb_display(widget, self.is_custom_mode(), led)
-
-            #    widget.setOn(False)
+            for widget in self.keyboardWidget.widgets:
+                widget.masked = True
+                widget.setOn(False)
             
             self.reset_custom_widget()
 
@@ -244,8 +231,6 @@ class RgbMatrix(BasicEditor):
 
             for widget in self.keyboardWidget.widgets:
                 widget.masked = True
-                led = self.get_led(widget.desc.row, widget.desc.col)
-                rgb_display(widget, self.is_custom_mode(), led)
                 widget.setOn(False)
 
             self.reset_custom_widget()
@@ -279,7 +264,6 @@ class RgbMatrix(BasicEditor):
                     led.set_sat(sat)
                     led.set_val(val)
                     self.keyboard.apply_rgb_matrix_led(index, led)
-                    rgb_display(key, self.is_custom_mode(), led)
         else:
             r, g, b, a = color.getRgbF()
             red = int(255*r)
@@ -298,7 +282,6 @@ class RgbMatrix(BasicEditor):
                 on = not led.get_on()
                 led.set_on(on)
                 self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
 
@@ -310,7 +293,6 @@ class RgbMatrix(BasicEditor):
                 dynamic = not led.get_dynamic()
                 led.set_dynamic(dynamic)
                 self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
 
@@ -322,7 +304,6 @@ class RgbMatrix(BasicEditor):
                 blink = not led.get_blink()
                 led.set_blink(blink)
                 self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
 
@@ -334,7 +315,6 @@ class RgbMatrix(BasicEditor):
                 breath = not led.get_breath()
                 led.set_breath(breath)
                 self.keyboard.apply_rgb_matrix_led(index, led)
-                rgb_display(key, self.is_custom_mode(), led)
 
         self.keyboardWidget.update()
 
@@ -347,7 +327,6 @@ class RgbMatrix(BasicEditor):
                     speed = self.speed_sld.value()
                     led.set_speed(speed)
                     self.keyboard.apply_rgb_matrix_led(index, led)
-                    rgb_display(key, self.is_custom_mode(), led)
         else:
             speed = (self.speed_sld.value() * 255) // self.speed_sld.maximum()
             self.keyboard.apply_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_SPEED, speed)
@@ -365,18 +344,19 @@ class RgbMatrix(BasicEditor):
             return
 
         for widget in self.keyboardWidget.widgets:
-            led = self.get_led(widget.desc.row, widget.desc.col)
-            if led is not None:
-                rgb_display(widget, self.is_custom_mode(), led)
+            color, led = self.get_led(widget.desc.row, widget.desc.col)
+            if color is not None:
+                rgb_display(widget, self.is_custom_mode(), color, led)
 
         self.keyboardWidget.update()
     
     def get_led(self, row, col):
+        color = RgbColor(0,0,0)
+        index = self.keyboard.get_rgb_matrix_led_index(row, col)
+        if index is not None:
+            color = self.keyboard.amk_rgb_data[index]
+        led = None
         if self.is_custom_mode():
-            return self.keyboard.get_rgb_matrix_led(row, col)
-        else:
-            index = self.keyboard.get_rgb_matrix_led_index(row, col)
-            if index is not None:
-                return self.keyboard.amk_rgb_data[index]
-            else:
-                return RgbColor(0, 0, 0)
+            led = self.keyboard.get_rgb_matrix_led(row, col)
+        
+        return color, led
