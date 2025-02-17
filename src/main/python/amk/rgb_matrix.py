@@ -41,25 +41,25 @@ class RgbWidget(AmkWidget):
         qp.setRenderHint(QPainter.Antialiasing)
 
         for idx, key in enumerate(self.widgets):
-            led = self.editor.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
+            #led = self.editor.keyboard.get_rgb_matrix_led(key.desc.row, key.desc.col)
 
-            if led and led.get_on():
-                qp.save()
+            #if led and led.get_on():
+            qp.save()
 
-                qp.scale(self.scale, self.scale)
-                qp.translate(key.shift_x, key.shift_y)
-                qp.translate(key.rotation_x, key.rotation_y)
-                qp.rotate(key.rotation_angle)
-                qp.translate(-key.rotation_x, -key.rotation_y)
+            qp.scale(self.scale, self.scale)
+            qp.translate(key.shift_x, key.shift_y)
+            qp.translate(key.rotation_x, key.rotation_y)
+            qp.rotate(key.rotation_angle)
+            qp.translate(-key.rotation_x, -key.rotation_y)
 
-                qp.setPen(Qt.NoPen)
-                color_brush = QBrush()
-                color_brush.setColor(key.mask_color if key.mask_color else QApplication.palette().color(QPalette.Button).lighter(120))
-                color_brush.setStyle(Qt.SolidPattern)
-                qp.setBrush(color_brush)
-                qp.drawRoundedRect(key.mask_rect, key.corner, key.corner)
+            qp.setPen(Qt.NoPen)
+            color_brush = QBrush()
+            color_brush.setColor(key.mask_color if key.mask_color else QApplication.palette().color(QPalette.Button).lighter(120))
+            color_brush.setStyle(Qt.SolidPattern)
+            qp.setBrush(color_brush)
+            qp.drawRoundedRect(key.mask_rect, key.corner, key.corner)
 
-                qp.restore()
+            qp.restore()
 
         qp.end()
 

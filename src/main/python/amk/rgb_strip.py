@@ -13,24 +13,20 @@ from util import tr
 from vial_device import VialKeyboard
 from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_STRIP, RgbColor
 
-def rgb_display(widget, is_custom, led):
+def rgb_display(widget, is_custom, color, led = None):
     apc_text =""
     widget.setMaskColor(None)
 
-    if led is not None:
-        if is_custom:
-            if led.get_on():
-                color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
-                dynamic = "\u2b12" if led.get_dynamic() else " "
-                blink = "\u2b16" if led.get_blink() else " "
-                breath = "\u2b14" if led.get_breath() else " "
-                speed = "\u2942{}".format(led.get_speed())
-                apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
-                widget.setMaskColor(color)
-        else:
-            color = QColor.fromRgbF(led.get_red()/255.0, led.get_green()/255.0, led.get_blue()/255.0)
-            widget.setMaskColor(color)
+    if is_custom:
+        if led is not None and led.get_on():
+            dynamic = "\u2b12" if led.get_dynamic() else " "
+            blink = "\u2b16" if led.get_blink() else " "
+            breath = "\u2b14" if led.get_breath() else " "
+            speed = "\u2942{}".format(led.get_speed())
+            apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
 
+    led_color = QColor.fromRgbF(color.get_red()/255.0, color.get_green()/255.0, color.get_blue()/255.0)
+    widget.setMaskColor(led_color)
     widget.setText(apc_text)
 
 class RgbStripWidget(AmkWidget):
@@ -154,7 +150,7 @@ class RgbStrip(BasicEditor):
                (self.device.keyboard and len(self.device.keyboard.amk_rgb_strip) > 0)
 
     def reset_mode_widgets(self):
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             self.on_cbx.setEnabled(True)
             self.dynamic_cbx.setEnabled(True)
             self.blink_cbx.setEnabled(True)
@@ -178,10 +174,6 @@ class RgbStrip(BasicEditor):
             self.keyboardWidget.update_layout()
             for widget in self.keyboardWidget.widgets:
                 widget.masked = True
-                if self.is_custom_mode():
-                    led = self.get_led(widget.desc.row, widget.desc.col)
-                    rgb_display(widget, self.is_custom_mode(), led)
-
                 widget.setOn(False)
 
             self.reset_mode_widgets()
@@ -204,11 +196,11 @@ class RgbStrip(BasicEditor):
         if not self.keyboardWidget.active_keys:
             return
 
-        if not self.is_custom_mode():
+        key = list(self.keyboardWidget.active_keys.values())[0]
+        if not self.is_custom_mode(key.desc.row):
             return
 
-        key = list(self.keyboardWidget.active_keys.values())[0]
-        led = self.get_led(key.desc.row, key.desc.col)
+        color, led = self.get_led(key.desc.row, key.desc.col)
         if led is None:
             return
         
@@ -230,11 +222,11 @@ class RgbStrip(BasicEditor):
         self.dynamic_cbx.blockSignals(False)
         self.on_cbx.blockSignals(False)
 
-    def is_custom_mode(self):
-        if self.strip == -1 or self.strip >= len(self.keyboard.amk_rgb_strip["strips"]):
+    def is_custom_mode(self, strip):
+        if strip == -1 or strip >= len(self.keyboard.amk_rgb_strip["strips"]):
             return False
         
-        return self.keyboard.amk_rgb_strip["strips"][self.strip]["mode"] == self.keyboard.amk_rgb_strip["effects"].index("Custom") 
+        return self.keyboard.amk_rgb_strip["strips"][strip]["mode"] == self.keyboard.amk_rgb_strip["effects"].index("Custom") 
 
     def on_color_btn_clicked(self):
         self.dlg_color = QColorDialog()
@@ -250,7 +242,7 @@ class RgbStrip(BasicEditor):
         if not color.isValid():
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             h, s, v, a = color.getHsvF()
             if h < 0:
                 h = 0
@@ -280,14 +272,14 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             for idx, key in self.keyboardWidget.active_keys.items():
                 if key.desc.row == self.strip:
                     index = self.get_led_index(key.desc.row, key.desc.col)
                     led = self.keyboard.amk_rgb_strip["leds"][index]
                     on = not led.get_on()
                     led.set_on(on)
-                    self.apply_rgb_strip_led(index, led)
+                    self.keyboard.apply_rgb_strip_led(index, led)
 
         self.keyboardWidget.update()
 
@@ -295,14 +287,14 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             for idx, key in self.keyboardWidget.active_keys.items():
                 if key.desc.row == self.strip:
                     index = self.get_led_index(key.desc.row, key.desc.col)
                     led = self.keyboard.amk_rgb_strip["leds"][index]
                     dynamic = not led.get_dynamic()
                     led.set_dynamic(dynamic)
-                    self.apply_rgb_strip_led(index, led)
+                    self.keyboard.apply_rgb_strip_led(index, led)
 
         self.keyboardWidget.update()
 
@@ -310,14 +302,14 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             for idx, key in self.keyboardWidget.active_keys.items():
                 if key.desc.row == self.strip:
                     index = self.get_led_index(key.desc.row, key.desc.col)
                     led = self.keyboard.amk_rgb_strip["leds"][index]
                     blink = not led.get_blink()
                     led.set_blink(blink)
-                    self.apply_rgb_strip_led(index, led)
+                    self.keyboard.apply_rgb_strip_led(index, led)
 
         self.keyboardWidget.update()
 
@@ -325,14 +317,14 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             for idx, key in self.keyboardWidget.active_keys.items():
                 if key.desc.row == self.strip:
                     index = self.get_led_index(key.desc.row, key.desc.col)
                     led = self.keyboard.amk_rgb_strip["leds"][index]
                     breath = not led.get_breath()
                     led.set_breath(breath)
-                    self.apply_rgb_strip_led(index, led)
+                    self.keyboard.apply_rgb_strip_led(index, led)
 
         self.keyboardWidget.update()
 
@@ -340,14 +332,14 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        if self.is_custom_mode():
+        if self.is_custom_mode(self.strip):
             for idx, key in self.keyboardWidget.active_keys.items():
                 if key.desc.row == self.strip:
                     index = self.get_led_index(key.desc.row, key.desc.col)
                     led = self.keyboard.amk_rgb_strip["leds"][index]
                     if (led.get_speed() != self.speed_sld.value()):
                         led.set_speed(self.speed_sld.value())
-                        self.apply_rgb_strip_led(index, led)
+                        self.keyboard.apply_rgb_strip_led(index, led)
         else:
             speed = (self.speed_sld.value() * 255) // self.speed_sld.maximum()
             self.keyboard.apply_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, speed, self.strip)
@@ -365,19 +357,15 @@ class RgbStrip(BasicEditor):
         return index 
 
     def get_led(self, strip, offset):
-        if self.is_custom_mode():
-            index = self.get_led_index(strip, offset)
-            if index is not None:
-                return self.keyboard.amk_rgb_strip["leds"][index]
-            else:
-                return None
-        else:
-            index = self.get_led_index(strip, offset)
-            if index is not None:
-                #print("index: ", index)
-                return self.keyboard.amk_rgb_data[index]
-            else:
-                return RgbColor(0, 0, 0)
+        color = RgbColor(0,0,0)
+        index = self.get_led_index(strip, offset)
+        led = None
+        if index is not None:
+            color = self.keyboard.amk_rgb_data[index]
+            if self.is_custom_mode(strip):
+                led = self.keyboard.amk_rgb_strip["leds"][index]
+
+        return color, led
     
     def on_rgb_strip_poller(self):
         if not self.valid():
@@ -390,9 +378,8 @@ class RgbStrip(BasicEditor):
             return
 
         for widget in self.keyboardWidget.widgets:
-            led = self.get_led(widget.desc.row, widget.desc.col)
-            if led is not None:
-                rgb_display(widget, self.is_custom_mode(), led)
+            color, led = self.get_led(widget.desc.row, widget.desc.col)
+            rgb_display(widget, self.is_custom_mode(widget.desc.row), color, led)
 
         self.keyboardWidget.update()
 
