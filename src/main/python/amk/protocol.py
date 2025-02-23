@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.9.1"
+AMK_VERSION = "0.9.5"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -1283,6 +1283,6 @@ class ProtocolAmk(BaseProtocol):
         elif rgb_type == RGB_TYPE_STRIP:
             for i in range (len(self.amk_rgb_strip["strips"])):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_COLOR, i)
-                self.reload_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_SPEED, i)
+                self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
         else:
             print("unknown rgb type: ", rgb_type)
