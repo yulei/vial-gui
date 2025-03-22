@@ -38,6 +38,7 @@ from amk.misc import Misc
 from amk.animation import Animation
 from amk.rgb_matrix import RgbMatrix
 from amk.rgb_strip import RgbStrip 
+from amk.rgb_indicator import RgbIndicator
 from amk.rgb_config import RgbConfig
 from amk.aux_display import AuxDsiplay
 from amk.protocol import AMK_VERSION
@@ -96,6 +97,7 @@ class MainWindow(QMainWindow):
         self.snaptap = Snaptap(self.layout_editor)
         self.misc = Misc()
         self.rgb_strip = RgbStrip(self.layout_editor)
+        self.rgb_indicator = RgbIndicator(self.layout_editor)
         self.animation = Animation()
         self.rgb_matrix = RgbMatrix(self.layout_editor)
         self.rgb_config = RgbConfig(self.layout_editor)
@@ -107,7 +109,7 @@ class MainWindow(QMainWindow):
                         (self.matrix_tester, "Matrix tester"), (self.firmware_flasher, "Firmware updater"),
                         (self.apc_rt, "APC/RT Settings"), (self.dks, "DKS Settings"), (self.snaptap, "Snap Tap Settings"), (self.misc, "Misc settings"),
                         (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix"), (self.rgb_config, "RGB Config"),
-                        (self.aux_display, "Auxiliary Display")]
+                        (self.aux_display, "Auxiliary Display"), (self.rgb_indicator, "RGB Indicator")]
 
         Unlocker.global_layout_editor = self.layout_editor
         Unlocker.global_main_window = self
@@ -336,7 +338,7 @@ class MainWindow(QMainWindow):
                   self.rgb_configurator,
                   self.apc_rt, self.dks, self.snaptap, self.misc,
                   self.rgb_strip, self.animation, self.rgb_matrix, self.rgb_config,
-                  self.aux_display]:
+                  self.aux_display, self.rgb_indicator]:
             e.rebuild(self.autorefresh.current_device)
 
     def refresh_tabs(self):

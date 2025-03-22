@@ -810,37 +810,25 @@ class ProtocolAmk(BaseProtocol):
             print("AMK protocol: failed to set rgb strip mode: index={}, mode={}".format(strip, mode))
         #print("AMK protocol: set rgb strip mode: index={}, mode={}".format(strip, mode))
     
-    def reload_indicator(self, led):
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_INDICATOR_LED, led.get_index()), retries=20)
+    def reload_amk_rgb_indicators(self):
+        for i in range(len(self.amk_rgb_indicator["indicators"])):
+            self.reload_rgb_indicator(i)
+
+    def reload_rgb_indicator(self, index):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_INDICATOR_LED,index), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            indicator = RgbLed(data[3], data[4], data[5], data[6], data[7])
-            led.set_led(indicator)
+            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            self.amk_rgb_indicator["leds"][index] = led 
         else:
-            print("Failed to get indicator at: ", led.get_index())
+            print("Failed to get indicator at: ", index)
 
-    def reload_rgb_indicators(self):
-        if "indicator" in self.definition:
-            if "num_lock" in self.definition["indicator"]:
-                self.rgb_indicators["num_lock"] = RgbIndicator(self.definition["indicator"]["num_lock"]["index"])
-                self.reload_indicator(self.rgb_indicators["num_lock"])
-            if "caps_lock" in self.definition["indicator"]:
-                self.rgb_indicators["caps_lock"] = RgbIndicator(self.definition["indicator"]["caps_lock"]["index"])
-                self.reload_indicator(self.rgb_indicators["caps_lock"])
-            if "scroll_lock" in self.definition["indicator"]:
-                self.rgb_indicators["scroll_lock"] = RgbIndicator(self.definition["indicator"]["scroll_lock"]["index"])
-                self.reload_indicator(self.rgb_indicators["scroll_lock"])
-            if "compose" in self.definition["indicator"]:
-                self.rgb_indicators["compose"] = RgbIndicator(self.definition["indicator"]["compose"]["index"])
-                self.reload_indicator(self.rgb_indicators["compose"])
-            if "kana" in self.definition["indicator"]:
-                self.rgb_indicators["kana"] = RgbIndicator(self.definition["indicator"]["kana"]["index"])
-                self.reload_indicator(self.rgb_indicators["kana"])
+    def apply_rgb_indicator(self, index, led):
+        self.amk_rgb_indicator["leds"][index] = led 
 
-    def apply_rgb_indicator(self, led):
-        data = self.usb_send(self.dev,
-                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, 
-                                        led.get_index()) + led.get_led().pack(), 
-                             retries=20)
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, index) + led.pack(), retries=20)
+        if data[2] != AMK_PROTOCOL_OK:
+            print("AMK protocol: failed to set rgb indicator led: index={}, led={}".format(index, led.pack()))
+
     
     def reload_anim_file_list(self):
         data = self.usb_send(self.dev, 
