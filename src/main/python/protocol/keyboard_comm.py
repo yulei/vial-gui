@@ -186,24 +186,25 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.reload_amk_rgb_strip()
                         self.reload_amk_rgb_params(RGB_TYPE_STRIP)
                     if "rgb_indicator" in feature:
-                        self.amk_rgb_indicator["layout"] = []
-                        serial = KleSerial()
-                        leds = serial.deserialize(feature["rgb_indicator"]["layout"])
-                        for led in leds.keys:
-                            led.row = led.col = None
-                            led.encoder_idx = led.encoder_dir = None
-                            row, col = 0, 0
-                            if led.labels[0] and "," in led.labels[0]:
-                                row, col = led.labels[0].split(",")
-                                row, col = int(row), int(col)
-                                led.row = row
-                                led.col = col
-                                led.layout_index = -1
-                                led.layout_option = -1
-                            self.amk_rgb_indicator["layout"].append(led)
-                        self.amk_rgb_indicator["indicators"] = feature["rgb_indicator"]["leds"]
-                        self.amk_rgb_indicator["leds"] = {}
-                        self.reload_amk_rgb_indicators()
+                        if "layout" in feature["rgb_indicator"]:
+                            self.amk_rgb_indicator["layout"] = []
+                            serial = KleSerial()
+                            leds = serial.deserialize(feature["rgb_indicator"]["layout"])
+                            for led in leds.keys:
+                                led.row = led.col = None
+                                led.encoder_idx = led.encoder_dir = None
+                                row, col = 0, 0
+                                if led.labels[0] and "," in led.labels[0]:
+                                    row, col = led.labels[0].split(",")
+                                    row, col = int(row), int(col)
+                                    led.row = row
+                                    led.col = col
+                                    led.layout_index = -1
+                                    led.layout_option = -1
+                                self.amk_rgb_indicator["layout"].append(led)
+                            self.amk_rgb_indicator["indicators"] = feature["rgb_indicator"]["leds"]
+                            self.amk_rgb_indicator["leds"] = {}
+                            self.reload_amk_rgb_indicators()
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
