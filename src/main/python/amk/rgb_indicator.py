@@ -18,7 +18,7 @@ def rgb_display(widget, desc, led):
     widget.setMaskColor(None)
 
     led_color = QColor.fromRgbF(0.0, 0.0, 0.0)
-    if led.get_on():
+    if led.get_on() or True:
         led_color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
 
     widget.setMaskColor(led_color)
