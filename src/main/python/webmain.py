@@ -5,6 +5,7 @@ import traceback
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QFont, QFontDatabase
 
 import sys
 import json
@@ -57,11 +58,12 @@ def web_get_resource(name):
 
 
 def main(app):
-    font = app.font()
+    app.get_resource = web_get_resource
+    QFontDatabase.addApplicationFont(app.get_resource("wqy-microhei.ttc"))
+    font = QFont("wqy-microhei")
     font.setPointSize(10)
     app.setFont(font)
 
-    app.get_resource = web_get_resource
     with open(app.get_resource("build_settings.json"), "r") as inf:
         app.build_settings = json.loads(inf.read())
     qt_exception_hook = UncaughtHook()
