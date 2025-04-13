@@ -10,6 +10,7 @@ import traceback
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QFontDatabase, QFont
 
 from fbs_runtime.application_context import cached_property
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
@@ -77,6 +78,9 @@ if __name__ == '__main__':
         linux_keystroke_recorder()
     else:
         appctxt = VialApplicationContext()       # 1. Instantiate ApplicationContext
+        QFontDatabase.addApplicationFont(appctxt.get_resource("wqy-microhei.ttc"))
+        font = QFont("wqy-microhei", 12)
+        appctxt.app.setFont(font)
         init_logger()
         qt_exception_hook = UncaughtHook()
         window = MainWindow(appctxt)
