@@ -27,13 +27,14 @@ def snaptap_display(widget, left, mode, valid=True, used=False):
     snaptap_text = ""
 
     if left:
-        snaptap_text = "First"
+        snaptap_text = tr("Snaptap", "First/第一个")
     else:
-        snaptap_text = "Second"
+        snaptap_text = tr("Snaptap", "Second/第二个")
 
-    tooltip = "Snaptap setting"
+    tooltip = tr("Snaptap", "Snaptap setting/Snaptap 设置")
     widget.setText(snaptap_text)
     widget.setToolTip(tooltip)
+    widget.setToolTipDuration(100000)
 
     if mode != 0:
         widget.masked = True 
@@ -132,7 +133,7 @@ class Snaptap(BasicEditor):
         super().__init__()
 
         h_layout = QHBoxLayout()
-        snaptap_lbl = QLabel(tr("Snaptap", "Snaptap list: "))
+        snaptap_lbl = QLabel(tr("Snaptap", "Snaptap list/列表: "))
         h_layout.addWidget(snaptap_lbl)
         self.snaptap_btns = []
         for x in range(8):
@@ -163,28 +164,28 @@ class Snaptap(BasicEditor):
         v_layout.addLayout(h_layout)
 
         self.mode_group = QButtonGroup()
-        self.depth_radio = QRadioButton("Depth: Activated most pressed key")
+        self.depth_radio = QRadioButton(tr("Snaptap", "Depth: Activated most pressed key/激活按下最深的按键"))
         self.depth_radio.setEnabled(False)
         self.mode_group.addButton(self.depth_radio, 1)
         v_layout.addWidget(self.depth_radio)
         v_layout.setAlignment(self.depth_radio, Qt.AlignLeft)
 
-        self.trigger_radio = QRadioButton("Trigger: Activated last pressed key")
+        self.trigger_radio = QRadioButton(tr("Snaptap", "Trigger: Activated last pressed key/激活最后按下的按键"))
         self.mode_group.addButton(self.trigger_radio, 2)
         v_layout.addWidget(self.trigger_radio)
         v_layout.setAlignment(self.trigger_radio, Qt.AlignLeft)
 
-        self.first_radio = QRadioButton("First: First key activated first")
+        self.first_radio = QRadioButton(tr("Snaptap", "First: First key activated first/激活最先按下的按键"))
         self.mode_group.addButton(self.first_radio, 3)
         v_layout.addWidget(self.first_radio)
         v_layout.setAlignment(self.first_radio, Qt.AlignLeft)
 
-        self.second_radio = QRadioButton("Second: Second key activated first")
+        self.second_radio = QRadioButton(tr("Snaptap", "Second: Second key activated first/激活第二个按下的按键"))
         self.mode_group.addButton(self.second_radio, 4)
         v_layout.addWidget(self.second_radio)
         v_layout.setAlignment(self.second_radio, Qt.AlignLeft)
 
-        self.both_radio = QRadioButton("Both: Released all if both pressed")
+        self.both_radio = QRadioButton(tr("Snaptap", "Both: Released all if both pressed/同时按下时将释放这对按键"))
         self.mode_group.addButton(self.both_radio, 5)
         v_layout.addWidget(self.both_radio)
         v_layout.setAlignment(self.both_radio, Qt.AlignLeft)
@@ -193,11 +194,11 @@ class Snaptap(BasicEditor):
         v_layout.addStretch(1)
 
         h_layout = QHBoxLayout()
-        self.clear_btn = QPushButton("Clear")
+        self.clear_btn = QPushButton(tr("Snaptap", "Clear/清除"))
         self.clear_btn.setEnabled(True)
         self.clear_btn.clicked.connect(self.on_clear_clicked)
         h_layout.addWidget(self.clear_btn)
-        self.apply_btn = QPushButton("Apply")
+        self.apply_btn = QPushButton(tr("Snaptap", "Apply/应用"))
         self.apply_btn.setEnabled(False)
         self.apply_btn.clicked.connect(self.on_apply_clicked)
         h_layout.addWidget(self.apply_btn)
@@ -376,7 +377,7 @@ class Snaptap(BasicEditor):
     def switch_snaptap(self, idx):
         if self.dirty:
             button = QMessageBox.warning(None, "Snap Tap",
-                                        "The current snap tap setting was modified, do you want to save ?",
+                                        tr("Snaptap", "The current snap tap setting was modified, do you want to save/当前设置已经改变，是否需要保存?"),
                                         buttons=QMessageBox.Save | QMessageBox.Discard,
                                         defaultButton=QMessageBox.Save)
             if button == QMessageBox.Save:
@@ -492,7 +493,7 @@ class Snaptap(BasicEditor):
                 self.current_first_col < 0 or \
                 self.current_second_row < 0 or \
                 self.current_second_col < 0:
-                QMessageBox.information(None, "", "Not a valid snaptap")
+                QMessageBox.information(None, "", tr("Snaptap", "Not a valid snaptap/不是有效的snaptap设置"))
             else:
                 key = {"first_row":self.current_first_row,
                         "first_col":self.current_first_col,
@@ -505,7 +506,7 @@ class Snaptap(BasicEditor):
 
     def save_or_discard(self, dks):
         button = QMessageBox.warning(None, "Snap Tap",
-                                    "The current snap tap setting was modified, do you want to save ?",
+                                    tr("Snaptap", "The current snap tap setting was modified, do you want to save/当前设置已经改变,是否需要保存?"),
                                     buttons=QMessageBox.Save | QMessageBox.Discard,
                                     defaultButton=QMessageBox.Save)
         if button == QMessageBox.Save:

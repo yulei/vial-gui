@@ -32,6 +32,7 @@ def apc_rt_display(widget, apc, rt):
     tooltip = tr("APCRT", "APC/RT setting/设置")
     widget.setText(apc_text)
     widget.setToolTip(tooltip)
+    widget.setToolTipDuration(100000)
 
     if rt["up"] > 0:
         widget.masked = True 

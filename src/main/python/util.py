@@ -200,6 +200,8 @@ class KeycodeDisplay:
         widget.setText(text)
         widget.setMaskText(mask_text)
         widget.setToolTip(tooltip)
+        widget.setToolTipDuration(100000)
+
         if cls.code_is_overriden(code):
             widget.setColor(QApplication.palette().color(QPalette.Link))
         else:

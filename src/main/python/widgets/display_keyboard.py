@@ -30,6 +30,7 @@ class DisplayKeyboard(QWidget):
             btn.setRelSize(KEYCODE_BTN_RATIO)
             btn.setContentsMargins(0, 0, 0, 0)
             btn.setToolTip(Keycode.tooltip(kc.qmk_id))
+            btn.setToolTipDuration(100000)
             btn.setText(kc.label)
             btn.clicked.connect(lambda st, k=kc: self.keycode_changed.emit(k.qmk_id))
             btn.keycode = kc
