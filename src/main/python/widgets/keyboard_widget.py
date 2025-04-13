@@ -181,6 +181,9 @@ class KeyWidget:
     def setToolTip(self, tooltip):
         self.tooltip = tooltip
 
+    def setToolTipDuration(self, duration):
+        self.duration = duration 
+
     def setActive(self, active):
         self.active = active
 
