@@ -18,12 +18,10 @@ def dks_display(widget, dks):
     if dks.is_valid():
         widget.setText("\u21DF\u21DE")
         widget.setToolTip(tr("DKS", "DKS already set/已经设置"))
-        widget.setToolTipDuration(100000)
         widget.setColor(QApplication.palette().color(QPalette.Link))
     else:
         widget.setText("")
         widget.setToolTip(tr("DKS", "DKS not set/没有设置"))
-        widget.setToolTipDuration(100000)
         widget.setColor(None)
 
 class DksButton(QPushButton):

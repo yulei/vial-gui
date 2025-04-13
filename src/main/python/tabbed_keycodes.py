@@ -57,7 +57,6 @@ class AlternativeDisplay(QWidget):
             btn = SquareButton()
             btn.setRelSize(KEYCODE_BTN_RATIO)
             btn.setToolTip(Keycode.tooltip(keycode.qmk_id))
-            btn.setToolTipDuration(100000)
             btn.clicked.connect(lambda st, k=keycode: self.keycode_changed.emit(k.qmk_id))
             btn.keycode = keycode
             self.key_layout.addWidget(btn)

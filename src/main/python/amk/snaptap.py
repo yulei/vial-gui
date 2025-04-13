@@ -34,7 +34,6 @@ def snaptap_display(widget, left, mode, valid=True, used=False):
     tooltip = tr("Snaptap", "Snaptap setting/Snaptap 设置")
     widget.setText(snaptap_text)
     widget.setToolTip(tooltip)
-    widget.setToolTipDuration(100000)
 
     if mode != 0:
         widget.masked = True 
