@@ -26,22 +26,22 @@ class TextboxWindow(QDialog):
         self.macrotext.selectAll()
 
         self.btn_apply = QToolButton()
-        self.btn_apply.setText(tr("TextboxWindow", "Apply"))
+        self.btn_apply.setText(tr("TextboxWindow", "Apply/应用"))
         self.btn_apply.setToolButtonStyle(Qt.ToolButtonTextOnly)
         self.btn_apply.clicked.connect(self.on_apply)
 
         self.btn_cancel = QToolButton()
-        self.btn_cancel.setText(tr("TextboxWindow", "Cancel"))
+        self.btn_cancel.setText(tr("TextboxWindow", "Cancel/取消"))
         self.btn_cancel.setToolButtonStyle(Qt.ToolButtonTextOnly)
         self.btn_cancel.clicked.connect(self.on_cancel)
 
         self.btn_copy = QToolButton()
-        self.btn_copy.setText(tr("TextboxWindow", "Copy"))
+        self.btn_copy.setText(tr("TextboxWindow", "Copy/复制"))
         self.btn_copy.setToolButtonStyle(Qt.ToolButtonTextOnly)
         self.btn_copy.clicked.connect(self.on_copy)
 
         self.btn_paste = QToolButton()
-        self.btn_paste.setText(tr("TextboxWindow", "Paste"))
+        self.btn_paste.setText(tr("TextboxWindow", "Paste/粘贴"))
         self.btn_paste.setToolButtonStyle(Qt.ToolButtonTextOnly)
         self.btn_paste.clicked.connect(self.on_paste)
 

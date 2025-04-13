@@ -104,13 +104,13 @@ class QmkSettings(BasicEditor):
         self.addWidget(self.tabs_widget)
         buttons = QHBoxLayout()
         buttons.addStretch()
-        self.btn_save = QPushButton(tr("QmkSettings", "Save"))
+        self.btn_save = QPushButton(tr("QmkSettings", "Save/保存"))
         self.btn_save.clicked.connect(self.save_settings)
         buttons.addWidget(self.btn_save)
-        self.btn_undo = QPushButton(tr("QmkSettings", "Undo"))
+        self.btn_undo = QPushButton(tr("QmkSettings", "Undo/撤销"))
         self.btn_undo.clicked.connect(self.reload_settings)
         buttons.addWidget(self.btn_undo)
-        btn_reset = QPushButton(tr("QmkSettings", "Reset"))
+        btn_reset = QPushButton(tr("QmkSettings", "Reset/重置"))
         btn_reset.clicked.connect(self.reset_settings)
         buttons.addWidget(btn_reset)
         self.addLayout(buttons)
@@ -222,7 +222,7 @@ class QmkSettings(BasicEditor):
 
     def reset_settings(self):
         if QMessageBox.question(self.widget(), "",
-                                tr("QmkSettings", "Reset all settings to default values?"),
+                                tr("QmkSettings", "Reset all settings to default values/重置所有设置为缺省值?"),
                                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.keyboard.qmk_settings_reset()
             self.reload_settings()

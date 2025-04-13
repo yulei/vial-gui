@@ -20,28 +20,28 @@ class Misc(BasicEditor):
         line = 0
 
         # import/export setting from/to file
-        self.ie_lbl = QLabel(tr("imp exp", "Import or export keyboard config file:"))
+        self.ie_lbl = QLabel(tr("Misc", "Import or export keyboard config file:/磁轴配置操作"))
         g_layout.addWidget(self.ie_lbl, line, 0)
-        self.im_btn = QPushButton("Import ...")
+        self.im_btn = QPushButton(tr("Misc", "Import/导入 ..."))
         self.im_btn.clicked.connect(self.on_im_btn)
         g_layout.addWidget(self.im_btn, line, 1)
-        self.ex_btn = QPushButton("Export ...")
+        self.ex_btn = QPushButton(tr("Misc", "Export/导出 ..."))
         self.ex_btn.clicked.connect(self.on_ex_btn)
         g_layout.addWidget(self.ex_btn, line, 2)
 
         line = line + 1
         # magnetic pole setting
-        self.mp_lbl = QLabel(tr("Pole", "Set the magnetic pole of the switch:"))
+        self.mp_lbl = QLabel(tr("Misc", "Set the magnetic pole of the switch:/设置磁轴极性"))
         g_layout.addWidget(self.mp_lbl, line, 0)
         self.mp_cbb = QComboBox()
-        self.mp_cbb.addItem("South")
-        self.mp_cbb.addItem("North")
+        self.mp_cbb.addItem(tr("Misc", "South/南极"))
+        self.mp_cbb.addItem(tr("misc", "North/北极"))
         self.mp_cbb.currentIndexChanged.connect(self.on_mp_cbb)
         g_layout.addWidget(self.mp_cbb, line, 1)
 
         line = line + 1
         # apcrt profile setting
-        self.apcrt_lbl = QLabel(tr("APCRT", "Set keyboard's APCRT profile:"))
+        self.apcrt_lbl = QLabel(tr("Misc", "Set keyboard's APCRT profile/设置当前APCRT的配置:"))
         g_layout.addWidget(self.apcrt_lbl, line, 0)
         self.apcrt_cbb = QComboBox()
         self.apcrt_cbb.currentIndexChanged.connect(self.on_apcrt_cbb)
@@ -49,9 +49,9 @@ class Misc(BasicEditor):
 
         line = line + 1
         # dks state setting
-        self.dks_status_lbl = QLabel(tr("DKS", "Set keyboard's DKS status:"))
+        self.dks_status_lbl = QLabel(tr("Misc", "Set keyboard's DKS status/切换DKS状态:"))
         g_layout.addWidget(self.dks_status_lbl, line, 0)
-        self.dks_lbl = QLabel(tr("DKS State", "ON"))
+        self.dks_lbl = QLabel(tr("Misc", "ON/激活"))
         g_layout.addWidget(self.dks_lbl, line, 1, alignment=Qt.AlignCenter)
         self.dks_cbx = QCheckBox()
         self.dks_cbx.setTristate(False)
@@ -62,9 +62,9 @@ class Misc(BasicEditor):
         line = line + 1
 
         # nkro setting
-        self.nk_lbl = QLabel(tr("NKRO", "Set the keyboard's nkro:"))
+        self.nk_lbl = QLabel(tr("Misc", "Set the keyboard's nkro/设置全键无冲:"))
         g_layout.addWidget(self.nk_lbl, line, 0)
-        self.ns_lbl = QLabel(tr("NKRO State", "OFF"))
+        self.ns_lbl = QLabel(tr("Misc", "OFF/关闭"))
         g_layout.addWidget(self.ns_lbl, line, 1, alignment=Qt.AlignCenter)
         self.nk_cbx = QCheckBox()
         self.nk_cbx.setTristate(False)
@@ -74,35 +74,35 @@ class Misc(BasicEditor):
 
         line = line + 1
         # polling rate setting
-        self.pr_lbl = QLabel(tr("Poll Rate", "Set the keyboard's poll rate:"))
+        self.pr_lbl = QLabel(tr("Misc", "Set the keyboard's poll rate/键盘回报率:"))
         g_layout.addWidget(self.pr_lbl, line, 0)
         self.pr_cbb = QComboBox()
-        self.pr_cbb.addItem("Fullspeed 1K Hz")
-        self.pr_cbb.addItem("Highspeed 2K Hz")
-        self.pr_cbb.addItem("Highspeed 4K Hz")
-        self.pr_cbb.addItem("Highspeed 8K Hz")
+        self.pr_cbb.addItem(tr("Misc", "Fullspeed/全速 1K Hz"))
+        self.pr_cbb.addItem(tr("Misc", "Highspeed/高速 2K Hz"))
+        self.pr_cbb.addItem(tr("Misc", "Highspeed/高速 4K Hz"))
+        self.pr_cbb.addItem(tr("Misc", "Highspeed/高速 8K Hz"))
         g_layout.addWidget(self.pr_cbb, line, 1)
-        self.pr_btn = QPushButton("Apply && Reset")
+        self.pr_btn = QPushButton(tr("Misc", "Apply && Reset/应用并重启键盘"))
         self.pr_btn.clicked.connect(self.on_pr_btn)
         g_layout.addWidget(self.pr_btn, line, 2)
 
         line = line + 1
         # switch type setting
-        self.st_lbl = QLabel(tr("Switch Type", "Set the current switch:"))
+        self.st_lbl = QLabel(tr("Misc", "Set the current switch/设置当前轴体:"))
         g_layout.addWidget(self.st_lbl, line, 0)
         self.st_cbb = QComboBox()
-        self.st_cbb.addItem("Common Switch")
-        self.st_cbb.addItem("Gateron Magnetic Jade")
-        self.st_cbb.addItem("TTC King of Magnetic")
+        self.st_cbb.addItem(tr("Misc", "Common Switch/其它"))
+        self.st_cbb.addItem(tr("Misc", "Gateron Magnetic Jade/磁玉系列"))
+        self.st_cbb.addItem(tr("Misc", "TTC King of Magnetic/万磁王系列"))
         g_layout.addWidget(self.st_cbb, line, 1)
-        self.st_btn = QPushButton("Apply")
+        self.st_btn = QPushButton(tr("Misc", "Apply/应用"))
         self.st_btn.clicked.connect(self.on_st_btn)
         g_layout.addWidget(self.st_btn, line, 2)
 
         line = line + 1
 
         # down debounce setting
-        self.dd_lbl = QLabel(tr("Down Debounce", "Set the debounce time(ms) when press key:"))
+        self.dd_lbl = QLabel(tr("Misc", "Set the debounce time(ms) when press key/按键按下时的去抖时间:"))
         g_layout.addWidget(self.dd_lbl, line, 0)
         self.dd_sld= QSlider(Qt.Horizontal)
         self.dd_sld.setEnabled(False)
@@ -125,7 +125,7 @@ class Misc(BasicEditor):
 
         line = line + 1
         # up debounce setting
-        self.ud_lbl = QLabel(tr("Up Debounce", "Set the debounce time(ms) when release key:"))
+        self.ud_lbl = QLabel(tr("Misc", "Set the debounce time(ms) when release key/按键释放时的去抖时间:"))
         g_layout.addWidget(self.ud_lbl, line, 0)
         self.ud_sld= QSlider(Qt.Horizontal)
         self.ud_sld.setEnabled(False)
@@ -148,13 +148,13 @@ class Misc(BasicEditor):
     
         line = line + 1
         #advanced
-        self.adv_btn = QPushButton(tr("advance", "Advanced \u22d9"))
+        self.adv_btn = QPushButton(tr("Misc", "Advanced/高级选项 \u22d9"))
         self.adv_btn.setMaximumWidth(100)
         self.adv_btn.clicked.connect(self.on_adv_btn)
         g_layout.addWidget(self.adv_btn, line, 0)
 
         line = line + 1
-        self.noise_lbl = QLabel(tr("noise sens", "Set the noise sensitivity:"))
+        self.noise_lbl = QLabel(tr("Misc", "Set the noise sensitivity/电磁干扰灵敏度:"))
         g_layout.addWidget(self.noise_lbl, line, 0)
         self.noise_dpb = QSpinBox()
         self.noise_dpb.setRange(1, 255)
@@ -172,7 +172,7 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.noise_sld, line, 2)
 
         line = line + 1
-        self.apc_lbl = QLabel(tr("apc sens", "Set the apc sensitivity:"))
+        self.apc_lbl = QLabel(tr("Misc", "Set the apc sensitivity/APC动作灵敏度:"))
         g_layout.addWidget(self.apc_lbl, line, 0)
         self.apc_dpb = QSpinBox()
         self.apc_dpb.setRange(1, 255)
@@ -190,7 +190,7 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.apc_sld, line, 2)
 
         line = line + 1
-        self.rt_lbl = QLabel(tr("rt sens", "Set the rt sensitivity:"))
+        self.rt_lbl = QLabel(tr("Misc", "Set the rt sensitivity/RT动作灵敏度:"))
         g_layout.addWidget(self.rt_lbl, line, 0)
         self.rt_dpb = QSpinBox()
         #self.rt_dpb.setEnabled(False)
@@ -212,7 +212,7 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.rt_sld, line, 2)
 
         line = line + 1
-        self.top_lbl = QLabel(tr("top sens", "Set the top sensitivity:"))
+        self.top_lbl = QLabel(tr("Misc", "Set the top sensitivity/轴体顶部状态灵敏度:"))
         g_layout.addWidget(self.top_lbl, line, 0)
         self.top_dpb = QSpinBox()
         #self.top_dpb.setEnabled(False)
@@ -234,7 +234,7 @@ class Misc(BasicEditor):
         g_layout.addWidget(self.top_sld, line, 2)
 
         line = line + 1
-        self.btm_lbl = QLabel(tr("bottom sens", "Set the bottom sensitivity:"))
+        self.btm_lbl = QLabel(tr("Misc", "Set the bottom sensitivity/轴体底部状态灵敏度:"))
         g_layout.addWidget(self.btm_lbl, line, 0)
         self.btm_dpb = QSpinBox()
         #self.btm_dpb.setEnabled(False)
@@ -289,7 +289,7 @@ class Misc(BasicEditor):
     def reset_ui(self):
         self.nk_cbx.blockSignals(True)
         self.nk_cbx.setCheckState(self.keyboard.amk_nkro)
-        self.ns_lbl.setText("ON" if self.keyboard.amk_nkro else "OFF")
+        self.ns_lbl.setText(tr("Misc", "ON/开启") if self.keyboard.amk_nkro else tr("Misc", "OFF/关闭"))
         self.nk_cbx.blockSignals(False)
 
         if self.device.keyboard.keyboard_speed == "hs":
@@ -322,7 +322,7 @@ class Misc(BasicEditor):
 
             self.dks_cbx.blockSignals(True)
             self.dks_cbx.setCheckState(not self.keyboard.amk_dks_disable)
-            self.dks_lbl.setText("OFF" if self.keyboard.amk_dks_disable else "ON")
+            self.dks_lbl.setText(tr("Misc", "OFF/关闭") if self.keyboard.amk_dks_disable else tr("Misc", "ON/开启"))
             self.dks_cbx.blockSignals(False)
             self.dks_status_lbl.show()
             self.dks_lbl.show()
@@ -650,7 +650,7 @@ class Misc(BasicEditor):
             self.btm_sld.blockSignals(False)
             self.btm_sld.show()
 
-            self.adv_btn.setText(tr("hide", "Hide \u22d8"))
+            self.adv_btn.setText(tr("Misc", "Hide/隐藏 \u22d8"))
         else:
             self.noise_lbl.hide()
             self.noise_dpb.hide()
@@ -671,7 +671,7 @@ class Misc(BasicEditor):
             self.btm_lbl.hide()
             self.btm_dpb.hide()
             self.btm_sld.hide()
-            self.adv_btn.setText(tr("advance", "Advanced \u22d9"))
+            self.adv_btn.setText(tr("Misc", "Advanced/高级选项 \u22d9"))
 
     def on_adv_btn(self):
         self.advance = not self.advance

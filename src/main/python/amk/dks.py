@@ -17,11 +17,11 @@ from amk.protocol import DksKey
 def dks_display(widget, dks):
     if dks.is_valid():
         widget.setText("\u21DF\u21DE")
-        widget.setToolTip("DKS already set")
+        widget.setToolTip(tr("DKS", "DKS already set/已经设置"))
         widget.setColor(QApplication.palette().color(QPalette.Link))
     else:
         widget.setText("")
-        widget.setToolTip("DKS not set")
+        widget.setToolTip(tr("DKS", "DKS not set/没有设置"))
         widget.setColor(None)
 
 class DksButton(QPushButton):
@@ -175,10 +175,10 @@ class DksCheckBox(QCheckBox):
     def get_index(self):
         return self.index
 
-DKS_TRIGGER_LABELS = [tr("DKS A", "Event point 1:"), tr("DKS B", "Event point 2:"), 
-                tr("DKS C", "Event point 3:"), tr("DKS D", "Event point 4:")]
+DKS_TRIGGER_LABELS = [tr("DKS", "Event point/触发点 1:"), tr("DKS", "Event point/触发点 2:"), 
+                tr("DKS", "Event point/触发点 3:"), tr("DKS", "Event point/触发点 4:")]
 
-DKS_KEY_EVENT_LABELS = [tr("Down Event", "\u21A7"), tr("Up Event", "\u21A5")]
+DKS_KEY_EVENT_LABELS = [tr("DKS", "\u21A7"), tr("DKS", "\u21A5")]
 
 class Dks(BasicEditor):
 
@@ -379,8 +379,8 @@ class Dks(BasicEditor):
         self.keyboardWidget.update()
 
     def save_or_discard(self, dks):
-        button = QMessageBox.warning(None, "DKS button",
-                                    "The current DKS button was modified, do you want to save ?",
+        button = QMessageBox.warning(None, tr("DKS", "DKS button"),
+                                    tr("DKS", "The current DKS button was modified, do you want to save/当前按键已更改,是否需要保存 ?"),
                                     buttons=QMessageBox.Save | QMessageBox.Discard,
                                     defaultButton=QMessageBox.Save)
         if button == QMessageBox.Save:
@@ -422,8 +422,8 @@ class Dks(BasicEditor):
         if self.active_dks_btn is not None:
             if self.active_dks_btn.is_mask_selected():
                 if Keycode.is_mask(code):
-                    QMessageBox.warning(None, "Keycode selection",
-                                "Only basic keycodes can be used",
+                    QMessageBox.warning(None, tr("DKS", "Keycode selection/按键选择"),
+                                tr("DKS", "Only basic keycodes can be used/只有基础a按键可以在DKS中使用"),
                                 buttons=QMessageBox.Ok)
                     return
                 index = self.active_dks_btn.get_index()

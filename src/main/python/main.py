@@ -79,8 +79,10 @@ if __name__ == '__main__':
     else:
         appctxt = VialApplicationContext()       # 1. Instantiate ApplicationContext
         QFontDatabase.addApplicationFont(appctxt.get_resource("wqy-microhei.ttc"))
-        font = QFont("wqy-microhei", 12)
+        font = QFont("wqy-microhei")
+        font.setPointSize(10)
         appctxt.app.setFont(font)
+
         init_logger()
         qt_exception_hook = UncaughtHook()
         window = MainWindow(appctxt)

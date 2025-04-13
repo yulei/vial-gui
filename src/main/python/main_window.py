@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
 
         self.btn_refresh_devices = QToolButton()
         self.btn_refresh_devices.setToolButtonStyle(Qt.ToolButtonTextOnly)
-        self.btn_refresh_devices.setText(tr("MainWindow", "Refresh"))
+        self.btn_refresh_devices.setText(tr("MainWindow", "Refresh/刷新"))
         self.btn_refresh_devices.clicked.connect(self.on_click_refresh)
 
         layout_combobox = QHBoxLayout()
@@ -103,13 +103,16 @@ class MainWindow(QMainWindow):
         self.rgb_config = RgbConfig(self.layout_editor)
         self.aux_display = AuxDsiplay(self.layout_editor, appctx)
 
-        self.editors = [(self.keymap_editor, "Keymap"), (self.layout_editor, "Layout"), (self.macro_recorder, "Macros"),
-                        (self.rgb_configurator, "Lighting"), (self.tap_dance, "Tap Dance"), (self.combos, "Combos"),
-                        (self.key_override, "Key Overrides"), (self.qmk_settings, "QMK Settings"),
-                        (self.matrix_tester, "Matrix tester"), (self.firmware_flasher, "Firmware updater"),
-                        (self.apc_rt, "APC/RT Settings"), (self.dks, "DKS Settings"), (self.snaptap, "Snap Tap Settings"), (self.misc, "Misc settings"),
-                        (self.rgb_strip, "RGB Led Strips"), (self.animation, "Animations"), (self.rgb_matrix, "RGB Matrix"), (self.rgb_config, "RGB Config"),
-                        (self.aux_display, "Auxiliary Display"), (self.rgb_indicator, "RGB Indicator")]
+        self.editors = [(self.keymap_editor, "Keymap/键位"), (self.layout_editor, "Layout/布局"), (self.macro_recorder, "Macros/按键宏"),
+                        (self.rgb_configurator, "Lighting/灯光"), (self.tap_dance, "Tap Dance/高级按键"), (self.combos, "Combos/组合键"),
+                        (self.key_override, "Key Overrides/按键覆盖"), (self.qmk_settings, "QMK Settings/设置"),
+                        (self.matrix_tester, "Matrix tester/按键测试"), (self.firmware_flasher, "Firmware updater/固件更新"),
+                        (self.apc_rt, "APC/RT Settings/按键行程和快速触发"), (self.dks, "DKS Settings/设置"), (self.snaptap, "Snap Tap Settings"), 
+                        (self.rgb_strip, "RGB Led Strips/灯条"), (self.animation, "Animations/屏幕动画"), (self.rgb_matrix, "RGB Matrix/轴灯"), 
+                        (self.rgb_config, "RGB Config/配置"),
+                        (self.aux_display, "Auxiliary Display/辅助屏幕"), (self.rgb_indicator, "RGB Indicator/指示灯"),
+                        (self.misc, "Misc settings/其它设置")
+                        ]
 
         Unlocker.global_layout_editor = self.layout_editor
         Unlocker.global_main_window = self
@@ -120,7 +123,9 @@ class MainWindow(QMainWindow):
         self.refresh_tabs()
 
         no_devices = 'No devices detected. Connect a Vial-compatible device and press "Refresh"<br>' \
-                     'or select "File" → "Download VIA definitions" in order to enable support for VIA keyboards.'
+                     'or select "File" → "Download VIA definitions" in order to enable support for VIA keyboards.<br>' \
+                     '未检测到兼容键盘，请连接一个兼容的键盘并点击"刷新"'
+
         if sys.platform.startswith("linux"):
             no_devices += '<br><br>On Linux you need to set up a custom udev rule for keyboards to be detected. ' \
                           'Follow the instructions linked below:<br>' \
@@ -307,7 +312,7 @@ class MainWindow(QMainWindow):
         try:
             self.autorefresh.select_device(self.combobox_devices.currentIndex())
         except ProtocolError:
-            QMessageBox.warning(self, "", "Unsupported protocol version!\n"
+            QMessageBox.warning(self, "", "Unsupported protocol version!/键盘协议不兼容\n"
                                           "Please download latest Vial from https://get.vial.today/")
 
         if isinstance(self.autorefresh.current_device, VialKeyboard):

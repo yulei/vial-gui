@@ -159,29 +159,29 @@ class FilteredTabbedKeycodes(QTabWidget):
         self.keycode_filter = keycode_filter
 
         self.tabs = [
-            Tab(self, "Basic", [
+            Tab(self, "Basic/基础", [
                 (ansi_100, KEYCODES_SPECIAL + KEYCODES_SHIFTED),
                 (ansi_80, KEYCODES_SPECIAL + KEYCODES_BASIC_NUMPAD + KEYCODES_SHIFTED),
                 (ansi_70, KEYCODES_SPECIAL + KEYCODES_BASIC_NUMPAD + KEYCODES_BASIC_NAV + KEYCODES_SHIFTED),
                 (None, KEYCODES_SPECIAL + KEYCODES_BASIC + KEYCODES_SHIFTED),
             ], prefix_buttons=[("Any", -1)]),
-            Tab(self, "ISO/JIS", [
+            Tab(self, "ISO/JIS/欧标/日本", [
                 (iso_100, KEYCODES_SPECIAL + KEYCODES_SHIFTED + KEYCODES_ISO_KR),
                 (iso_80, KEYCODES_SPECIAL + KEYCODES_BASIC_NUMPAD + KEYCODES_SHIFTED + KEYCODES_ISO_KR),
                 (iso_70, KEYCODES_SPECIAL + KEYCODES_BASIC_NUMPAD + KEYCODES_BASIC_NAV + KEYCODES_SHIFTED +
                  KEYCODES_ISO_KR),
                 (None, KEYCODES_ISO),
             ], prefix_buttons=[("Any", -1)]),
-            SimpleTab(self, "Layers", KEYCODES_LAYERS),
-            Tab(self, "Quantum", [(mods, (KEYCODES_BOOT + KEYCODES_QUANTUM)),
+            SimpleTab(self, "Layers/键位层", KEYCODES_LAYERS),
+            Tab(self, "Quantum/QMK按键", [(mods, (KEYCODES_BOOT + KEYCODES_QUANTUM)),
                                   (mods_narrow, (KEYCODES_BOOT + KEYCODES_QUANTUM)),
                                   (None, (KEYCODES_BOOT + KEYCODES_MODIFIERS + KEYCODES_QUANTUM))]),
-            SimpleTab(self, "Backlight/背光", KEYCODES_BACKLIGHT),
-            SimpleTab(self, "App, Media and Mouse", KEYCODES_MEDIA),
+            SimpleTab(self, "Backlight/RGB灯设置", KEYCODES_BACKLIGHT),
+            SimpleTab(self, "App, Media and Mouse/应用,媒体和鼠标键", KEYCODES_MEDIA),
             SimpleTab(self, "MIDI", KEYCODES_MIDI),
-            SimpleTab(self, "Tap Dance", KEYCODES_TAP_DANCE),
-            SimpleTab(self, "User", KEYCODES_USER),
-            SimpleTab(self, "Macro", KEYCODES_MACRO),
+            SimpleTab(self, "Tap Dance/高级按键", KEYCODES_TAP_DANCE),
+            SimpleTab(self, "User/自定义按键", KEYCODES_USER),
+            SimpleTab(self, "Macro/按键宏", KEYCODES_MACRO),
         ]
 
         for tab in self.tabs:

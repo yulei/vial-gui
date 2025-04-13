@@ -25,7 +25,7 @@ class WindowsRecorder(QWidget):
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
 
         layout = QVBoxLayout()
-        btn = QPushButton(tr("MacroRecorder", "Stop recording"))
+        btn = QPushButton(tr("MacroRecorder", "Stop recording/停止录制"))
         btn.clicked.connect(self.on_stop)
         layout.addWidget(btn)
 
