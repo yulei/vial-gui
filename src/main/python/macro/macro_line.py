@@ -21,7 +21,7 @@ class MacroLine(QObject):
         self.container = parent.container
 
         if self.parent.parent.keyboard.vial_protocol >= VIAL_PROTOCOL_ADVANCED_MACROS:
-            self.types = self.types[:] + ["Delay (ms)"]
+            self.types = self.types[:] + ["Delay (ms)/延时(毫秒)"]
             self.type_to_cls = self.type_to_cls[:] + [ActionDelayUI]
 
         self.arrows = QHBoxLayout()

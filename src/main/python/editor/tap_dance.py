@@ -34,7 +34,7 @@ class TapDanceEntryUI(QObject):
         l.addWidget(w)
         l.setAlignment(w, QtCore.Qt.AlignHCenter)
         l.addSpacing(10)
-        lbl = QLabel("Use <code>TD({})</code> to set up this action in the keymap./在按键映射中选择TD({})".format(self.idx,self.idx))
+        lbl = QLabel("Use <code>TD({})</code> to set up this action in the keymap./设置完成后可在'键位'页面中选择<code>TD({})</code>".format(self.idx,self.idx))
         l.addWidget(lbl)
         l.setAlignment(lbl, QtCore.Qt.AlignHCenter)
         l.addStretch()
@@ -58,7 +58,7 @@ class TapDanceEntryUI(QObject):
         self.kc_on_tap_hold = KeyWidget()
         self.kc_on_tap_hold.changed.connect(self.on_key_changed)
         self.container.addWidget(self.kc_on_tap_hold, 3, 1)
-        self.container.addWidget(QLabel("Tapping term (ms)/单击最长延时"), 4, 0)
+        self.container.addWidget(QLabel("Tapping term (ms)/按下延时"), 4, 0)
         self.txt_tapping_term = QSpinBox()
         self.txt_tapping_term.valueChanged.connect(self.on_timing_changed)
         self.txt_tapping_term.setMinimum(0)
@@ -115,6 +115,10 @@ class TapDance(BasicEditor):
 
         self.addWidget(self.tabs)
         buttons = QHBoxLayout()
+        desc_label = QLabel(tr("TapDance", "单颗轴的不同敲击行为可输出不同的按键.\n"
+                               "当前可识别<单击>,<按住>,<双击>,<单击后再按住>这四种行为,并可设置各自对应的按键.\n"
+                               "其中<按住>时指按下该轴超过<按下延时>."))
+        buttons.addWidget(desc_label)
         buttons.addStretch()
         self.btn_save = QPushButton(tr("TapDance", "Save/保存"))
         self.btn_save.clicked.connect(self.on_save)

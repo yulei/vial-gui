@@ -8,7 +8,7 @@ from widgets.key_widget import KeyWidget
 from vial_device import VialKeyboard
 from editor.basic_editor import BasicEditor
 from widgets.tab_widget_keycodes import TabWidgetWithKeycodes
-
+from util import tr
 
 class ComboEntryUI(QObject):
 
@@ -86,7 +86,10 @@ class Combos(BasicEditor):
             entry.key_changed.connect(self.on_key_changed)
             self.combo_entries_available.append(entry)
 
+        desc_label = QLabel(tr("Combos", "组合键功能允许在同时按下多个按键(最多4个)时, 触发一个新的按键.\n"
+                                "例如: 按下<1>+<2>+<3>, 触发<6>."))
         self.addWidget(self.tabs)
+        self.addWidget(desc_label)
 
     def rebuild_ui(self):
         while self.tabs.count() > 0:

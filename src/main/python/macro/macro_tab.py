@@ -3,7 +3,7 @@ import json
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QPushButton, QGridLayout, QHBoxLayout, QToolButton, QVBoxLayout, \
-    QWidget, QMenu, QScrollArea, QFrame
+    QWidget, QMenu, QScrollArea, QFrame, QMessageBox
 
 from keycodes.keycodes import Keycode
 from macro.macro_action import ActionTap
@@ -133,10 +133,17 @@ class MacroTab(QVBoxLayout):
             macro_text = self.dlg_textbox.getText()
             if len(macro_text) < 6:
                 macro_text = "[]"
-            macro_load = json.loads(macro_text)
+            try:
+                macro_load = json.loads(macro_text)
+            except json.JSONDecodeError:
+                macro_load = None
 
             # ensure a list exists
             if not isinstance(macro_load, list):
+                QMessageBox.warning(None, 
+                            "Apply macro/应用宏",
+                            tr("MacroRecorder", "Invalid macro, please check the format/无效的宏,请检查格式"),
+                            buttons=QMessageBox.Ok)
                 return
 
             # clear the actions from this tab
