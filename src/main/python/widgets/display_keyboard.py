@@ -14,6 +14,7 @@ from kle_serial import Serial as KleSerial
 class DisplayKeyboard(QWidget):
 
     keycode_changed = pyqtSignal(str)
+    keycode_focused = pyqtSignal(str, bool)
 
     def __init__(self, kbdef):
         super().__init__()
@@ -32,7 +33,9 @@ class DisplayKeyboard(QWidget):
             btn.setToolTip(Keycode.tooltip(kc.qmk_id))
             btn.setText(kc.label)
             btn.clicked.connect(lambda st, k=kc: self.keycode_changed.emit(k.qmk_id))
+            btn.keycode_focused.connect(self.keycode_focused)
             btn.keycode = kc
+            btn.aux_keycode = kc.qmk_id
 
             self.buttons.append(btn)
             self.layout.addWidget(btn, round(key.y * 4), round(key.x * 4), round(key.height * 4), round(key.width * 4))

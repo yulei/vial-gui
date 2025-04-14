@@ -3,7 +3,10 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QPushButton, QLabel, QHBoxLayout
 
+from PyQt5.QtCore import pyqtSignal
+
 class SquareButton(QPushButton):
+    keycode_focused = pyqtSignal(str, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -12,6 +15,7 @@ class SquareButton(QPushButton):
         self.label = None
         self.word_wrap = False
         self.text = ""
+        self.aux_keycode = None
 
     def setRelSize(self, ratio):
         self.scale = ratio
@@ -43,3 +47,13 @@ class SquareButton(QPushButton):
             if self.label is not None:
                 self.label.deleteLater()
             super().setText(text)
+    
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        if self.aux_keycode is not None:
+            self.keycode_focused.emit(self.aux_keycode, True)
+
+    def leaveEvent(self, event):
+        super().enterEvent(event)
+        if self.aux_keycode is not None:
+            self.keycode_focused.emit(self.aux_keycode, False)

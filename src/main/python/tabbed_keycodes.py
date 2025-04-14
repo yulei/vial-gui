@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QTabWidget, QWidget, QScrollArea, QApplication, QVBoxLayout
+from PyQt5.QtWidgets import QTabWidget, QWidget, QScrollArea, QApplication, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPalette
 
 from constants import KEYCODE_BTN_RATIO
@@ -19,6 +19,7 @@ from util import tr, KeycodeDisplay
 class AlternativeDisplay(QWidget):
 
     keycode_changed = pyqtSignal(str)
+    keycode_focused = pyqtSignal(str, bool)
 
     def __init__(self, kbdef, keycodes, prefix_buttons):
         super().__init__()
@@ -35,12 +36,15 @@ class AlternativeDisplay(QWidget):
                 btn.setRelSize(KEYCODE_BTN_RATIO)
                 btn.setText(title)
                 btn.clicked.connect(lambda st, k=code: self.keycode_changed.emit(title))
+                btn.aux_keycode = title
+                btn.keycode_focused.connect(self.keycode_focused)
                 self.key_layout.addWidget(btn)
 
         layout = QVBoxLayout()
         if kbdef:
             self.kb_display = DisplayKeyboard(kbdef)
             self.kb_display.keycode_changed.connect(self.keycode_changed)
+            self.kb_display.keycode_focused.connect(self.keycode_focused)
             layout.addWidget(self.kb_display)
             layout.setAlignment(self.kb_display, Qt.AlignHCenter)
         layout.addLayout(self.key_layout)
@@ -58,7 +62,9 @@ class AlternativeDisplay(QWidget):
             btn.setRelSize(KEYCODE_BTN_RATIO)
             btn.setToolTip(Keycode.tooltip(keycode.qmk_id))
             btn.clicked.connect(lambda st, k=keycode: self.keycode_changed.emit(k.qmk_id))
+            btn.keycode_focused.connect(self.keycode_focused)
             btn.keycode = keycode
+            btn.aux_keycode = keycode.qmk_id
             self.key_layout.addWidget(btn)
             self.buttons.append(btn)
 
@@ -80,6 +86,7 @@ class AlternativeDisplay(QWidget):
 class Tab(QScrollArea):
 
     keycode_changed = pyqtSignal(str)
+    keycode_focused = pyqtSignal(str, bool)
 
     def __init__(self, parent, label, alts, prefix_buttons=None):
         super().__init__(parent)
@@ -92,6 +99,7 @@ class Tab(QScrollArea):
         for kb, keys in alts:
             alt = AlternativeDisplay(kb, keys, prefix_buttons)
             alt.keycode_changed.connect(self.keycode_changed)
+            alt.keycode_focused.connect(self.keycode_focused)
             self.layout.addWidget(alt)
             self.alternatives.append(alt)
 
@@ -102,7 +110,7 @@ class Tab(QScrollArea):
         w = QWidget()
         w.setLayout(self.layout)
         self.setWidget(w)
-
+    
     def recreate_buttons(self, keycode_filter):
         for alt in self.alternatives:
             alt.recreate_buttons(keycode_filter)
@@ -151,6 +159,7 @@ def keycode_filter_masked(kc):
 class FilteredTabbedKeycodes(QTabWidget):
 
     keycode_changed = pyqtSignal(str)
+    keycode_focused = pyqtSignal(str, bool)
     anykey = pyqtSignal()
 
     def __init__(self, parent=None, keycode_filter=keycode_filter_any):
@@ -186,6 +195,7 @@ class FilteredTabbedKeycodes(QTabWidget):
 
         for tab in self.tabs:
             tab.keycode_changed.connect(self.on_keycode_changed)
+            tab.keycode_focused.connect(self.keycode_focused)
 
         self.recreate_keycode_buttons()
         KeycodeDisplay.notify_keymap_override(self)
@@ -195,7 +205,7 @@ class FilteredTabbedKeycodes(QTabWidget):
             self.anykey.emit()
         else:
             self.keycode_changed.emit(Keycode.normalize(code))
-
+    
     def recreate_keycode_buttons(self):
         prev_tab = self.tabText(self.currentIndex()) if self.currentIndex() >= 0 else ""
         while self.count() > 0:
@@ -220,7 +230,6 @@ class TabbedKeycodes(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setAttribute(Qt.WA_AlwaysShowToolTips, True)
 
         self.target = None
         self.is_tray = False
@@ -231,11 +240,21 @@ class TabbedKeycodes(QWidget):
         self.basic_keycodes = FilteredTabbedKeycodes(keycode_filter=keycode_filter_masked)
         for opt in [self.all_keycodes, self.basic_keycodes]:
             opt.keycode_changed.connect(self.keycode_changed)
+            opt.keycode_focused.connect(self.on_keycode_focused)
             opt.anykey.connect(self.anykey)
             self.layout.addWidget(opt)
+        
+        self.desc_lbl = QLabel(tr("TabbedKeycodes", "Description"))
+        self.layout.addWidget(self.desc_lbl)
 
         self.setLayout(self.layout)
         self.set_keycode_filter(keycode_filter_any)
+    
+    def on_keycode_focused(self, code, state):
+        if state:
+            self.desc_lbl.setText(Keycode.tooltip(code))
+        else:
+            self.desc_lbl.setText("")
 
     @classmethod
     def set_tray(cls, tray):
