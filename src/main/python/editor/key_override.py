@@ -222,7 +222,7 @@ class KeyOverrideEntryUI(QObject):
         self.container.addWidget(QLabel(tr("KeyOverride", "Suppressed mods/无效修饰符")), 5, 0)
         self.container.addWidget(self.suppressed_mods, 5, 1)
 
-        self.container.addWidget(QLabel(tr("KeyOverride", "Replacement/激活按键")), 6, 0)
+        self.container.addWidget(QLabel(tr("KeyOverride", "Replacement/替换按键")), 6, 0)
         self.container.addWidget(self.key_replacement, 6, 1)
 
         self.container.addWidget(QLabel(tr("KeyOverride", "Options/选项")), 7, 0)
@@ -279,9 +279,9 @@ class KeyOverride(BasicEditor):
 
         self.addWidget(self.tabs)
         desc_label = QLabel(tr("KeyOverride", 
-                               "按键替换功能允许在指定的激活条件下, 触发一个指定按键(激活按键)并可释放指定修饰符(无效修饰符).\n"
+                               "按键替换功能允许在指定的激活条件下, 触发一个指定按键(替换按键)并可释放指定修饰符(无效修饰符).\n"
                                "激活条件如下:1.指定按键按下(触发按键),2.指定修饰符按下(触发修饰符),3.指定修饰符处于释放状态(禁用修饰符)\n"
-                               "这些激活条件可由可由前4个选项控制,并且后两个选项可以控制(触发按键)和(激活按键)的特殊行为."))
+                               "这些激活条件可由可由前4个选项控制,并且后两个选项可以控制(触发按键)和(替换按键)的特殊行为."))
         self.addWidget(desc_label)
 
     def rebuild_ui(self):
