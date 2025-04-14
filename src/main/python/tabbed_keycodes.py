@@ -220,6 +220,7 @@ class TabbedKeycodes(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setAttribute(Qt.WA_AlwaysShowToolTips, True)
 
         self.target = None
         self.is_tray = False
