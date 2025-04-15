@@ -108,9 +108,10 @@ class MainWindow(QMainWindow):
                         (self.key_override, "Key Overrides/按键覆盖"), (self.qmk_settings, "QMK Settings/设置"),
                         (self.matrix_tester, "Matrix tester/按键测试"), (self.firmware_flasher, "Firmware updater/固件更新"),
                         (self.apc_rt, "APC/RT Settings/按键行程和快速触发"), (self.dks, "DKS Settings/设置"), (self.snaptap, "Snap Tap Settings"), 
-                        (self.rgb_strip, "RGB Led Strips/灯条"), (self.animation, "Animations/屏幕动画"), (self.rgb_matrix, "RGB Matrix/轴灯"), 
+                        (self.rgb_strip, "RGB Led Strips/灯条"),(self.rgb_matrix, "RGB Matrix/轴灯"), (self.rgb_indicator, "RGB Indicator/指示灯"),
                         (self.rgb_config, "RGB Config/配置"),
-                        (self.aux_display, "Auxiliary Display/辅助屏幕"), (self.rgb_indicator, "RGB Indicator/指示灯"),
+                        (self.aux_display, "Auxiliary Display/辅助屏幕"),
+                        (self.animation, "Animations/屏幕动画"), 
                         (self.misc, "Misc settings/其它设置")
                         ]
 
@@ -339,11 +340,14 @@ class MainWindow(QMainWindow):
             self.autorefresh.current_device.keyboard.reload()
 
         for e in [self.layout_editor, self.keymap_editor, self.firmware_flasher, self.macro_recorder,
-                  self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester,
-                  self.rgb_configurator,
-                  self.apc_rt, self.dks, self.snaptap, self.misc,
-                  self.rgb_strip, self.animation, self.rgb_matrix, self.rgb_config,
-                  self.aux_display, self.rgb_indicator]:
+                  self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester, self.rgb_configurator,
+                  self.apc_rt, self.dks, self.snaptap,
+                  self.rgb_strip, self.rgb_matrix, self.rgb_indicator,
+                  self.rgb_config,
+                  self.aux_display,
+                  self.animation,
+                  self.misc
+                  ]:
             e.rebuild(self.autorefresh.current_device)
 
     def refresh_tabs(self):
