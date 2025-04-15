@@ -187,6 +187,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.reload_amk_rgb_params(RGB_TYPE_STRIP)
                     if "rgb_indicator" in feature:
                         if "layout" in feature["rgb_indicator"]:
+                            if "on_off" in feature["rgb_indicator"]:
+                                self.amk_rgb_indicator["on_off"] = feature["rgb_indicator"]["on_off"]
+                            else:
+                                self.amk_rgb_indicator["on_off"] = False
+
                             self.amk_rgb_indicator["layout"] = []
                             serial = KleSerial()
                             leds = serial.deserialize(feature["rgb_indicator"]["layout"])

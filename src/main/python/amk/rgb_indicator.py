@@ -162,7 +162,10 @@ class RgbIndicator(BasicEditor):
 
             self.color_btn.setEnabled(True)
 
-            self.on_cbx.setEnabled(True)
+            if not self.keyboard.amk_rgb_indicator["on_off"]:
+                self.on_cbx.setEnabled(False)
+            else:
+                self.on_cbx.setEnabled(True)
 
             self.dynamic_cbx.setEnabled(False)
             self.blink_cbx.setEnabled(False)
