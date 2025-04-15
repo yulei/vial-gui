@@ -18,7 +18,7 @@ def rgb_display(widget, desc, led):
     widget.setMaskColor(None)
 
     led_color = QColor.fromRgbF(0.0, 0.0, 0.0)
-    if led.get_on() or True:
+    if led.get_on():
         led_color = QColor.fromHsvF(led.get_hue()/255.0, led.get_sat()/255.0, led.get_val()/255.0)
 
     widget.setMaskColor(led_color)
@@ -162,7 +162,7 @@ class RgbIndicator(BasicEditor):
 
             self.color_btn.setEnabled(True)
 
-            self.on_cbx.setEnabled(False)
+            self.on_cbx.setEnabled(True)
 
             self.dynamic_cbx.setEnabled(False)
             self.blink_cbx.setEnabled(False)

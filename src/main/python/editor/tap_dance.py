@@ -117,7 +117,7 @@ class TapDance(BasicEditor):
         buttons = QHBoxLayout()
         desc_label = QLabel(tr("TapDance", "单颗轴的不同敲击行为可输出不同的按键.\n"
                                "当前可识别<单击>,<按住>,<双击>,<单击后再按住>这四种行为,并可设置各自对应的按键.\n"
-                               "其中<按住>时指按下该轴超过<按下延时>."))
+                               "其中<按住>是指按下该轴超过<按下延时>."))
         buttons.addWidget(desc_label)
         buttons.addStretch()
         self.btn_save = QPushButton(tr("TapDance", "Save/保存"))
