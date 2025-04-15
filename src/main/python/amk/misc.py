@@ -343,7 +343,7 @@ class Misc(BasicEditor):
             self.ud_sbx.hide()
 
             import sys
-            if sys.platform == "emscripten":
+            if True or sys.platform == "emscripten":
                 self.ie_lbl.hide()
                 self.im_btn.hide()
                 self.ex_btn.hide()

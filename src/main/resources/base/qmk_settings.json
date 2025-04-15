@@ -3,16 +3,16 @@
         {
             "name": "Magic",
             "fields": [
-                { "type": "boolean", "title": "Swap Caps Lock and Left Control", "qsid": 21, "width": 4, "bit": 0 },
-                { "type": "boolean", "title": "Treat Caps Lock as Control", "qsid": 21, "width": 4, "bit": 1 },
-                { "type": "boolean", "title": "Swap Left Alt and GUI", "qsid": 21, "width": 4, "bit": 2 },
-                { "type": "boolean", "title": "Swap Right Alt and GUI", "qsid": 21, "width": 4, "bit": 3 },
-                { "type": "boolean", "title": "Disable the GUI keys", "qsid": 21, "width": 4, "bit": 4 },
-                { "type": "boolean", "title": "Swap ` and Escape", "qsid": 21, "width": 4, "bit": 5 },
-                { "type": "boolean", "title": "Swap \\ and Backspace", "qsid": 21, "width": 4, "bit": 6 },
-                { "type": "boolean", "title": "Enable N-key rollover", "qsid": 21, "width": 4, "bit": 7 },
-                { "type": "boolean", "title": "Swap Left Control and GUI", "qsid": 21, "width": 4, "bit": 8 },
-                { "type": "boolean", "title": "Swap Right Control and GUI", "qsid": 21, "width": 4, "bit": 9 }
+                { "type": "boolean", "title": "Swap Caps Lock and Left Control/交换Caps Lock和左Control", "qsid": 21, "width": 4, "bit": 0 },
+                { "type": "boolean", "title": "Treat Caps Lock as Control/将Caps Lock作为Control使用", "qsid": 21, "width": 4, "bit": 1 },
+                { "type": "boolean", "title": "Swap Left Alt and GUI/交换左Alt和Win", "qsid": 21, "width": 4, "bit": 2 },
+                { "type": "boolean", "title": "Swap Right Alt and GUI/交换右Alt和Win", "qsid": 21, "width": 4, "bit": 3 },
+                { "type": "boolean", "title": "Disable the GUI keys/禁用Win键", "qsid": 21, "width": 4, "bit": 4 },
+                { "type": "boolean", "title": "Swap ` and Escape/交换 ` 和Esc", "qsid": 21, "width": 4, "bit": 5 },
+                { "type": "boolean", "title": "Swap \\ and Backspace/交换 \\ 和Backspace", "qsid": 21, "width": 4, "bit": 6 },
+                { "type": "boolean", "title": "Enable N-key rollover/开启全键无冲", "qsid": 21, "width": 4, "bit": 7 },
+                { "type": "boolean", "title": "Swap Left Control and GUI/交换左Control和Win", "qsid": 21, "width": 4, "bit": 8 },
+                { "type": "boolean", "title": "Swap Right Control and GUI/交换右Control和Win", "qsid": 21, "width": 4, "bit": 9 }
             ]
         },
         {
