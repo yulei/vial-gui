@@ -103,16 +103,24 @@ class MainWindow(QMainWindow):
         self.rgb_config = RgbConfig(self.layout_editor)
         self.aux_display = AuxDsiplay(self.layout_editor, appctx)
 
-        self.editors = [(self.keymap_editor, "Keymap/键位"), (self.layout_editor, "Layout/布局"), (self.macro_recorder, "Macros/按键宏"),
-                        (self.rgb_configurator, "Lighting/灯光"), (self.tap_dance, "Tap Dance/高级按键"), (self.combos, "Combos/组合键"),
-                        (self.key_override, "Key Overrides/按键覆盖"), (self.qmk_settings, "QMK Settings/设置"),
-                        (self.matrix_tester, "Matrix tester/按键测试"), (self.firmware_flasher, "Firmware updater/固件更新"),
-                        (self.apc_rt, "APC/RT Settings/按键行程和快速触发"), (self.dks, "DKS Settings/设置"), (self.snaptap, "Snap Tap Settings"), 
-                        (self.rgb_strip, "RGB Led Strips/灯条"),(self.rgb_matrix, "RGB Matrix/轴灯"), (self.rgb_indicator, "RGB Indicator/指示灯"),
-                        (self.rgb_config, "RGB Config/配置"),
+        self.editors = [(self.keymap_editor, "Keymap/键位"), (self.layout_editor, "Layout/配列"), (self.matrix_tester, "Matrix tester/按键测试"),
+                        (self.macro_recorder, "Macros/按键宏"),
+                        (self.rgb_strip, "RGB Led Strips/灯条"),
+                        (self.rgb_matrix, "RGB Matrix/轴灯"),
+                        (self.rgb_indicator, "RGB Indicator/指示灯"),
+                        (self.apc_rt, "APC/RT/按键行程和快速触发"),
+                        (self.dks, "DKS Settings/DKS设置"),
+                        (self.snaptap, "Snap Tap Settings/SnapTap设置"), 
+                        (self.misc, "Misc settings/其它设置"),
                         (self.aux_display, "Auxiliary Display/辅助屏幕"),
                         (self.animation, "Animations/屏幕动画"), 
-                        (self.misc, "Misc settings/其它设置")
+                        (self.rgb_config, "RGB Config/配置"),
+                        (self.qmk_settings, "QMK Settings/QMK设置"),
+                        (self.tap_dance, "Tap Dance/高级按键"),
+                        (self.combos, "Combos/组合键"),
+                        (self.key_override, "Key Overrides/按键改写"),
+                        (self.rgb_configurator, "Lighting/灯光"),
+                        (self.firmware_flasher, "Firmware updater/固件更新")
                         ]
 
         Unlocker.global_layout_editor = self.layout_editor
