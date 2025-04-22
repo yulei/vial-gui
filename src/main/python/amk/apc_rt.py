@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QDoubleSpinBox, QCheckBox, QGridLayout, QPushButton
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
-from PyQt5.QtGui import QPalette
+from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtWidgets import QApplication
 
 from editor.basic_editor import BasicEditor
@@ -45,10 +45,26 @@ def apc_rt_display(widget, apc, rt):
     else:
         widget.masked = False
 
+def stroke_display(widget, depth, on):
+    #print("Current stroke={}, depth={}".format(stroke, depth))
+    stroke_text = "{:.2f}".format(depth/100.0)
+    stroke_color = QColor.fromRgb(255, 255, 255)
+    if on:
+        stroke_color = QColor.fromRgb(255,191,0)
+    stroke_depth = depth/400.0
+
+    widget.stroke = True
+    widget.stroke_text = stroke_text
+    widget.stroke_depth = stroke_depth
+    widget.stroke_color = stroke_color
+
 class ApcRt(BasicEditor):
 
     def __init__(self, layout_editor):
         super().__init__()
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.on_switch_state_poller)
 
         h_layout = QHBoxLayout()
         profile_lbl = QLabel(tr("APCRT", "Profiles/配置列表: "))
@@ -271,6 +287,39 @@ class ApcRt(BasicEditor):
 
         self.keyboardWidget.update()
 
+    def get_switch_state(self, row, col):
+        if len(self.keyboard.amk_switch_states) == 0:
+            return
+
+        for state in self.keyboard.amk_switch_states:
+            if state.row == row and state.col == col:
+                return state 
+
+        return None
+
+    def update_key_state(self):
+        for widget in self.keyboardWidget.widgets:
+            state = self.get_switch_state(widget.desc.row, widget.desc.col)
+            if state is None:
+                widget.stroke = False
+            else:
+                stroke_display(widget, state.get_stroke(), state.get_on())
+
+        self.keyboardWidget.update()
+
+    def on_switch_state_poller(self):
+        if not self.valid():
+            self.timer.stop()
+            return
+
+        try:
+            self.keyboard.reload_switch_state()
+        except (RuntimeError, ValueError):
+            self.timer.stop()
+            return
+
+        self.update_key_state()
+
     def activate(self):
         if self.valid():
             self.reset_keyboard_widget()
@@ -286,8 +335,13 @@ class ApcRt(BasicEditor):
             self.refresh_apc(apc)
             self.refresh_rt(rt)
 
+            if self.keyboard.amk_has_switch_state:
+                self.timer.start(50)
+
     def deactivate(self):
         self.keyboardWidget.clear_active_keys()
+        if self.keyboard.amk_has_switch_state:
+            self.timer.stop()
     
     def apcrt_scale(self, val, down=True):
         if down:
@@ -404,6 +458,8 @@ class ApcRt(BasicEditor):
         rt  = self.keyboard.amk_rt[self.keyboard.amk_profile].get((row,col), None)
         self.refresh_rt(rt)
         #print("row={},col={},apc={},rt={}".format(row, col, apc, rt))
+
+        self.keyboard.reload_switch_state()
 
     def on_rt_check(self):
         self.rt_cbx.blockSignals(True)

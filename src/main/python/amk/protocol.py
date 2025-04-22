@@ -72,6 +72,7 @@ AMK_PROTOCOL_SET_AUX_MODE = 59
 AMK_PROTOCOL_GET_RGB_DATA = 60
 AMK_PROTOCOL_GET_RGB_PARAM = 61
 AMK_PROTOCOL_SET_RGB_PARAM = 62
+AMK_PROTOCOL_GET_SWITCH_STATE = 63
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -481,6 +482,37 @@ class RgbColor:
 
     def get_blue(self):
         return self.blue
+
+class SwitchState:
+    def __init__(self, row, col, stroke, on):
+        self.row = row
+        self.col = col
+        self.stroke = stroke
+        self.on = on
+    
+    def get_row(self):
+        return self.row
+    
+    def set_row(self, row):
+        self.row = row
+
+    def get_col(self):
+        return self.col
+
+    def set_col(self, col):
+        self.col = col
+    
+    def get_on(self):
+        return self.on
+    
+    def set_on(self, on):
+        self.on = on
+
+    def get_stroke(self):
+        return self.stroke
+    
+    def set_stroke(self, stroke):
+        self.stroke = stroke
 class ProtocolAmk(BaseProtocol):
 
     def amk_protocol_version(self):
@@ -1274,3 +1306,25 @@ class ProtocolAmk(BaseProtocol):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
         else:
             print("unknown rgb type: ", rgb_type)
+    
+    def reload_switch_state(self):
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_SWITCH_STATE), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            self.amk_switch_states = []
+
+            count = data[3]
+            index = 4
+            for i in range(count):
+                row = data[index]
+                col = data[index+1]
+                position = (data[index+2]<<8) + data[index+3]
+                on = False
+                if (position & 0x8000) > 0:
+                    on = True
+                position = position & 0x7FFF
+                index = index + 4
+                switch_state = SwitchState(row, col, position, on)
+                self.amk_switch_states.append(switch_state)
+                #print("switch state: index={}, row={}, col={}, position={}, on={}".format(index, row, col, position, on))
+        else:
+            print("unsupported get switch state command")

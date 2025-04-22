@@ -115,6 +115,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_has_datetime = False
         self.amk_has_switch_type = False
         self.amk_has_aux_display = False
+        self.amk_has_switch_state = False
+        self.amk_switch_states = []
 
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
@@ -233,6 +235,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_snaptap = True
                         elif feature == "switchType":
                             self.amk_has_switch_type = True
+                        elif feature == "switchState":
+                            self.amk_has_switch_state = True
                         else:
                             print("unknown feature: {}".format(feature))
 

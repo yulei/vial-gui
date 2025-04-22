@@ -24,6 +24,10 @@ class KeyWidget:
         self.color = None
         self.mask_color = None
         self.scale = 0
+        self.stroke = False
+        self.stroke_color = None
+        self.stroke_text = ""
+        self.stroke_depth = 0.0
 
         self.rotation_angle = desc.rotation_angle
 
@@ -444,24 +448,39 @@ class KeyboardWidget(QWidget):
             qp.drawPath(key.foreground_draw_path)
 
             # draw key text
-            if key.masked:
-                # draw the outer legend
+            if not key.stroke:
+                if key.masked:
+                    # draw the outer legend
+                    qp.setFont(mask_font)
+                    qp.setPen(key.color if key.color else regular_pen)
+                    qp.drawText(key.nonmask_rect, Qt.AlignCenter, key.text)
+
+                    # draw the inner highlight rect
+                    qp.setPen(active_pen if self.active_key == key and self.active_mask else Qt.NoPen)
+                    qp.setBrush(mask_brush)
+                    qp.drawRoundedRect(key.mask_rect, key.corner, key.corner)
+
+                    # draw the inner legend
+                    qp.setPen(key.mask_color if key.mask_color else regular_pen)
+                    qp.drawText(key.mask_rect, Qt.AlignCenter, key.mask_text)
+                else:
+                    # draw the legend
+                    qp.setPen(key.color if key.color else regular_pen)
+                    qp.drawText(key.text_rect, Qt.AlignCenter, key.text)
+            else:
                 qp.setFont(mask_font)
                 qp.setPen(key.color if key.color else regular_pen)
-                qp.drawText(key.nonmask_rect, Qt.AlignCenter, key.text)
+                qp.drawText(key.nonmask_rect, Qt.AlignCenter, key.stroke_text)
 
-                # draw the inner highlight rect
-                qp.setPen(active_pen if self.active_key == key and self.active_mask else Qt.NoPen)
-                qp.setBrush(mask_brush)
-                qp.drawRoundedRect(key.mask_rect, key.corner, key.corner)
+                stroke_brush = QBrush()
+                stroke_brush.setColor(key.stroke_color)
+                stroke_brush.setStyle(Qt.SolidPattern)
 
-                # draw the inner legend
-                qp.setPen(key.mask_color if key.mask_color else regular_pen)
-                qp.drawText(key.mask_rect, Qt.AlignCenter, key.mask_text)
-            else:
-                # draw the legend
-                qp.setPen(key.color if key.color else regular_pen)
-                qp.drawText(key.text_rect, Qt.AlignCenter, key.text)
+                rect = QRect(key.mask_rect)
+                rect.setWidth(rect.width()*key.stroke_depth)
+
+                qp.setBrush(stroke_brush)
+                qp.drawRoundedRect(rect, key.corner, key.corner)
 
             # draw the extra shape (encoder arrow)
             qp.setPen(extra_pen)

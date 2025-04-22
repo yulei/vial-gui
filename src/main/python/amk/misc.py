@@ -19,48 +19,6 @@ class Misc(BasicEditor):
 
         line = 0
 
-        # import/export setting from/to file
-        self.ie_lbl = QLabel(tr("Misc", "Import or export keyboard config file:/磁轴配置操作"))
-        g_layout.addWidget(self.ie_lbl, line, 0)
-        self.im_btn = QPushButton(tr("Misc", "Import/导入 ..."))
-        self.im_btn.clicked.connect(self.on_im_btn)
-        g_layout.addWidget(self.im_btn, line, 1)
-        self.ex_btn = QPushButton(tr("Misc", "Export/导出 ..."))
-        self.ex_btn.clicked.connect(self.on_ex_btn)
-        g_layout.addWidget(self.ex_btn, line, 2)
-
-        line = line + 1
-        # magnetic pole setting
-        self.mp_lbl = QLabel(tr("Misc", "Set the magnetic pole of the switch:/设置磁轴极性"))
-        g_layout.addWidget(self.mp_lbl, line, 0)
-        self.mp_cbb = QComboBox()
-        self.mp_cbb.addItem(tr("Misc", "South/南极"))
-        self.mp_cbb.addItem(tr("misc", "North/北极"))
-        self.mp_cbb.currentIndexChanged.connect(self.on_mp_cbb)
-        g_layout.addWidget(self.mp_cbb, line, 1)
-
-        line = line + 1
-        # apcrt profile setting
-        self.apcrt_lbl = QLabel(tr("Misc", "Set keyboard's APCRT profile/设置当前APCRT的配置:"))
-        g_layout.addWidget(self.apcrt_lbl, line, 0)
-        self.apcrt_cbb = QComboBox()
-        self.apcrt_cbb.currentIndexChanged.connect(self.on_apcrt_cbb)
-        g_layout.addWidget(self.apcrt_cbb, line, 1)
-
-        line = line + 1
-        # dks state setting
-        self.dks_status_lbl = QLabel(tr("Misc", "Set keyboard's DKS status/切换DKS状态:"))
-        g_layout.addWidget(self.dks_status_lbl, line, 0)
-        self.dks_lbl = QLabel(tr("Misc", "ON/激活"))
-        g_layout.addWidget(self.dks_lbl, line, 1, alignment=Qt.AlignCenter)
-        self.dks_cbx = QCheckBox()
-        self.dks_cbx.setTristate(False)
-        self.dks_cbx.setEnabled(True)
-        self.dks_cbx.stateChanged.connect(self.on_dks_cbx)
-        g_layout.addWidget(self.dks_cbx, line, 2)
-
-        line = line + 1
-
         # nkro setting
         self.nk_lbl = QLabel(tr("Misc", "Set the keyboard's nkro/设置全键无冲:"))
         g_layout.addWidget(self.nk_lbl, line, 0)
@@ -72,8 +30,8 @@ class Misc(BasicEditor):
         self.nk_cbx.stateChanged.connect(self.on_nk_cbx)
         g_layout.addWidget(self.nk_cbx, line, 2)
 
-        line = line + 1
         # polling rate setting
+        line = line + 1
         self.pr_lbl = QLabel(tr("Misc", "Set the keyboard's poll rate/键盘回报率:"))
         g_layout.addWidget(self.pr_lbl, line, 0)
         self.pr_cbb = QComboBox()
@@ -86,22 +44,8 @@ class Misc(BasicEditor):
         self.pr_btn.clicked.connect(self.on_pr_btn)
         g_layout.addWidget(self.pr_btn, line, 2)
 
-        line = line + 1
-        # switch type setting
-        self.st_lbl = QLabel(tr("Misc", "Set the current switch/设置当前轴体:"))
-        g_layout.addWidget(self.st_lbl, line, 0)
-        self.st_cbb = QComboBox()
-        self.st_cbb.addItem(tr("Misc", "Common Switch/其它"))
-        self.st_cbb.addItem(tr("Misc", "Gateron Magnetic Jade/磁玉系列"))
-        self.st_cbb.addItem(tr("Misc", "TTC King of Magnetic/万磁王系列"))
-        g_layout.addWidget(self.st_cbb, line, 1)
-        self.st_btn = QPushButton(tr("Misc", "Apply/应用"))
-        self.st_btn.clicked.connect(self.on_st_btn)
-        g_layout.addWidget(self.st_btn, line, 2)
-
-        line = line + 1
-
         # down debounce setting
+        line = line + 1
         self.dd_lbl = QLabel(tr("Misc", "Set the debounce time(ms) when press key/按键按下时的去抖时间:"))
         g_layout.addWidget(self.dd_lbl, line, 0)
         self.dd_sld= QSlider(Qt.Horizontal)
@@ -123,8 +67,8 @@ class Misc(BasicEditor):
         self.dd_sbx.valueChanged.connect(self.on_dd_sbx)
         g_layout.addWidget(self.dd_sbx, line, 2)
 
-        line = line + 1
         # up debounce setting
+        line = line + 1
         self.ud_lbl = QLabel(tr("Misc", "Set the debounce time(ms) when release key/按键释放时的去抖时间:"))
         g_layout.addWidget(self.ud_lbl, line, 0)
         self.ud_sld= QSlider(Qt.Horizontal)
@@ -145,111 +89,158 @@ class Misc(BasicEditor):
         self.ud_sbx.setSingleStep(1)
         self.ud_sbx.valueChanged.connect(self.on_ud_sbx)
         g_layout.addWidget(self.ud_sbx, line, 2)
-    
+
+        # import/export setting from/to file
         line = line + 1
+        self.ie_lbl = QLabel(tr("Misc", "Import or export keyboard config file:/磁轴配置操作"))
+        g_layout.addWidget(self.ie_lbl, line, 0)
+        self.im_btn = QPushButton(tr("Misc", "Import/导入 ..."))
+        self.im_btn.clicked.connect(self.on_im_btn)
+        g_layout.addWidget(self.im_btn, line, 1)
+        self.ex_btn = QPushButton(tr("Misc", "Export/导出 ..."))
+        self.ex_btn.clicked.connect(self.on_ex_btn)
+        g_layout.addWidget(self.ex_btn, line, 2)
+
+        # magnetic pole setting
+        line = line + 1
+        self.mp_lbl = QLabel(tr("Misc", "Set the magnetic pole of the switch:/设置磁轴极性"))
+        g_layout.addWidget(self.mp_lbl, line, 0)
+        self.mp_cbb = QComboBox()
+        self.mp_cbb.addItem(tr("Misc", "South/南极"))
+        self.mp_cbb.addItem(tr("misc", "North/北极"))
+        self.mp_cbb.currentIndexChanged.connect(self.on_mp_cbb)
+        g_layout.addWidget(self.mp_cbb, line, 1)
+
+        # apcrt profile setting
+        line = line + 1
+        self.apcrt_lbl = QLabel(tr("Misc", "Set keyboard's APCRT profile/设置当前APCRT的配置:"))
+        g_layout.addWidget(self.apcrt_lbl, line, 0)
+        self.apcrt_cbb = QComboBox()
+        self.apcrt_cbb.currentIndexChanged.connect(self.on_apcrt_cbb)
+        g_layout.addWidget(self.apcrt_cbb, line, 1)
+
+        # dks state setting
+        line = line + 1
+        self.dks_status_lbl = QLabel(tr("Misc", "Set keyboard's DKS status/切换DKS状态:"))
+        g_layout.addWidget(self.dks_status_lbl, line, 0)
+        self.dks_lbl = QLabel(tr("Misc", "ON/激活"))
+        g_layout.addWidget(self.dks_lbl, line, 1, alignment=Qt.AlignCenter)
+        self.dks_cbx = QCheckBox()
+        self.dks_cbx.setTristate(False)
+        self.dks_cbx.setEnabled(True)
+        self.dks_cbx.stateChanged.connect(self.on_dks_cbx)
+        g_layout.addWidget(self.dks_cbx, line, 2)
+
+        # switch type setting
+        line = line + 1
+        self.st_lbl = QLabel(tr("Misc", "Set the current switch/设置当前轴体:"))
+        g_layout.addWidget(self.st_lbl, line, 0)
+        self.st_cbb = QComboBox()
+        self.st_cbb.addItem(tr("Misc", "Common Switch/其它"))
+        self.st_cbb.addItem(tr("Misc", "Gateron Magnetic Jade/磁玉系列"))
+        self.st_cbb.addItem(tr("Misc", "TTC King of Magnetic/万磁王系列"))
+        g_layout.addWidget(self.st_cbb, line, 1)
+        self.st_btn = QPushButton(tr("Misc", "Apply/应用"))
+        self.st_btn.clicked.connect(self.on_st_btn)
+        g_layout.addWidget(self.st_btn, line, 2)
+    
         #advanced
+        line = line + 1
         self.adv_btn = QPushButton(tr("Misc", "Advanced/高级选项 \u22d9"))
-        self.adv_btn.setMaximumWidth(100)
+        self.adv_btn.setMaximumWidth(200)
         self.adv_btn.clicked.connect(self.on_adv_btn)
         g_layout.addWidget(self.adv_btn, line, 0)
 
+        #noise
         line = line + 1
         self.noise_lbl = QLabel(tr("Misc", "Set the noise sensitivity/电磁干扰灵敏度:"))
         g_layout.addWidget(self.noise_lbl, line, 0)
         self.noise_dpb = QSpinBox()
-        self.noise_dpb.setRange(1, 255)
+        self.noise_dpb.setRange(0, 255)
         self.noise_dpb.setSingleStep(1)
         self.noise_dpb.valueChanged.connect(self.on_noise_dpb) 
         g_layout.addWidget(self.noise_dpb, line, 1)
         self.noise_sld= QSlider(Qt.Horizontal)
         self.noise_sld.setMaximumWidth(300)
         self.noise_sld.setMinimumWidth(200)
-        self.noise_sld.setRange(1, 255)
+        self.noise_sld.setRange(0, 255)
         self.noise_sld.setSingleStep(1)
         self.noise_sld.setTickPosition(QSlider.TicksAbove)
         self.noise_sld.setTracking(False)
         self.noise_sld.valueChanged.connect(self.on_noise_sld) 
         g_layout.addWidget(self.noise_sld, line, 2)
 
+        #apc
         line = line + 1
         self.apc_lbl = QLabel(tr("Misc", "Set the apc sensitivity/APC动作灵敏度:"))
         g_layout.addWidget(self.apc_lbl, line, 0)
         self.apc_dpb = QSpinBox()
-        self.apc_dpb.setRange(1, 255)
+        self.apc_dpb.setRange(0, 255)
         self.apc_dpb.setSingleStep(1)
         self.apc_dpb.valueChanged.connect(self.on_apc_dpb) 
         g_layout.addWidget(self.apc_dpb, line, 1)
         self.apc_sld= QSlider(Qt.Horizontal)
         self.apc_sld.setMaximumWidth(300)
         self.apc_sld.setMinimumWidth(200)
-        self.apc_sld.setRange(1, 255)
+        self.apc_sld.setRange(0, 255)
         self.apc_sld.setSingleStep(1)
         self.apc_sld.setTickPosition(QSlider.TicksAbove)
         self.apc_sld.setTracking(False)
         self.apc_sld.valueChanged.connect(self.on_apc_sld) 
         g_layout.addWidget(self.apc_sld, line, 2)
 
+        #rt
         line = line + 1
         self.rt_lbl = QLabel(tr("Misc", "Set the rt sensitivity/RT动作灵敏度:"))
         g_layout.addWidget(self.rt_lbl, line, 0)
         self.rt_dpb = QSpinBox()
-        #self.rt_dpb.setEnabled(False)
-        self.rt_dpb.setRange(1, 255)
-        #self.rt_dpb.setValue(80)
+        self.rt_dpb.setRange(0, 255)
         self.rt_dpb.setSingleStep(1)
         self.rt_dpb.valueChanged.connect(self.on_rt_dpb) 
         g_layout.addWidget(self.rt_dpb, line, 1)
         self.rt_sld= QSlider(Qt.Horizontal)
-        #self.rt_sld.setEnabled(False)
         self.rt_sld.setMaximumWidth(300)
         self.rt_sld.setMinimumWidth(200)
-        self.rt_sld.setRange(1, 255)
+        self.rt_sld.setRange(0, 255)
         self.rt_sld.setSingleStep(1)
-        #self.rt_sld.setValue(80)
         self.rt_sld.setTickPosition(QSlider.TicksAbove)
         self.rt_sld.setTracking(False)
         self.rt_sld.valueChanged.connect(self.on_rt_sld) 
         g_layout.addWidget(self.rt_sld, line, 2)
 
+        #top
         line = line + 1
         self.top_lbl = QLabel(tr("Misc", "Set the top sensitivity/轴体顶部状态灵敏度:"))
         g_layout.addWidget(self.top_lbl, line, 0)
         self.top_dpb = QSpinBox()
-        #self.top_dpb.setEnabled(False)
-        self.top_dpb.setRange(1, 255)
-        #self.top_dpb.setValue(100)
+        self.top_dpb.setRange(0, 255)
         self.top_dpb.setSingleStep(1)
         self.top_dpb.valueChanged.connect(self.on_top_dpb) 
         g_layout.addWidget(self.top_dpb, line, 1)
         self.top_sld= QSlider(Qt.Horizontal)
-        #self.top_sld.setEnabled(False)
         self.top_sld.setMaximumWidth(300)
         self.top_sld.setMinimumWidth(200)
-        self.top_sld.setRange(1, 255)
+        self.top_sld.setRange(0, 255)
         self.top_sld.setSingleStep(1)
-        #self.top_sld.setValue(100)
         self.top_sld.setTickPosition(QSlider.TicksAbove)
         self.top_sld.setTracking(False)
         self.top_sld.valueChanged.connect(self.on_top_sld) 
         g_layout.addWidget(self.top_sld, line, 2)
 
+        #bottom
         line = line + 1
         self.btm_lbl = QLabel(tr("Misc", "Set the bottom sensitivity/轴体底部状态灵敏度:"))
         g_layout.addWidget(self.btm_lbl, line, 0)
         self.btm_dpb = QSpinBox()
-        #self.btm_dpb.setEnabled(False)
-        self.btm_dpb.setRange(1, 255)
-        #self.btm_dpb.setValue(100)
+        self.btm_dpb.setRange(0, 255)
         self.btm_dpb.setSingleStep(1)
         self.btm_dpb.valueChanged.connect(self.on_btm_dpb) 
         g_layout.addWidget(self.btm_dpb, line, 1)
         self.btm_sld= QSlider(Qt.Horizontal)
-        #self.btm_sld.setEnabled(False)
         self.btm_sld.setMaximumWidth(300)
         self.btm_sld.setMinimumWidth(200)
-        self.btm_sld.setRange(1, 255)
+        self.btm_sld.setRange(0, 255)
         self.btm_sld.setSingleStep(1)
-        #self.btm_sld.setValue(100)
         self.btm_sld.setTickPosition(QSlider.TicksAbove)
         self.btm_sld.setTracking(False)
         self.btm_sld.valueChanged.connect(self.on_btm_sld) 
