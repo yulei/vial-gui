@@ -45,26 +45,10 @@ def apc_rt_display(widget, apc, rt):
     else:
         widget.masked = False
 
-def stroke_display(widget, depth, on):
-    #print("Current stroke={}, depth={}".format(stroke, depth))
-    stroke_text = "{:.2f}".format(depth/100.0)
-    stroke_color = QColor.fromRgb(255, 255, 255)
-    if on:
-        stroke_color = QColor.fromRgb(255,191,0)
-    stroke_depth = depth/400.0
-
-    widget.stroke = True
-    widget.stroke_text = stroke_text
-    widget.stroke_depth = stroke_depth
-    widget.stroke_color = stroke_color
-
 class ApcRt(BasicEditor):
 
     def __init__(self, layout_editor):
         super().__init__()
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.on_switch_state_poller)
 
         h_layout = QHBoxLayout()
         profile_lbl = QLabel(tr("APCRT", "Profiles/配置列表: "))
@@ -115,7 +99,7 @@ class ApcRt(BasicEditor):
         #self.apc_sld.setRange(1, 400)
         #self.apc_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
         #self.apc_sld.setValue(120)
-        self.apc_sld.setTickPosition(QSlider.TicksAbove)
+        self.apc_sld.setTickPosition(QSlider.NoTicks)
         self.apc_sld.setTracking(False)
         self.apc_sld.valueChanged.connect(self.on_apc_sld) 
 
@@ -142,7 +126,7 @@ class ApcRt(BasicEditor):
         #self.rt_sld.setRange(1*self.keyboard.amk_apcrt_scale, 120)
         #self.rt_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
         #self.rt_sld.setValue(50)
-        self.rt_sld.setTickPosition(QSlider.TicksAbove)
+        self.rt_sld.setTickPosition(QSlider.NoTicks)
         self.rt_sld.setTracking(False)
         self.rt_sld.valueChanged.connect(self.on_rt_sld) 
 
@@ -178,7 +162,7 @@ class ApcRt(BasicEditor):
         #self.rt_down_sld.setRange(1*self.keyboard.amk_apcrt_scale, 120)
         #self.rt_down_sld.setSingleStep(1*self.keyboard.amk_apcrt_scale)
         #self.rt_down_sld.setValue(50)
-        self.rt_down_sld.setTickPosition(QSlider.TicksAbove)
+        self.rt_down_sld.setTickPosition(QSlider.NoTicks)
         self.rt_down_sld.setTracking(False)
         self.rt_down_sld.valueChanged.connect(self.on_rt_down_sld) 
         apc_rt_layout.addWidget(self.rt_down_lbl, 2, 0)
@@ -274,6 +258,7 @@ class ApcRt(BasicEditor):
             for i in range(self.keyboard.amk_profile_count):
                 self.profile_btns[i].show()
                 self.profile_btns[i].setChecked(False)
+
             self.profile_btns[self.keyboard.amk_profile].setChecked(True)
 
     def reset_active_apcrt(self):
@@ -286,39 +271,6 @@ class ApcRt(BasicEditor):
             apc_rt_display(key, self.keyboard.amk_apc[self.keyboard.amk_profile][(row,col)], self.keyboard.amk_rt[self.keyboard.amk_profile][(row,col)])
 
         self.keyboardWidget.update()
-
-    def get_switch_state(self, row, col):
-        if len(self.keyboard.amk_switch_states) == 0:
-            return
-
-        for state in self.keyboard.amk_switch_states:
-            if state.row == row and state.col == col:
-                return state 
-
-        return None
-
-    def update_key_state(self):
-        for widget in self.keyboardWidget.widgets:
-            state = self.get_switch_state(widget.desc.row, widget.desc.col)
-            if state is None:
-                widget.stroke = False
-            else:
-                stroke_display(widget, state.get_stroke(), state.get_on())
-
-        self.keyboardWidget.update()
-
-    def on_switch_state_poller(self):
-        if not self.valid():
-            self.timer.stop()
-            return
-
-        try:
-            self.keyboard.reload_switch_state()
-        except (RuntimeError, ValueError):
-            self.timer.stop()
-            return
-
-        self.update_key_state()
 
     def activate(self):
         if self.valid():
@@ -335,13 +287,8 @@ class ApcRt(BasicEditor):
             self.refresh_apc(apc)
             self.refresh_rt(rt)
 
-            if self.keyboard.amk_has_switch_state:
-                self.timer.start(50)
-
     def deactivate(self):
         self.keyboardWidget.clear_active_keys()
-        if self.keyboard.amk_has_switch_state:
-            self.timer.stop()
     
     def apcrt_scale(self, val, down=True):
         if down:

@@ -30,6 +30,7 @@ from unlocker import Unlocker
 from util import tr, EXAMPLE_KEYBOARDS, KeycodeDisplay, EXAMPLE_KEYBOARD_PREFIX
 from vial_device import VialKeyboard
 from editor.matrix_test import MatrixTest
+from amk.calibrate import Calibrate
 from amk.apc_rt import ApcRt
 from amk.dks import Dks 
 from amk.snaptap import Snaptap
@@ -92,6 +93,7 @@ class MainWindow(QMainWindow):
         self.qmk_settings = QmkSettings()
         self.matrix_tester = MatrixTest(self.layout_editor)
         self.rgb_configurator = RGBConfigurator()
+        self.calibrate = Calibrate(self.layout_editor)
         self.apc_rt = ApcRt(self.layout_editor)
         self.dks = Dks(self.layout_editor, appctx)
         self.snaptap = Snaptap(self.layout_editor)
@@ -108,6 +110,7 @@ class MainWindow(QMainWindow):
                         (self.rgb_strip, "RGB Led Strips/灯条"),
                         (self.rgb_matrix, "RGB Matrix/轴灯"),
                         (self.rgb_indicator, "RGB Indicator/指示灯"),
+                        (self.calibrate, "Key Calibrate/按键校准"),
                         (self.apc_rt, "APC/RT/按键行程和快速触发"),
                         (self.dks, "DKS Settings/DKS设置"),
                         (self.snaptap, "Snap Tap Settings/SnapTap设置"), 
@@ -349,7 +352,7 @@ class MainWindow(QMainWindow):
 
         for e in [self.layout_editor, self.keymap_editor, self.firmware_flasher, self.macro_recorder,
                   self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester, self.rgb_configurator,
-                  self.apc_rt, self.dks, self.snaptap,
+                  self.calibrate, self.apc_rt, self.dks, self.snaptap,
                   self.rgb_strip, self.rgb_matrix, self.rgb_indicator,
                   self.rgb_config,
                   self.aux_display,

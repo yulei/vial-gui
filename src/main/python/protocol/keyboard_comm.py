@@ -116,6 +116,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_has_switch_type = False
         self.amk_has_aux_display = False
         self.amk_has_switch_state = False
+        self.amk_has_calibrate = False
         self.amk_switch_states = []
 
         if "amkFeature" in self.definition:
@@ -237,6 +238,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_has_switch_type = True
                         elif feature == "switchState":
                             self.amk_has_switch_state = True
+                        elif feature = "calibrate":
+                            self.amk_has_calibrate = True
                         else:
                             print("unknown feature: {}".format(feature))
 

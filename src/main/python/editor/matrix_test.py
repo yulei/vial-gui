@@ -33,7 +33,7 @@ class MatrixTest(BasicEditor):
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        self.unlock_lbl = QLabel(tr("MatrixTest", "Unlock the keyboard before testing:/在测试值钱解锁键盘"))
+        self.unlock_lbl = QLabel(tr("MatrixTest", "Unlock the keyboard before testing:/测试前需要解锁键盘"))
         btn_layout.addWidget(self.unlock_lbl)
         btn_layout.addWidget(self.unlock_btn)
         btn_layout.addWidget(self.reset_btn)
