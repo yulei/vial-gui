@@ -238,7 +238,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_has_switch_type = True
                         elif feature == "switchState":
                             self.amk_has_switch_state = True
-                        elif feature = "calibrate":
+                        elif feature == "calibrate":
                             self.amk_has_calibrate = True
                         else:
                             print("unknown feature: {}".format(feature))
