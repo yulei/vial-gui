@@ -73,6 +73,8 @@ AMK_PROTOCOL_GET_RGB_DATA = 60
 AMK_PROTOCOL_GET_RGB_PARAM = 61
 AMK_PROTOCOL_SET_RGB_PARAM = 62
 AMK_PROTOCOL_GET_SWITCH_STATE = 63
+AMK_PROTOCOL_FIRMWARE = 64
+
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -90,6 +92,12 @@ RGB_PARAM_SPEED = 2
 RGB_TYPE_MATRIX = 0
 RGB_TYPE_STRIP  = 1
 RGB_TYPE_INDICATOR  = 2
+
+FIRMWARE_INFO = 0
+FIRMWARE_PREPARE = 1
+FIRMWARE_READ = 2
+FIRMWARE_WRITE = 3
+FIRMWARE_FINISH = 4
 class DksKey:
     def __init__(self):
         self.down_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
@@ -1328,3 +1336,41 @@ class ProtocolAmk(BaseProtocol):
                 #print("switch state: index={}, row={}, col={}, position={}, on={}".format(index, row, col, position, on))
         else:
             print("unsupported get switch state command")
+
+    def firmware_info(self):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_INFO), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            vendor_id, product_id, family, date, second, size, = struct.unpack("<HHIIII", data[3:23])
+            return (vendor_id, product_id, family, date, second, size) 
+        else:
+            print("Firmware info failed")
+            return (0,0,0,0,0,0) 
+
+    def firmware_prepare(self):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_PREPARE), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Firmware prepare ok")
+            return True
+        else:
+            print("Firmware prepare failed")
+            return False
+
+    def firmware_upload(self, offset, data):
+        result = self.usb_send(self.dev, 
+                                struct.pack("<BBBBI", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_WRITE, len(data), offset) + data, 
+                                retries=20)
+        if result[2] != AMK_PROTOCOL_OK:
+            print("Firmware upload failed at offset: ", offset)
+            return False
+    
+        #print("Firmware upload success")
+        return True
+
+    def firmware_finish(self):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_FINISH), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Firmware finish ok")
+            return True
+        else:
+            print("Firmware finish failed")
+            return False

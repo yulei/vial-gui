@@ -118,6 +118,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_has_switch_state = False
         self.amk_has_calibrate = False
         self.amk_switch_states = []
+        self.amk_firmware = False
 
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
@@ -213,6 +214,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_rgb_indicator["indicators"] = feature["rgb_indicator"]["leds"]
                             self.amk_rgb_indicator["leds"] = {}
                             self.reload_amk_rgb_indicators()
+                    if "firmware" in feature:
+                        self.amk_firmware = True
+                        print(feature["firmware"])
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider 
+from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog
+from PyQt5.QtCore import Qt, QCoreApplication
 
 import os, json
 
@@ -9,6 +10,13 @@ from util import tr
 
 from editor.basic_editor import BasicEditor
 from vial_device import VialKeyboard
+
+BUILD_MAGIC=0x2ac097b5
+MAGIC_INDEX=7*4
+SIZE_INDEX=8*4
+DATE_INDEX=9*4
+SECOND_INDEX=10*4
+INFO_INDEX=13*4
 
 class Misc(BasicEditor):
 
@@ -246,6 +254,17 @@ class Misc(BasicEditor):
         self.btm_sld.valueChanged.connect(self.on_btm_sld) 
         g_layout.addWidget(self.btm_sld, line, 2)
 
+        #firmware
+        line = line + 1
+        self.firmware_lbl = QLabel(tr("Misc", "Firmware/键盘固件:"))
+        g_layout.addWidget(self.firmware_lbl, line, 0)
+        self.firmware_load_btn = QPushButton(tr("Misc", "Load/导入 ..."))
+        self.firmware_load_btn.clicked.connect(self.on_load_firmware)
+        g_layout.addWidget(self.firmware_load_btn, line, 1)
+        self.firmware_check_btn = QPushButton(tr("Misc", "Check update/检查更新"))
+        self.firmware_check_btn.clicked.connect(self.on_check_firmware)
+        g_layout.addWidget(self.firmware_check_btn, line, 2)
+
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
         v_layout.addLayout(g_layout)
@@ -391,6 +410,14 @@ class Misc(BasicEditor):
             self.st_cbb.hide()
             self.st_btn.hide()
 
+        if self.keyboard.amk_firmware:
+            self.firmware_lbl.show()
+            self.firmware_load_btn.show()
+            self.firmware_check_btn.show()
+        else:
+            self.firmware_lbl.hide()
+            self.firmware_load_btn.hide()
+            self.firmware_check_btn.hide()
 
     def activate(self):
         pass
@@ -747,3 +774,179 @@ class Misc(BasicEditor):
         self.keyboard.apply_btm_sensitivity(self.btm_sld.value())
         self.btm_sld.blockSignals(False)
         self.btm_dpb.blockSignals(False)
+
+    def on_check_firmware(self):
+        pass
+
+    def is_uf2_block_valid(self, block):
+        if len(block) != 512:
+            print("Invalid block size")
+            return (False, 0, 0)
+
+        import struct
+        magicStart0,magicStart1,flags, targetAddr, payloadSize,blockNo, numBlocks, fileSize = struct.unpack("<8I", block[0:32])
+        magicEnd, = struct.unpack("<I", block[508:])
+        if magicStart0 != 0x0A324655 or magicStart1 != 0x9E5D5157 or magicEnd != 0x0AB16F30:
+            print("Invalid magic number:", hex(magicStart0), hex(magicStart1), hex(magicEnd))
+            return (False, 0, 0)
+
+
+        UF2_FLAG_NOFLASH = 0x00000001
+        UF2_FLAG_FAMILYID = 0x00002000
+        if ((flags & UF2_FLAG_FAMILYID) == 0) or ((flags & UF2_FLAG_NOFLASH) != 0):
+            print("Invalid flags:", hex(flags))
+            return (False, 0, 0)
+        
+        return (True, payloadSize, targetAddr)
+
+    def load_uf2(self, filename):
+        with open(filename, "rb") as fp:
+            uf2 = fp.read()
+            return self.parse_uf2(uf2)
+        return (None, None)
+
+    def parse_uf2(self, uf2):
+        data = bytearray() 
+        start = 0xFFFFFFFF
+        if (len(uf2) % 512) != 0:
+            button = QMessageBox.warning(None, "Loading firmware",
+                                        "Invalid UF2 file size./固件已损坏",
+                                        buttons=QMessageBox.Ok,
+                                        defaultButton=QMessageBox.Ok)
+            return (None,None)
+        for i in range(len(uf2) // 512):
+            block = uf2[i * 512:i * 512 + 512]
+            valid, size, address = self.is_uf2_block_valid(block)
+            if valid:
+                data = data + block[32:32+size]
+                start = min(start, address)
+            else:
+                button = QMessageBox.warning(None, "Loading firmware",
+                                            "UF2 file content invalid./无效的固件",
+                                            buttons=QMessageBox.Ok,
+                                            defaultButton=QMessageBox.Ok)
+                return (None,None)
+
+        return (data, start)
+
+    def convert_date_second(self, build):
+        data = build.split("-")
+        date = (int(data[0])<<16) | (int(data[1])<<8) | int(data[2])
+        second = (int(data[3]*3600) | (int(data[4])*60) | int(data[5]))
+        return (date, second)
+
+    def upload_firmware(self, data, address):
+        import struct
+        magic, = struct.unpack("<I", data[MAGIC_INDEX:MAGIC_INDEX+4])
+        if magic != BUILD_MAGIC:
+            print("Invalid magic number:", hex(magic))
+            button = QMessageBox.warning(None, "Loading firmware",
+                                        "Invalid firmware file./固件已损坏",
+                                        buttons=QMessageBox.Ok,
+                                        defaultButton=QMessageBox.Ok)
+            return
+        board_info_address, = struct.unpack("<I", data[INFO_INDEX:INFO_INDEX+4])
+        offset = board_info_address - address
+        firmware_vendor_id, firmware_product_id, firmware_family, = struct.unpack("<HHI", data[offset:offset+8])
+
+        vendor_id, product_id, family, date, second, size = self.keyboard.firmware_info()
+        if vendor_id != firmware_vendor_id or product_id != firmware_product_id or family != firmware_family:
+            print("Invalid firmware vendor id or product id or family:", hex(vendor_id), hex(product_id), hex(family), hex(firmware_vendor_id), hex(firmware_product_id), hex(firmware_family))
+            button = QMessageBox.warning(None, "Loading firmware",
+                                        "The firmware is not for this keyboard./固件不适合此键盘",
+                                        buttons=QMessageBox.Ok,
+                                        defaultButton=QMessageBox.Ok)
+            return
+
+        #return
+
+        self.keyboard.firmware_prepare()
+
+        progress = QProgressDialog("Upload firmware/更新固件...", "Abort/退出", 0, len(data))
+        progress.setWindowModality(Qt.WindowModal)
+        progress.show()
+
+        offset = 0
+        while offset < len(data):
+            size = 24 if len(data) - offset >= 24 else len(data) - offset
+
+            if self.keyboard.firmware_upload(offset, data[offset:offset+size]):
+                progress.setValue(offset)
+                QCoreApplication.processEvents()
+            else:
+                print("Failed to upload firmware")
+                break
+
+            if progress.wasCanceled():
+                break
+
+            offset = offset + size
+
+        progress.hide()
+
+        self.keyboard.firmware_finish()
+
+
+    def on_check_firmware(self):
+        from urllib.request import urlopen 
+        from urllib.error import URLError
+        url_prefix = "https://config.matrix-lab.com/update/"
+
+        try:
+            firmware_list = urlopen(url_prefix + "firmware.json")
+        except URLError as e:
+            print("Failed to load firmware list:", e)
+            button = QMessageBox.warning(None, "Loading firmware",
+                                        "Failed to load firmware list./无法加载固件列表",
+                                        buttons=QMessageBox.Ok,
+                                        defaultButton=QMessageBox.Ok)
+            return
+        import json
+        firmwares = json.loads(firmware_list.read().decode("utf-8"))
+        #print(firmwares)
+        vendor_id, product_id, family, date, second, size = self.keyboard.firmware_info()
+        print(vendor_id, product_id, family, date, second, size)
+        if "keyboards" in firmwares:
+            for kbd in firmwares["keyboards"]:
+                if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
+                    kbd_date, kbd_second = self.convert_date_second(kbd["build"])
+                    print(kbd)
+                    if (kbd_date > date) or (kbd_date == date and kbd_second > second):
+                        print("New firmware found:", kbd["build"])
+                        button = QMessageBox.warning(None, "Loading firmware",
+                                                    "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
+                                                    buttons=QMessageBox.Yes | QMessageBox.No,
+                                                    defaultButton=QMessageBox.No)
+                        if button == QMessageBox.Yes:
+                            url = url_prefix + "firmwares/"+kbd["firmware"]
+                            print("Downloading firmware from:", url)
+                            try:
+                                firmware = urlopen(url)
+                            except URLError as e:
+                                print("Failed to load firmware:", e)
+                                button = QMessageBox.warning(None, "Loading firmware",
+                                                            "Failed to download firmware./无法下载固件",
+                                                            buttons=QMessageBox.Ok,
+                                                            defaultButton=QMessageBox.Ok)
+                                return
+                            uf2 = firmware.read()
+                            print("Firmware size:", len(uf2))
+                            data, address = self.parse_uf2(uf2)
+                            self.upload_firmware(data, address)
+                            break
+
+
+    def on_load_firmware(self):
+        firmware_file, firmware_file_type = QFileDialog.getOpenFileName(None, "Select Firmware/选择固件", os.getcwd(), "Firmware Files (*.uf2)")
+        if firmware_file is None or firmware_file == "":
+            return
+        
+        if not os.path.exists(firmware_file):
+            return
+
+        #print(firmware_file)
+        with open(firmware_file, "rb") as fp:
+            uf2 = fp.read()
+            data, address = self.parse_uf2(uf2)
+            if data is not None:
+                self.upload_firmware(data, address)
