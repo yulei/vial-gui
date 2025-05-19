@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider 
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QProgressBar
 from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog
 from PyQt5.QtCore import Qt, QCoreApplication
 
@@ -20,8 +20,9 @@ INFO_INDEX=13*4
 
 class Misc(BasicEditor):
 
-    def __init__(self):
+    def __init__(self, layout_editor, appctx):
         super().__init__()
+        self.appctx = appctx
 
         g_layout = QGridLayout()
 
@@ -265,6 +266,15 @@ class Misc(BasicEditor):
         self.firmware_check_btn.clicked.connect(self.on_check_firmware)
         g_layout.addWidget(self.firmware_check_btn, line, 2)
 
+        if sys.platform == "emscripten":
+            line = line + 1
+            self.upload_bar = QProgressBar()
+            g_layout.addWidget(self.upload_bar, line, 1)
+            self.upload_btn = QPushButton(tr("Misc", "Upload&Reset/更新并重启"))
+            self.upload_btn.clicked.connect(self.on_upload_reset)
+            self.upload_btn.setEnabled(False)
+            g_layout.addWidget(self.upload_btn, line, 2)
+
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
         v_layout.addLayout(g_layout)
@@ -278,6 +288,7 @@ class Misc(BasicEditor):
         self.keyboard = None
         self.device = None
         self.advance = False
+        self.current_firmware_data = None
 
     def rebuild(self, device):
         super().rebuild(device)
@@ -413,6 +424,7 @@ class Misc(BasicEditor):
             self.firmware_lbl.show()
             self.firmware_load_btn.show()
             self.firmware_check_btn.show()
+            self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
         else:
             self.firmware_lbl.hide()
             self.firmware_load_btn.hide()
@@ -808,7 +820,8 @@ class Misc(BasicEditor):
         data = bytearray() 
         start = 0xFFFFFFFF
         if (len(uf2) % 512) != 0:
-            button = QMessageBox.warning(None, "Loading firmware",
+            if sys.platform != "emscripten":
+                button = QMessageBox.warning(None, "Loading firmware",
                                         "Invalid UF2 file size./固件已损坏",
                                         buttons=QMessageBox.Ok,
                                         defaultButton=QMessageBox.Ok)
@@ -820,7 +833,8 @@ class Misc(BasicEditor):
                 data = data + block[32:32+size]
                 start = min(start, address)
             else:
-                button = QMessageBox.warning(None, "Loading firmware",
+                if sys.platform != "emscripten":
+                    button = QMessageBox.warning(None, "Loading firmware",
                                             "UF2 file content invalid./无效的固件",
                                             buttons=QMessageBox.Ok,
                                             defaultButton=QMessageBox.Ok)
@@ -894,7 +908,9 @@ class Misc(BasicEditor):
 
     def on_check_firmware(self):
         if sys.platform == "emscripten":
-            firmwares = json.load(appctx.get_resource("firmware.json"))
+            with open(self.appctx.get_resource("firmware.json"), "r", encoding='utf-8') as fp:
+                import json
+                firmwares = json.load(fp)
             print(firmwares)
         else:
             from urllib.request import urlopen 
@@ -912,23 +928,28 @@ class Misc(BasicEditor):
                 return
             import json
             firmwares = json.loads(firmware_list.read().decode("utf-8"))
+
         vendor_id, product_id, family, date, second, size = self.keyboard.firmware_info()
-        print(vendor_id, product_id, family, date, second, size)
         if "keyboards" in firmwares:
             for kbd in firmwares["keyboards"]:
                 if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
                     kbd_date, kbd_second = self.convert_date_second(kbd["build"])
                     if (kbd_date > date) or (kbd_date == date and kbd_second > second):
                         print("New firmware found:", kbd["build"])
-                        button = QMessageBox.warning(None, "Firmware",
-                                                    "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
-                                                    buttons=QMessageBox.Yes | QMessageBox.No,
-                                                    defaultButton=QMessageBox.No)
-                        if button == QMessageBox.Yes:
-                            if sys.platform == "emscripten":
-                                with open(appctx.get_resource("firmwares/"+kbd["firmware"]), "rb") as fp:
-                                    uf2 = fp.read()
-                            else:
+                        if sys.platform == "emscripten":
+                            with open(self.appctx.get_resource("firmwares/"+kbd["firmware"]), "rb") as fp:
+                                uf2 = fp.read()
+                                data, address = self.parse_uf2(uf2)
+                                self.current_firmware_data = data
+                                self.current_firmware_address = address
+                                self.upload_btn.setEnabled(True)
+                                self.upload_bar.reset()
+                        else:
+                            button = QMessageBox.warning(None, "Firmware",
+                                                        "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
+                                                        buttons=QMessageBox.Yes | QMessageBox.No,
+                                                        defaultButton=QMessageBox.No)
+                            if button == QMessageBox.Yes:
                                 url = url_prefix + "firmwares/"+kbd["firmware"]
                                 print("Downloading firmware from:", url)
                                 try:
@@ -941,11 +962,13 @@ class Misc(BasicEditor):
                                                                 defaultButton=QMessageBox.Ok)
                                     return
                                 uf2 = firmware.read()
-                            print("Firmware size:", len(uf2))
-                            data, address = self.parse_uf2(uf2)
-                            self.upload_firmware(data, address)
+                                data, address = self.parse_uf2(uf2)
+                                self.upload_firmware(data, address)
                     else:
-                        button = QMessageBox.warning(None, "Firmware",
+                        if sys.platform == "emscripten":
+                            self.firmware_check_btn.setText(tr("Misc", "Already Latest/已经是最新版本"))
+                        else:
+                            button = QMessageBox.warning(None, "Firmware",
                                                     "No new firmware available./目前已经是最新版",
                                                     buttons=QMessageBox.Ok,
                                                     defaultButton=QMessageBox.Ok)
@@ -967,3 +990,35 @@ class Misc(BasicEditor):
             data, address = self.parse_uf2(uf2)
             if data is not None:
                 self.upload_firmware(data, address)
+
+    def on_upload_reset(self):
+        if self.current_firmware_data is None:
+            return
+        data = self.current_firmware_data
+
+        self.upload_bar.setRange(0, len(data))
+        self.upload_bar.setValue(0)
+
+        self.keyboard.firmware_prepare()
+
+        offset = 0
+        while offset < len(data):
+            size = 24 if len(data) - offset >= 24 else len(data) - offset
+
+            if self.keyboard.firmware_upload(offset, data[offset:offset+size]):
+                self.upload_bar.setValue(offset)
+            else:
+                print("Failed to upload firmware")
+                break
+
+            QCoreApplication.processEvents()
+            offset = offset + size
+
+        self.upload_bar.setValue(offset)
+
+        self.keyboard.firmware_finish()
+        self.keyboard.firmware_reset()
+
+        self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
+        self.upload_btn.setEnabled(False)
+        self.current_firmware_data = None

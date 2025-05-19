@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
         self.apc_rt = ApcRt(self.layout_editor)
         self.dks = Dks(self.layout_editor, appctx)
         self.snaptap = Snaptap(self.layout_editor)
-        self.misc = Misc()
+        self.misc = Misc(self.layout_editor, appctx)
         self.rgb_strip = RgbStrip(self.layout_editor)
         self.rgb_indicator = RgbIndicator(self.layout_editor)
         self.animation = Animation()
