@@ -98,6 +98,7 @@ FIRMWARE_PREPARE = 1
 FIRMWARE_READ = 2
 FIRMWARE_WRITE = 3
 FIRMWARE_FINISH = 4
+FIRMWARE_RESET = 5
 class DksKey:
     def __init__(self):
         self.down_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
@@ -1368,6 +1369,15 @@ class ProtocolAmk(BaseProtocol):
 
     def firmware_finish(self):
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_FINISH), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            #print("Firmware finish ok")
+            return True
+        else:
+            print("Firmware finish failed")
+            return False
+
+    def firmware_reset(self):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_FIRMWARE, FIRMWARE_RESET), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
             #print("Firmware finish ok")
             return True

@@ -775,9 +775,6 @@ class Misc(BasicEditor):
         self.btm_sld.blockSignals(False)
         self.btm_dpb.blockSignals(False)
 
-    def on_check_firmware(self):
-        pass
-
     def is_uf2_block_valid(self, block):
         if len(block) != 512:
             print("Invalid block size")
@@ -886,6 +883,12 @@ class Misc(BasicEditor):
 
         self.keyboard.firmware_finish()
 
+        button = QMessageBox.warning(None, "Firmware",
+                                    "Need reset keyboard to use the new firmware, do you want to reset now?\n新固件需要重启键盘才能生效,现在重启?",
+                                    buttons=QMessageBox.Yes | QMessageBox.No,
+                                    defaultButton=QMessageBox.No)
+        if button == QMessageBox.Yes:
+            self.keyboard.firmware_reset()
 
     def on_check_firmware(self):
         from urllib.request import urlopen 
@@ -896,7 +899,7 @@ class Misc(BasicEditor):
             firmware_list = urlopen(url_prefix + "firmware.json")
         except URLError as e:
             print("Failed to load firmware list:", e)
-            button = QMessageBox.warning(None, "Loading firmware",
+            button = QMessageBox.warning(None, "Firmware",
                                         "Failed to load firmware list./无法加载固件列表",
                                         buttons=QMessageBox.Ok,
                                         defaultButton=QMessageBox.Ok)
@@ -913,7 +916,7 @@ class Misc(BasicEditor):
                     print(kbd)
                     if (kbd_date > date) or (kbd_date == date and kbd_second > second):
                         print("New firmware found:", kbd["build"])
-                        button = QMessageBox.warning(None, "Loading firmware",
+                        button = QMessageBox.warning(None, "Firmware",
                                                     "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
                                                     buttons=QMessageBox.Yes | QMessageBox.No,
                                                     defaultButton=QMessageBox.No)
@@ -924,7 +927,7 @@ class Misc(BasicEditor):
                                 firmware = urlopen(url)
                             except URLError as e:
                                 print("Failed to load firmware:", e)
-                                button = QMessageBox.warning(None, "Loading firmware",
+                                button = QMessageBox.warning(None, "Firmware",
                                                             "Failed to download firmware./无法下载固件",
                                                             buttons=QMessageBox.Ok,
                                                             defaultButton=QMessageBox.Ok)
@@ -933,7 +936,13 @@ class Misc(BasicEditor):
                             print("Firmware size:", len(uf2))
                             data, address = self.parse_uf2(uf2)
                             self.upload_firmware(data, address)
-                            break
+                    else:
+                        button = QMessageBox.warning(None, "Firmware",
+                                                    "No new firmware available./目前已经是最新版",
+                                                    buttons=QMessageBox.Ok,
+                                                    defaultButton=QMessageBox.Ok)
+                    break
+
 
 
     def on_load_firmware(self):

@@ -216,7 +216,6 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.reload_amk_rgb_indicators()
                     if "firmware" in feature:
                         self.amk_firmware = True
-                        print(feature["firmware"])
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
