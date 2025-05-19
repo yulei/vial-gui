@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, 
 from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog
 from PyQt5.QtCore import Qt, QCoreApplication
 
-import os, json
+import os, json, sys
 
 from util import tr
 
@@ -352,7 +352,6 @@ class Misc(BasicEditor):
             self.ud_sld.hide()
             self.ud_sbx.hide()
 
-            import sys
             if True or sys.platform == "emscripten":
                 self.ie_lbl.hide()
                 self.im_btn.hide()
@@ -418,6 +417,9 @@ class Misc(BasicEditor):
             self.firmware_lbl.hide()
             self.firmware_load_btn.hide()
             self.firmware_check_btn.hide()
+
+        if sys.platform == "emscripten":
+            self.firmware_load_btn.hide()
 
     def activate(self):
         pass
@@ -891,29 +893,31 @@ class Misc(BasicEditor):
             self.keyboard.firmware_reset()
 
     def on_check_firmware(self):
-        from urllib.request import urlopen 
-        from urllib.error import URLError
-        url_prefix = "https://config.matrix-lab.com/update/"
+        if sys.platform == "emscripten":
+            firmwares = json.load(appctx.get_resource("firmware.json"))
+            print(firmwares)
+        else:
+            from urllib.request import urlopen 
+            from urllib.error import URLError
+            url_prefix = "https://config.matrix-lab.com/update/"
 
-        try:
-            firmware_list = urlopen(url_prefix + "firmware.json")
-        except URLError as e:
-            print("Failed to load firmware list:", e)
-            button = QMessageBox.warning(None, "Firmware",
-                                        "Failed to load firmware list./无法加载固件列表",
-                                        buttons=QMessageBox.Ok,
-                                        defaultButton=QMessageBox.Ok)
-            return
-        import json
-        firmwares = json.loads(firmware_list.read().decode("utf-8"))
-        #print(firmwares)
+            try:
+                firmware_list = urlopen(url_prefix + "firmware.json")
+            except URLError as e:
+                print("Failed to load firmware list:", e)
+                button = QMessageBox.warning(None, "Firmware",
+                                            "Failed to load firmware list./无法加载固件列表",
+                                            buttons=QMessageBox.Ok,
+                                            defaultButton=QMessageBox.Ok)
+                return
+            import json
+            firmwares = json.loads(firmware_list.read().decode("utf-8"))
         vendor_id, product_id, family, date, second, size = self.keyboard.firmware_info()
         print(vendor_id, product_id, family, date, second, size)
         if "keyboards" in firmwares:
             for kbd in firmwares["keyboards"]:
                 if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
                     kbd_date, kbd_second = self.convert_date_second(kbd["build"])
-                    print(kbd)
                     if (kbd_date > date) or (kbd_date == date and kbd_second > second):
                         print("New firmware found:", kbd["build"])
                         button = QMessageBox.warning(None, "Firmware",
@@ -921,18 +925,22 @@ class Misc(BasicEditor):
                                                     buttons=QMessageBox.Yes | QMessageBox.No,
                                                     defaultButton=QMessageBox.No)
                         if button == QMessageBox.Yes:
-                            url = url_prefix + "firmwares/"+kbd["firmware"]
-                            print("Downloading firmware from:", url)
-                            try:
-                                firmware = urlopen(url)
-                            except URLError as e:
-                                print("Failed to load firmware:", e)
-                                button = QMessageBox.warning(None, "Firmware",
-                                                            "Failed to download firmware./无法下载固件",
-                                                            buttons=QMessageBox.Ok,
-                                                            defaultButton=QMessageBox.Ok)
-                                return
-                            uf2 = firmware.read()
+                            if sys.platform == "emscripten":
+                                with open(appctx.get_resource("firmwares/"+kbd["firmware"]), "rb") as fp:
+                                    uf2 = fp.read()
+                            else:
+                                url = url_prefix + "firmwares/"+kbd["firmware"]
+                                print("Downloading firmware from:", url)
+                                try:
+                                    firmware = urlopen(url)
+                                except URLError as e:
+                                    print("Failed to load firmware:", e)
+                                    button = QMessageBox.warning(None, "Firmware",
+                                                                "Failed to download firmware./无法下载固件",
+                                                                buttons=QMessageBox.Ok,
+                                                                defaultButton=QMessageBox.Ok)
+                                    return
+                                uf2 = firmware.read()
                             print("Firmware size:", len(uf2))
                             data, address = self.parse_uf2(uf2)
                             self.upload_firmware(data, address)
