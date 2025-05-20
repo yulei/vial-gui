@@ -157,7 +157,7 @@ class Misc(BasicEditor):
     
         #advanced
         line = line + 1
-        self.adv_btn = QPushButton(tr("Misc", "Advanced/高级选项 \u22d9"))
+        self.adv_btn = QPushButton(tr("Misc", "Advanced/高级选项 >>"))
         self.adv_btn.setMaximumWidth(200)
         self.adv_btn.clicked.connect(self.on_adv_btn)
         g_layout.addWidget(self.adv_btn, line, 0)
@@ -427,13 +427,17 @@ class Misc(BasicEditor):
             self.firmware_load_btn.show()
             self.firmware_check_btn.show()
             self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
+            if sys.platform == "emscripten":
+                self.upload_btn.show()
+                self.upload_bar.show()
+                self.firmware_load_btn.hide()
         else:
             self.firmware_lbl.hide()
             self.firmware_load_btn.hide()
             self.firmware_check_btn.hide()
-
-        if sys.platform == "emscripten":
-            self.firmware_load_btn.hide()
+            if sys.platform == "emscripten":
+                self.upload_btn.hide()
+                self.upload_bar.hide()
 
     def activate(self):
         pass
@@ -684,7 +688,7 @@ class Misc(BasicEditor):
             self.btm_sld.blockSignals(False)
             self.btm_sld.show()
 
-            self.adv_btn.setText(tr("Misc", "Hide/隐藏 \u22d8"))
+            self.adv_btn.setText(tr("Misc", "Hide/隐藏 <<"))
         else:
             self.noise_lbl.hide()
             self.noise_dpb.hide()
@@ -705,7 +709,7 @@ class Misc(BasicEditor):
             self.btm_lbl.hide()
             self.btm_dpb.hide()
             self.btm_sld.hide()
-            self.adv_btn.setText(tr("Misc", "Advanced/高级选项 \u22d9"))
+            self.adv_btn.setText(tr("Misc", "Advanced/高级选项 >>"))
 
     def on_adv_btn(self):
         self.advance = not self.advance

@@ -270,15 +270,15 @@ KEYCODES_BASIC = [
     K("KC_F11", "F11", recorder_alias=["f11"]),
     K("KC_F12", "F12", recorder_alias=["f12"]),
 
-    K("KC_APPLICATION", "Menu", recorder_alias=["menu", "left menu", "right menu"], alias=["KC_APP"]),
-    K("KC_LCTRL", "LCtrl", recorder_alias=["left ctrl", "ctrl"], alias=["KC_LCTL"]),
-    K("KC_LSHIFT", "LShift", recorder_alias=["left shift", "shift"], alias=["KC_LSFT"]),
-    K("KC_LALT", "LAlt", recorder_alias=["alt"], alias=["KC_LOPT"]),
-    K("KC_LGUI", "LGui", recorder_alias=["left windows", "windows"], alias=["KC_LCMD", "KC_LWIN"]),
-    K("KC_RCTRL", "RCtrl", recorder_alias=["right ctrl"], alias=["KC_RCTL"]),
-    K("KC_RSHIFT", "RShift", recorder_alias=["right shift"], alias=["KC_RSFT"]),
-    K("KC_RALT", "RAlt", alias=["KC_ALGR", "KC_ROPT"]),
-    K("KC_RGUI", "RGui", recorder_alias=["right windows"], alias=["KC_RCMD", "KC_RWIN"]),
+    K("KC_APPLICATION", "Menu", "Menu/菜单", recorder_alias=["menu", "left menu", "right menu"], alias=["KC_APP"]),
+    K("KC_LCTRL", "LCtrl", "Left Control/左Control", recorder_alias=["left ctrl", "ctrl"], alias=["KC_LCTL"]),
+    K("KC_LSHIFT", "LShift", "Left Shift/左Shift", recorder_alias=["left shift", "shift"], alias=["KC_LSFT"]),
+    K("KC_LALT", "LAlt", "Left Alt/Left Mac Option/左Alt", recorder_alias=["alt"], alias=["KC_LOPT"]),
+    K("KC_LGUI", "LGui", "Left Gui/Left Mac Command/左Win", recorder_alias=["left windows", "windows"], alias=["KC_LCMD", "KC_LWIN"]),
+    K("KC_RCTRL", "RCtrl", "Right Control/右Control", recorder_alias=["right ctrl"], alias=["KC_RCTL"]),
+    K("KC_RSHIFT", "RShift", "Right Shift/右Sfhit", recorder_alias=["right shift"], alias=["KC_RSFT"]),
+    K("KC_RALT", "RAlt", "Right Alt/Right Mac Option/右Alt", alias=["KC_ALGR", "KC_ROPT"]),
+    K("KC_RGUI", "RGui", "Right Gui/Right Mac Command/右Win", recorder_alias=["right windows"], alias=["KC_RCMD", "KC_RWIN"]),
 ]
 
 KEYCODES_BASIC.extend(KEYCODES_BASIC_NUMPAD)
