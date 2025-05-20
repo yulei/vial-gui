@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QProgressBar
-from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog
-from PyQt5.QtCore import Qt, QCoreApplication
+from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog, QApplication
+from PyQt5.QtCore import Qt, QCoreApplication, QTimer
 
 import os, json, sys
 
@@ -23,6 +23,8 @@ class Misc(BasicEditor):
     def __init__(self, layout_editor, appctx):
         super().__init__()
         self.appctx = appctx
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.upload_firmware_period)
 
         g_layout = QGridLayout()
 
@@ -270,7 +272,7 @@ class Misc(BasicEditor):
             line = line + 1
             self.upload_bar = QProgressBar()
             g_layout.addWidget(self.upload_bar, line, 1)
-            self.upload_btn = QPushButton(tr("Misc", "Upload&Reset/更新并重启"))
+            self.upload_btn = QPushButton(tr("Misc", "Upload && Reset/更新并重启"))
             self.upload_btn.clicked.connect(self.on_upload_reset)
             self.upload_btn.setEnabled(False)
             g_layout.addWidget(self.upload_btn, line, 2)
@@ -994,31 +996,43 @@ class Misc(BasicEditor):
     def on_upload_reset(self):
         if self.current_firmware_data is None:
             return
-        data = self.current_firmware_data
 
-        self.upload_bar.setRange(0, len(data))
+        self.upload_bar.setRange(0, len(self.current_firmware_data))
         self.upload_bar.setValue(0)
 
         self.keyboard.firmware_prepare()
 
-        offset = 0
-        while offset < len(data):
+        self.current_firmware_offset = 0
+        self.timer.start(5)
+        self.upload_btn.setEnabled(False)
+
+    def upload_firmware_period(self):
+        offset = self.current_firmware_offset
+        data = self.current_firmware_data
+
+        if offset < len(data):
             size = 24 if len(data) - offset >= 24 else len(data) - offset
 
-            if self.keyboard.firmware_upload(offset, data[offset:offset+size]):
+            try:
+                result = self.keyboard.firmware_upload(offset, data[offset:offset+size])
                 self.upload_bar.setValue(offset)
-            else:
+            except (RuntimeError, ValueError):
+                self.timer.stop()
+                return
+            
+            if not result:
+                self.timer.stop()
                 print("Failed to upload firmware")
-                break
+                return 
 
-            QCoreApplication.processEvents()
-            offset = offset + size
+            self.current_firmware_offset = offset = offset + size
 
-        self.upload_bar.setValue(offset)
+        else:
+            self.timer.stop()
+            self.upload_bar.setValue(offset)
 
-        self.keyboard.firmware_finish()
-        self.keyboard.firmware_reset()
+            self.keyboard.firmware_finish()
+            self.keyboard.firmware_reset()
 
-        self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
-        self.upload_btn.setEnabled(False)
-        self.current_firmware_data = None
+            self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
+            self.current_firmware_data = None
