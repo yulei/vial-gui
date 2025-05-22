@@ -452,6 +452,10 @@ class Misc(BasicEditor):
         val = self.pr_cbb.currentIndex()
         self.keyboard.apply_poll_rate(val)
 
+        if sys.platform == "emscripten":
+            import vialglue
+            vialglue.reload_keyboard()
+
     def on_st_btn(self):
         #print("Apply switch type clicked")
         val = self.st_cbb.currentIndex()
@@ -1040,3 +1044,6 @@ class Misc(BasicEditor):
 
             self.firmware_check_btn.setText(tr("Misc", "Check update/检查更新"))
             self.current_firmware_data = None
+            if sys.platform == "emscripten":
+                import vialglue
+                vialglue.reload_keyboard()
