@@ -549,12 +549,31 @@ class keycodes_v6:
         "MI_BENDD": 0x718E,
         "MI_BENDU": 0x718F,
 
-        "RESET": 0x7C00,
+        "QK_BOOT": 0x7C00,
+        "QK_REBOOT": 0x7C01,
+        "QK_CLEAR_EEPROM": 0x7C03,
 
         "FN_MO13": 0x7C77,
         "FN_MO23": 0x7C78,
 
         "QK_KB": 0x7E00,
+
+        "QMK_LM_SHIFT": 5,
+        "QMK_LM_MASK": 0x1F,
+
+        "RM_ON": 0x7840,
+        "RM_OFF": 0x7841,
+        "RM_TOGG": 0x7842,
+        "RM_NEXT": 0x7843,
+        "RM_PREV": 0x7844,
+        "RM_HUEU": 0x7845,
+        "RM_HUED": 0x7846,
+        "RM_SATU": 0x7847,
+        "RM_SATD": 0x7848,
+        "RM_VALU": 0x7849,
+        "RM_VALD": 0x784A,
+        "RM_SPDU": 0x784B,
+        "RM_SPDD": 0x784C,
     }
 
     masked = set()

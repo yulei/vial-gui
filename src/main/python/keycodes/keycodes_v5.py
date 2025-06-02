@@ -548,13 +548,34 @@ class keycodes_v5:
         "MI_BENDD": 0x5CB9,
         "MI_BENDU": 0x5CBA,
 
-        "RESET": 0x5C00,
+        "QK_BOOT": 0x5C00,
+        "QK_CLEAR_EEPROM": 0x5CDF,
 
         "FN_MO13": 0x5F10,
         "FN_MO23": 0x5F11,
 
         "QK_KB": 0x5F80,
         "QK_MACRO": 0x5F12,
+
+        "QMK_LM_SHIFT": 4,
+        "QMK_LM_MASK": 0xF,
+
+        # TODO: these keycodes don't actually exist in v5; we need fake ones here to unbreak the build
+        # TODO: these should be removed after we can move keycodes to be owned by the Keyboard object and support optional/not implemented keycodes
+        "RM_ON": 0x9990,
+        "RM_OFF": 0x9991,
+        "RM_TOGG": 0x9992,
+        "RM_NEXT": 0x9993,
+        "RM_PREV": 0x9994,
+        "RM_HUEU": 0x9995,
+        "RM_HUED": 0x9996,
+        "RM_SATU": 0x9997,
+        "RM_SATD": 0x9998,
+        "RM_VALU": 0x9999,
+        "RM_VALD": 0x999a,
+        "RM_SPDU": 0x999b,
+        "RM_SPDD": 0x999c,
+        "QK_REBOOT": 0x999d,
     }
 
     masked = set()
@@ -575,7 +596,8 @@ for x in range(32):
 for x in range(16):
     keycodes_v5.kc["LT{}(kc)".format(x)] = keycodes_v5.kc["QK_LAYER_TAP"] | (((x) & 0xF) << 8)
 
-for x in range(16):
+#TODO(userkeycodes): temp workaround, keycodes handling is messy, rework this later
+for x in range(64):
     keycodes_v5.kc["USER{:02}".format(x)] = keycodes_v5.kc["QK_KB"] + x
 
 for name, val in keycodes_v5.kc.items():

@@ -122,10 +122,10 @@ class TapDance(BasicEditor):
         buttons.addStretch()
         self.btn_save = QPushButton(tr("TapDance", "Save/保存"))
         self.btn_save.clicked.connect(self.on_save)
-        btn_revert = QPushButton(tr("TapDance", "Revert/恢复"))
-        btn_revert.clicked.connect(self.on_revert)
+        self.btn_revert = QPushButton(tr("TapDance", "Revert/恢复"))
+        self.btn_revert.clicked.connect(self.on_revert)
         buttons.addWidget(self.btn_save)
-        buttons.addWidget(btn_revert)
+        buttons.addWidget(self.btn_revert)
         self.addLayout(buttons)
 
     def rebuild_ui(self):

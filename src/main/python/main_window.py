@@ -67,6 +67,9 @@ class MainWindow(QMainWindow):
         #if _pos and qApp.screenAt(_pos) and qApp.screenAt(_pos + (self.rect().bottomRight())):
             self.move(self.settings.value("pos"))
 
+        if self.settings.value("maximized", False, bool):
+            self.showMaximized()
+
         themes.Theme.set_theme(self.get_theme())
 
         self.combobox_devices = QComboBox()
@@ -482,5 +485,6 @@ class MainWindow(QMainWindow):
     def closeEvent(self, e):
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
+        self.settings.setValue("maximized", self.isMaximized())
 
         e.accept()

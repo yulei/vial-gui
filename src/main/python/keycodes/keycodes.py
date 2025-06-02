@@ -326,10 +326,12 @@ KEYCODES_ISO_KR = [
 KEYCODES_ISO.extend(KEYCODES_ISO_KR)
 
 KEYCODES_LAYERS = []
-RESET_KEYCODE = "RESET"
+RESET_KEYCODE = "QK_BOOT"
 
 KEYCODES_BOOT = [
-    K("RESET", "Reset", "Reboot to bootloader/进入刷机模式")
+    K("QK_BOOT", "Boot-\nloader", "Put the keyboard into bootloader mode for flashing/进入刷机模式", alias=["RESET"]),
+    K("QK_REBOOT", "Reboot", "Reboots the keyboard. Does not load the bootloader/重启键盘", alias=["REBOOT"]),
+    K("QK_CLEAR_EEPROM", "Clear\nEEPROM", "Reinitializes the keyboard's EEPROM (persistent memory)/重置系统配置", alias=["EE_CLR"]),
 ]
 
 KEYCODES_MODIFIERS = [
@@ -491,7 +493,7 @@ KEYCODES_BACKLIGHT = [
 #    K("BL_INC", "BL +", "Increase the backlight level"),
 #    K("BL_DEC", "BL - ", "Decrease the backlight level"),
 
-    K("RGB_TOG", "RGB\nToggle", "Toggle RGB lighting on or off/打开或者关闭RGB"),
+    K("RGB_TOG", "RGB\nToggle", "Toggle RGB lighting on or off/切换RGB开关"),
     K("RGB_MOD", "RGB\nMode +", "Next RGB mode/下一个RGB模式"),
     K("RGB_RMOD", "RGB\nMode -", "Previous RGB mode/上一个RGB模式"),
     K("RGB_HUI", "Hue +", "Increase hue/增加色调"),
@@ -499,9 +501,9 @@ KEYCODES_BACKLIGHT = [
     K("RGB_SAI", "Sat +", "Increase saturation/增加饱和度"),
     K("RGB_SAD", "Sat -", "Decrease saturation/减少饱和度"),
     K("RGB_VAI", "Bright +", "Increase value/增加亮度"),
-    K("RGB_VAD", "Bright -", "Decrease value/减少亮度"),
+    K("RGB_VAD", "Bright -", "Decrease value/降低亮度"),
     K("RGB_SPI", "Effect +", "Increase RGB effect speed/增加RGB效果速度"),
-    K("RGB_SPD", "Effect -", "Decrease RGB effect speed/减少RGB效果速度"),
+    K("RGB_SPD", "Effect -", "Decrease RGB effect speed/降低RGB效果速度"),
 #    K("RGB_M_P", "RGB\nMode P", "RGB Mode: Plain"),
 #    K("RGB_M_B", "RGB\nMode B", "RGB Mode: Breathe"),
 #    K("RGB_M_R", "RGB\nMode R", "RGB Mode: Rainbow"),
@@ -511,6 +513,20 @@ KEYCODES_BACKLIGHT = [
 #    K("RGB_M_X", "RGB\nMode X", "RGB Mode: Christmas"),
 #    K("RGB_M_G", "RGB\nMode G", "RGB Mode: Gradient"),
 #    K("RGB_M_T", "RGB\nMode T", "RGB Mode: Test"),
+
+    K("RM_ON", "RGBM\nOn", "Turn on RGB Matrix/打开RGB轴灯"),
+    K("RM_OFF", "RGBM\nOff", "Turn off RGB Matrix/关闭RGB轴灯"),
+    K("RM_TOGG", "RGBM\nTogg", "Toggle RGB Matrix on or off/切换RGB轴灯开关"),
+    K("RM_NEXT", "RGBM\nNext", "Cycle through animations/下一个RGB轴灯模式"),
+    K("RM_PREV", "RGBM\nPrev", "Cycle through animations in reverse/上一个RGB轴灯模式"),
+    K("RM_HUEU", "RGBM\nHue +", "Cycle through hue/增加色调"),
+    K("RM_HUED", "RGBM\nHue -", "Cycle through hue in reverse/减少色调"),
+    K("RM_SATU", "RGBM\nSat +", "Increase the saturation/增加饱和度"),
+    K("RM_SATD", "RGBM\nSat -", "Decrease the saturation/减少饱和度"),
+    K("RM_VALU", "RGBM\nBright +", "Increase the brightness level/增加亮度"),
+    K("RM_VALD", "RGBM\nBright -", "Decrease the brightness level/减少亮度"),
+    K("RM_SPDU", "RGBM\nSpeed +", "Increase the animation speed/增加速度"),
+    K("RM_SPDD", "RGBM\nSpeed -", "Decrease the animation speed/降低速度"),
 ]
 
 KEYCODES_MEDIA = [
