@@ -20,7 +20,7 @@ from protocol.dynamic import ProtocolDynamic
 from protocol.key_override import ProtocolKeyOverride
 from protocol.macro import ProtocolMacro
 from protocol.tap_dance import ProtocolTapDance
-from amk.protocol import ProtocolAmk, RGB_TYPE_MATRIX, RGB_TYPE_STRIP, RGB_TYPE_INDICATOR
+from amk.protocol import ProtocolAmk, RGB_TYPE_MATRIX, RGB_TYPE_STRIP, RGB_TYPE_GRID, RGB_TYPE_INDICATOR
 from unlocker import Unlocker
 from util import MSG_LEN, hid_send
 
@@ -110,11 +110,13 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_rgb_led = {}
         self.amk_rgb_matrix = {}
         self.amk_rgb_strip = {}
+        self.amk_rgb_grid = {}
         self.amk_rgb_indicator = {}
         self.amk_rgb_data = []
         self.amk_has_datetime = False
         self.amk_has_switch_type = False
         self.amk_has_aux_display = False
+        self.amk_aux_display = {}
         self.amk_has_switch_state = False
         self.amk_has_calibrate = False
         self.amk_switch_states = []
@@ -126,8 +128,15 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                     self.amk_has_datetime = True
                 if feature == "aux_display":
                     self.amk_has_aux_display = True
-                    self.amk_aux_mode = 0
+                    self.amk_aux_display["width"] = 70
+                    self.amk_aux_display["height"] = 40
+                    self.amk_aux_display["mode"] = 0
                 if isinstance(feature, dict):
+                    if "aux_display_params" in feature:
+                        self.amk_aux_display["width"] = feature["aux_display_params"]["width"]
+                        self.amk_aux_display["height"] = feature["aux_display_params"]["height"]
+                        self.amk_aux_display["mode"] = feature["aux_display_params"]["mode"]
+
                     if "rgb" in feature:
                         for r in feature["rgb"]:
                             rgb_inst = {"type": r["type"]}
@@ -189,6 +198,30 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_rgb_strip["leds"] = {}
                         self.reload_amk_rgb_strip()
                         self.reload_amk_rgb_params(RGB_TYPE_STRIP)
+                    if "rgb_grid" in feature:
+                        self.amk_rgb_grid["config_start"] = feature["rgb_grid"]["config_start"]
+                        self.amk_rgb_grid["start"] = feature["rgb_grid"]["start"]
+                        self.amk_rgb_grid["count"] = feature["rgb_grid"]["count"]
+                        self.amk_rgb_grid["grids"] = feature["rgb_grid"]["grids"]
+                        self.amk_rgb_grid["effects"] = feature["rgb_grid"]["effects"]
+                        self.amk_rgb_grid["layout"] = []
+                        serial = KleSerial()
+                        leds = serial.deserialize(feature["rgb_grid"]["layout"])
+                        for led in leds.keys:
+                            led.row = led.col = None
+                            led.encoder_idx = led.encoder_dir = None
+                            row, col = 0, 0
+                            if led.labels[0] and "," in led.labels[0]:
+                                row, col = led.labels[0].split(",")
+                                row, col = int(row), int(col)
+                                led.row = row
+                                led.col = col
+                                led.layout_index = -1
+                                led.layout_option = -1
+                            self.amk_rgb_grid["layout"].append(led)
+                        self.amk_rgb_grid["leds"] = {}
+                        self.reload_amk_rgb_grid()
+                        self.reload_amk_rgb_params(RGB_TYPE_GRID)
                     if "rgb_indicator" in feature:
                         if "layout" in feature["rgb_indicator"]:
                             if "on_off" in feature["rgb_indicator"]:

@@ -4,7 +4,7 @@ from keycodes.keycodes import Keycode
 
 from protocol.base_protocol import BaseProtocol
 
-AMK_VERSION = "0.9.8"
+AMK_VERSION = "0.9.9"
 
 AMK_PROTOCOL_PREFIX = 0xFD
 AMK_PROTOCOL_OK = 0xAA
@@ -37,7 +37,7 @@ AMK_PROTOCOL_SET_APC_SENS = 24
 AMK_PROTOCOL_GET_NOISE_SENS = 25
 AMK_PROTOCOL_SET_NOISE_SENS = 26
 AMK_PROTOCOL_GET_RGB_STRIP_COUNT = 27
-AMK_PROTOCOL_GET_RGB_STRIP_PARAM = 28
+AMK_PROTOCOL_GET_RGB_STRIP_INFO = 28
 AMK_PROTOCOL_GET_RGB_STRIP_LED = 29
 AMK_PROTOCOL_SET_RGB_STRIP_LED = 30
 AMK_PROTOCOL_GET_RGB_STRIP_MODE = 31
@@ -74,7 +74,12 @@ AMK_PROTOCOL_GET_RGB_PARAM = 61
 AMK_PROTOCOL_SET_RGB_PARAM = 62
 AMK_PROTOCOL_GET_SWITCH_STATE = 63
 AMK_PROTOCOL_FIRMWARE = 64
-
+AMK_PROTOCOL_GET_RGB_GRID_COUNT = 65
+AMK_PROTOCOL_GET_RGB_GRID_INFO = 66
+AMK_PROTOCOL_GET_RGB_GRID_MODE = 67
+AMK_PROTOCOL_SET_RGB_GRID_MODE = 68
+AMK_PROTOCOL_GET_RGB_GRID_LED = 69
+AMK_PROTOCOL_SET_RGB_GRID_LED = 70
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -92,6 +97,7 @@ RGB_PARAM_SPEED = 2
 RGB_TYPE_MATRIX = 0
 RGB_TYPE_STRIP  = 1
 RGB_TYPE_INDICATOR  = 2
+RGB_TYPE_GRID = 3
 
 FIRMWARE_INFO = 0
 FIRMWARE_PREPARE = 1
@@ -814,7 +820,7 @@ class ProtocolAmk(BaseProtocol):
         if data[2] == AMK_PROTOCOL_OK:
             if len(self.amk_rgb_strip["strips"]) == data[3]:
                 for i in range(data[3]):
-                    data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_PARAM,i), retries=20)
+                    data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_INFO,i), retries=20)
                     if data[2] == AMK_PROTOCOL_OK:
                         strip = self.amk_rgb_strip["strips"][i]
                         strip["config"] = data[4]
@@ -851,6 +857,50 @@ class ProtocolAmk(BaseProtocol):
             print("AMK protocol: failed to set rgb strip mode: index={}, mode={}".format(strip, mode))
         #print("AMK protocol: set rgb strip mode: index={}, mode={}".format(strip, mode))
     
+    def reload_amk_rgb_grid(self):
+        data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_COUNT), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            if len(self.amk_rgb_grid["grids"]) == data[3]:
+                for i in range(data[3]):
+                    data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_INFO,i), retries=20)
+                    if data[2] == AMK_PROTOCOL_OK:
+                        grid = self.amk_rgb_grid["grids"][i]
+                        grid["config"] = data[4]
+                        grid["enabled"] = data[5]
+                        grid["mode"] = data[6]
+                        grid["custom"] = data[7]
+                        grid["row"] = data[8]
+                        grid["col"] = data[9]
+                        #print("AMK protocol: get rgb grid: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
+            for i in range(self.amk_rgb_grid["count"]):
+                self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+i)
+
+    def reload_rgb_grid_led(self, index):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_LED,index), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            self.amk_rgb_grid["leds"][index] = led 
+            #print("AMK protocol: get rgb grid led: index={}, hue={},sat={},val={}, param={}".format(data[3], data[4], data[5], data[6],data[7]))
+
+
+    def apply_rgb_grid_led(self, index, led):
+        self.amk_rgb_grid["leds"][index] = led 
+
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_GRID_LED, index) + led.pack(), retries=20)
+        if data[2] != AMK_PROTOCOL_OK:
+            print("AMK protocol: failed to set rgb grid led: index={}, led={}".format(index, led.pack()))
+        #print("AMK protocol: set rgb grid led: grid ={}, index={}, led={}".format(grid, index, led.pack()))
+
+    def apply_rgb_grid_mode(self, grid, mode):
+        if self.amk_rgb_grid["grids"][grid]["mode"] == mode:
+            return
+        
+        self.amk_rgb_grid["grids"][grid]["mode"] = mode
+        data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_GRID_MODE, grid, mode), retries=20)
+        if data[2] != AMK_PROTOCOL_OK:
+            print("AMK protocol: failed to set rgb grid mode: index={}, mode={}".format(grid, mode))
+        #print("AMK protocol: set rgb grid mode: index={}, mode={}".format(grid, mode))
+
     def reload_amk_rgb_indicators(self):
         for i in range(len(self.amk_rgb_indicator["indicators"])):
             self.reload_rgb_indicator(i)
@@ -1164,15 +1214,13 @@ class ProtocolAmk(BaseProtocol):
     def reload_aux_mode(self):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_AUX_MODE), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            self.amk_aux_mode = data[3]
+            self.amk_aux_display["mode"] = data[3]
         else:
             print("Failed to reload aux mode")
 
     def apply_aux_mode(self, aux_mode):
-        #if self.amk_aux_mode == aux_mode:
-        #    return
         
-        self.amk_aux_mode = aux_mode 
+        self.amk_aux_display["mode"] = aux_mode 
 
         data = self.usb_send(self.dev, 
                             struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_AUX_MODE, aux_mode),
@@ -1217,6 +1265,13 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_strip["strips"][index]["color"] = self.color_from_hsv(data[4], data[4], data[6])
                 elif param == RGB_PARAM_SPEED:
                     self.amk_rgb_strip["strips"][index]["speed"] = data[4]
+            elif rgb_type == RGB_TYPE_GRID:
+                if param == RGB_PARAM_COLOR:
+                    self.amk_rgb_grid["grids"][index]["color"] = RgbColor(data[4], data[5], data[6])
+                elif param == RGB_PARAM_HSV:
+                    self.amk_rgb_grid["grids"][index]["color"] = self.color_from_hsv(data[4], data[4], data[6])
+                elif param == RGB_PARAM_SPEED:
+                    self.amk_rgb_grid["grids"][index]["speed"] = data[4]
         else:
             print("Failed to reload rgb param: ", param)
 
@@ -1301,6 +1356,38 @@ class ProtocolAmk(BaseProtocol):
                                                 hue,sat,val), retries=20)
             elif param == RGB_PARAM_SPEED:
                 data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+        elif rgb_type == RGB_TYPE_GRID:
+            if param == RGB_PARAM_COLOR:
+                data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
+                                                AMK_PROTOCOL_PREFIX, 
+                                                AMK_PROTOCOL_SET_RGB_PARAM, 
+                                                rgb_type,
+                                                param, 
+                                                index,
+                                                data.get_red(), 
+                                                data.get_green(), 
+                                                data.get_blue(), 
+                                                ), retries=20)
+            elif param == RGB_PARAM_HSV:
+                from PyQt5.QtGui import QColor
+                color = QColor.fromRgbF(data.get_red()/255.0, data.get_green()/255.0, data.get_blue()/255.0)
+                h, s, v, a = color.getHsvF()
+                if h < 0:
+                    h = 0
+
+                hue = int(255*h)
+                sat = int(255*s)
+                val = int(255*v)
+
+                data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
+                                                AMK_PROTOCOL_PREFIX, 
+                                                AMK_PROTOCOL_SET_RGB_PARAM, 
+                                                rgb_type,
+                                                param, 
+                                                index,
+                                                hue,sat,val), retries=20)
+            elif param == RGB_PARAM_SPEED:
+                data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
   
         else:
             print("Invalid RGB param: ", param)
@@ -1313,6 +1400,10 @@ class ProtocolAmk(BaseProtocol):
             for i in range (len(self.amk_rgb_strip["strips"])):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_COLOR, i)
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
+        elif rgb_type == RGB_TYPE_GRID:
+            for i in range (len(self.amk_rgb_grid["grids"])):
+                self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_COLOR, i)
+                self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_SPEED, i)
         else:
             print("unknown rgb type: ", rgb_type)
     

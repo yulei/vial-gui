@@ -13,11 +13,13 @@ from vial_device import VialKeyboard
 class AuxWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.text = "Hello\nMy-2K"
+        self.text = "Hello\nMatrix"
         self.font_size = 12
         self.font = QFont()
         self.font.setStyleStrategy(QFont.NoAntialias)
         self.font.setPixelSize(self.font_size)
+        self.pixmap_width = 70
+        self.pixmap_height = 40
         self.update_pixmap()
 
     def paintEvent(self, event):
@@ -61,8 +63,18 @@ class AuxWidget(QWidget):
     def get_font_size(self):
         return self.font_size
 
+    def get_pixmap_width(self):
+        return self.pixmap_width
+
+    def get_pixmap_height(self):
+        return self.pixmap_height
+
+    def set_pixmap_size(self, width, height):
+        self.pixmap_width = width
+        self.pixmap_height = height
+
     def update_pixmap(self):
-        self.pix = QPixmap(70, 40)
+        self.pix = QPixmap(self.pixmap_width, self.pixmap_height)
         qp = QPainter()
         qp.begin(self.pix)
         brush = QBrush()
@@ -74,7 +86,7 @@ class AuxWidget(QWidget):
         qp.setFont(self.font)
         pen.setColor(Qt.white)
         qp.setPen(pen)
-        qp.fillRect(0,0,70,40,Qt.black)
+        qp.fillRect(0,0,self.pixmap_width,self.pixmap_height,Qt.black)
 
         lines = self.text.splitlines()
         x = 0
@@ -85,7 +97,7 @@ class AuxWidget(QWidget):
             y = y + y_step
         qp.end()
 
-        self.pix_scaled = self.pix.scaled(140,80,Qt.KeepAspectRatio)
+        self.pix_scaled = self.pix.scaled(self.get_pixmap_width()*2,self.get_pixmap_height()*2,Qt.KeepAspectRatio)
     
     def get_pixmap_data(self):
         img = self.pix.toImage()
@@ -107,38 +119,30 @@ class AuxDsiplay(BasicEditor):
 
         line = 0
 
-        if sys.platform != "emscripten":
-            self.dt_lbl = QLabel(tr("DATETIME", "时间同步 Synchronize the datetime"))
-        else:
-            self.dt_lbl = QLabel(tr("DATETIME", "Synchronize the datetime"))
+        self.dt_lbl = QLabel(tr("AuxDisplay", "Synchronize the datetime/时间同步"))
 
         g_layout.addWidget(self.dt_lbl, line, 0)
-        self.dt_btn = QPushButton("Sync")
+        self.dt_btn = QPushButton(tr("AuxDisplay", "Sync/同步"))
         self.dt_btn.clicked.connect(self.on_dt_btn)
         g_layout.addWidget(self.dt_btn, line, 1)
 
         line = line + 1
 
-        if sys.platform != "emscripten":
-            lbl = QLabel("My-2K 黑白屏设置 Monochrome Screen Setting")
-        else:
-            lbl = QLabel("My-2K Monochrome Screen Setting")
+        lbl = QLabel(tr("AuxDisplay", "Monochrome Screen Setting/黑白屏设置"))
+
         g_layout.addWidget(lbl, line, 0)
-        self.ad_btn = QPushButton("Update")
+        self.ad_btn = QPushButton(tr("AuxDisplay", "Update/更新"))
         self.ad_btn.clicked.connect(self.on_sync_clicked)
         g_layout.addWidget(self.ad_btn, line, 1)
 
         line = line + 1
-        if sys.platform != "emscripten":
-            lbl = QLabel("文本编辑 Text Editor")
-        else:
-            lbl = QLabel("Text Editor")
+        lbl = QLabel(tr("AuxDisplay", "Text Editor/文本编辑"))
+
         g_layout.addWidget(lbl, line, 0, Qt.AlignRight)
 
         h_lyt = QHBoxLayout()
         h_lyt.addStretch(1)
-        h_lyt.addWidget(QLabel("Select Font"))
-        #QFontDatabase.addApplicationFont(appctx.get_resource("wqy-zenhei.ttc"))
+        h_lyt.addWidget(QLabel(tr("AuxDisplay", "Select Font/选择字体")))
 
         fontDatabase = QFontDatabase()
         families = fontDatabase.families()
@@ -147,7 +151,7 @@ class AuxDsiplay(BasicEditor):
         for family in families:
             self.ad_fonts.addItem(family)
         h_lyt.addWidget(self.ad_fonts)
-        h_lyt.addWidget(QLabel("Font Size"))
+        h_lyt.addWidget(QLabel(tr("AuxDisplay", "Font Size/字体大小")))
         self.ad_font_size= QSpinBox()
         self.ad_font_size.valueChanged.connect(self.on_font_size_change)
         self.ad_font_size.setMinimum(8)
@@ -184,6 +188,8 @@ class AuxDsiplay(BasicEditor):
 
     def reset_ui(self):
         self.ad_font_size.setValue(self.ad_preview.get_font_size())
+        self.ad_preview.set_pixmap_size(self.keyboard.amk_aux_display["width"], self.keyboard.amk_aux_display["height"])
+        self.ad_preview.update_pixmap()
 
     def activate(self):
         pass
@@ -205,7 +211,7 @@ class AuxDsiplay(BasicEditor):
     def on_sync_clicked(self):
         #pack file header
         from amk.animation import pack_anim_header
-        packed = pack_anim_header(70, 40, "ABIT", 1)
+        packed = pack_anim_header(self.ad_preview.get_pixmap_width(), self.ad_preview.get_pixmap_height(), "ABIT", 1)
 
         #pack frame durations
         import struct

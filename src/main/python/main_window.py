@@ -39,6 +39,7 @@ from amk.misc import Misc
 from amk.animation import Animation
 from amk.rgb_matrix import RgbMatrix
 from amk.rgb_strip import RgbStrip 
+from amk.rgb_grid import RgbGrid
 from amk.rgb_indicator import RgbIndicator
 from amk.rgb_config import RgbConfig
 from amk.aux_display import AuxDsiplay
@@ -102,6 +103,7 @@ class MainWindow(QMainWindow):
         self.snaptap = Snaptap(self.layout_editor)
         self.misc = Misc(self.layout_editor, appctx)
         self.rgb_strip = RgbStrip(self.layout_editor)
+        self.rgb_grid = RgbGrid(self.layout_editor)
         self.rgb_indicator = RgbIndicator(self.layout_editor)
         self.animation = Animation()
         self.rgb_matrix = RgbMatrix(self.layout_editor)
@@ -110,7 +112,8 @@ class MainWindow(QMainWindow):
 
         self.editors = [(self.keymap_editor, "Keymap/键位"), (self.layout_editor, "Layout/配列"), (self.matrix_tester, "Matrix tester/按键测试"),
                         (self.macro_recorder, "Macros/按键宏"),
-                        (self.rgb_strip, "RGB Led Strips/灯条"),
+                        (self.rgb_strip, "RGB Strips/灯条"),
+                        (self.rgb_grid, "RGB Grids/灯阵"),
                         (self.rgb_matrix, "RGB Matrix/轴灯"),
                         (self.rgb_indicator, "RGB Indicator/指示灯"),
                         (self.calibrate, "Key Calibrate/按键校准"),
@@ -356,7 +359,7 @@ class MainWindow(QMainWindow):
         for e in [self.layout_editor, self.keymap_editor, self.firmware_flasher, self.macro_recorder,
                   self.tap_dance, self.combos, self.key_override, self.qmk_settings, self.matrix_tester, self.rgb_configurator,
                   self.calibrate, self.apc_rt, self.dks, self.snaptap,
-                  self.rgb_strip, self.rgb_matrix, self.rgb_indicator,
+                  self.rgb_strip, self.rgb_grid, self.rgb_matrix, self.rgb_indicator,
                   self.rgb_config,
                   self.aux_display,
                   self.animation,
