@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget,QLineEdit
 from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QPainter, QColor, QBrush, QPalette
@@ -9,7 +9,9 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
-from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_GRID, RgbColor
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_GRID, GRID_TEXT_MAX, RgbColor
+
+GRID_TEXT_MASK = "x" * GRID_TEXT_MAX
 
 def rgb_display(widget, is_custom, color, led = None):
     apc_text =""
@@ -133,7 +135,20 @@ class RgbGrid(BasicEditor):
         self.speed_sld.setTickPosition(QSlider.TicksAbove)
         self.speed_sld.setTracking(False)
         self.speed_sld.valueChanged.connect(self.on_speed_sld) 
+        lyt.addStretch(1)
         lyt.addWidget(self.speed_sld)
+        layout.addLayout(lyt)
+        lyt = QHBoxLayout()
+        self.text_cbx = QCheckBox(tr("RGB Grid", "Text/文字"))
+        self.text_cbx.stateChanged.connect(self.on_text_check)
+        lyt.addWidget(self.text_cbx)
+        self.text_edt = QLineEdit()
+        self.text_edt.setInputMask(GRID_TEXT_MASK)
+        self.text_edt.setMaxLength(GRID_TEXT_MAX)
+        #self.text_edt.textChanged.connect(self.on_text_changed)
+        self.text_edt.editingFinished.connect(self.on_text_finished)
+        lyt.addStretch(1)
+        lyt.addWidget(self.text_edt)
         layout.addLayout(lyt)
         layout.addStretch(3)
         h_layout.addLayout(layout)
@@ -165,11 +180,29 @@ class RgbGrid(BasicEditor):
             self.blink_cbx.setEnabled(False)
             self.breath_cbx.setEnabled(False)
 
+    def reset_grid_mask(self):
+        cur = self.grid_lst.currentRow()
+        if cur == -1:
+            self.text_cbx.setEnabled(False)
+            self.text_edt.setEnabled(False)
+            return
+
+        if self.keyboard.amk_rgb_grid["grids"][cur]["mask_enable"] > 0:
+            self.text_cbx.setEnabled(True)
+            self.text_edt.setEnabled(True)
+        else:
+            self.text_cbx.setEnabled(False)
+            self.text_edt.setEnabled(False)
+
     def reset_keyboard_widget(self):
         if self.valid():
             self.grid_lst.clear()
             for grid in self.keyboard.amk_rgb_grid["grids"]:
                 self.grid_lst.addItem(grid["name"])
+            self.grid_lst.setCurrentRow(0)
+            self.grid = 0
+
+            self.reset_grid_mask()
 
             self.mode_lst.clear()
             for effect in self.keyboard.amk_rgb_grid["effects"]:
@@ -396,6 +429,8 @@ class RgbGrid(BasicEditor):
         self.mode = self.keyboard.amk_rgb_grid["grids"][cur]["mode"]
         self.mode_lst.setCurrentRow(self.mode)
 
+        self.reset_grid_mask()
+
     def on_mode_changed(self):
         cur = self.mode_lst.currentRow()
         if cur == -1:
@@ -407,3 +442,21 @@ class RgbGrid(BasicEditor):
         self.keyboard.apply_rgb_grid_mode(self.grid, cur)
         self.mode = cur
         self.reset_mode_widgets()
+
+    def grid_mask_update(self):
+        if self.grid == -1:
+            self.grid = 0
+
+        enabled = self.text_cbx.isChecked()
+        text = self.text_edt.text().strip()
+        self.keyboard.apply_grid_mask(self.grid, enabled, text)
+        print("enabled: {}, current text: {}".format(enabled, text))
+
+    def on_text_check(self):
+        self.grid_mask_update()
+
+    def on_text_changed(self, text):
+        print("text changed:", text)
+
+    def on_text_finished(self):
+        self.grid_mask_update()

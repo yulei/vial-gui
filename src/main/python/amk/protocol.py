@@ -80,6 +80,8 @@ AMK_PROTOCOL_GET_RGB_GRID_MODE = 67
 AMK_PROTOCOL_SET_RGB_GRID_MODE = 68
 AMK_PROTOCOL_GET_RGB_GRID_LED = 69
 AMK_PROTOCOL_SET_RGB_GRID_LED = 70
+AMK_PROTOCOL_GET_GRID_MASK = 71
+AMK_PROTOCOL_SET_GRID_MASK = 72
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -105,6 +107,9 @@ FIRMWARE_READ = 2
 FIRMWARE_WRITE = 3
 FIRMWARE_FINISH = 4
 FIRMWARE_RESET = 5
+
+GRID_TEXT_MAX = 10
+
 class DksKey:
     def __init__(self):
         self.down_events = ([0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0])
@@ -871,6 +876,15 @@ class ProtocolAmk(BaseProtocol):
                         grid["custom"] = data[7]
                         grid["row"] = data[8]
                         grid["col"] = data[9]
+                        if "mask" in grid:
+                            if grid["mask"] > 0:
+                                mask = self.reload_grid_mask(i)
+                                if mask is not None:
+                                    grid["mask_enable"] = mask[0]
+                                    grid["mask_text"] = mask[1]
+                        else:
+                            grid["mask"] = 0
+
                         #print("AMK protocol: get rgb grid: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
             for i in range(self.amk_rgb_grid["count"]):
                 self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+i)
@@ -1475,3 +1489,40 @@ class ProtocolAmk(BaseProtocol):
         else:
             print("Firmware finish failed")
             return False
+    
+    def reload_grid_mask(self, index):
+        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_GRID_MASK, index), retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            enabled = data[4]
+            text = ""
+            for i in range(GRID_TEXT_MAX):
+                if data[5+i] != 0:
+                    text = text + str(data[5+i])
+                else:
+                    break
+            print(enabled, text)
+            return (enabled, text)
+        else:
+            return None
+    
+    def apply_grid_mask(self, index, enabled, text):
+        if index >= len(self.amk_rgb_grid["grids"]):
+            print("invalid grid index: ", index)
+            return
+        
+        grid = self.amk_rgb_grid["grids"][index]
+        if grid["mask"] == 0:
+            print("invalid grid mask: ", grid["mask"])
+            return
+        
+        if grid["mask_enable"] == enabled and grid["mask_text"] == text:
+            return
+
+        grid["mask_enable"] = enabled
+        grid["mask_text"] = text
+
+        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, enabled) + text.encode("utf-8")
+        self.usb_send(self.dev, data, retries=20)
+
+        if data[2] != AMK_PROTOCOL_OK:
+            print("Faild to set grid mask")
