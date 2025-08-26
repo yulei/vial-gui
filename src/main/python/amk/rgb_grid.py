@@ -181,6 +181,7 @@ class RgbGrid(BasicEditor):
             self.breath_cbx.setEnabled(False)
 
     def reset_grid_mask(self):
+        return
         cur = self.grid_lst.currentRow()
         if cur == -1:
             self.text_cbx.setEnabled(False)
