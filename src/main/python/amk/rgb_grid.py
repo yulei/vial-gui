@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget,QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget, QLineEdit, QComboBox
 from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QPainter, QColor, QBrush, QPalette
@@ -149,6 +149,11 @@ class RgbGrid(BasicEditor):
         self.text_edt.editingFinished.connect(self.on_text_finished)
         lyt.addStretch(1)
         lyt.addWidget(self.text_edt)
+        self.text_rotation_cbb = QComboBox()
+        self.text_rotation_cbb.addItems(["roate/旋转 0", "rotate/旋转 90", "rotate/旋转 180", "rotate/旋转 270"])
+        lyt.addWidget(self.text_rotation_cbb)
+        self.text_mode_cbb = QComboBox()
+        lyt.addWidget(self.text_mode_cbb)
         layout.addLayout(lyt)
         layout.addStretch(3)
         h_layout.addLayout(layout)
@@ -181,12 +186,9 @@ class RgbGrid(BasicEditor):
             self.breath_cbx.setEnabled(False)
 
     def reset_grid_mask(self):
-        return
         cur = self.grid_lst.currentRow()
         if cur == -1:
-            self.text_cbx.setEnabled(False)
-            self.text_edt.setEnabled(False)
-            return
+            cur = 0
 
         if self.keyboard.amk_rgb_grid["grids"][cur]["mask_enable"] > 0:
             self.text_cbx.setEnabled(True)

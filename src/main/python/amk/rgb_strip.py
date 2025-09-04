@@ -11,7 +11,7 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
-from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_STRIP, RgbColor
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_PARAM_SYNC, RGB_TYPE_STRIP, RgbColor
 
 def rgb_display(widget, is_custom, color, led = None):
     apc_text =""
@@ -137,6 +137,9 @@ class RgbStrip(BasicEditor):
         self.speed_sld.valueChanged.connect(self.on_speed_sld) 
         lyt.addWidget(self.speed_sld)
         layout.addLayout(lyt)
+        self.sync_cbx = QCheckBox(tr("RGB Strip", "Toggle Synchronization/切换同步状态"))
+        self.sync_cbx.stateChanged.connect(self.on_sync_check)
+        layout.addWidget(self.breath_cbx)
         layout.addStretch(3)
         h_layout.addLayout(layout)
         h_layout.addStretch(1)
@@ -166,6 +169,13 @@ class RgbStrip(BasicEditor):
             self.dynamic_cbx.setEnabled(False)
             self.blink_cbx.setEnabled(False)
             self.breath_cbx.setEnabled(False)
+        
+    def reset_sync_widgets(self):
+        if self.strip != -1:
+            if "master" in self.device.keyboard.amk_rgb_strip["strips"][self.strip]:
+                self.sync_cbx.setEnabled(True)
+            else:
+                self.sync_cbx.setEnabled(False)
 
     def reset_keyboard_widget(self):
         if self.valid():
@@ -183,6 +193,7 @@ class RgbStrip(BasicEditor):
                 widget.setOn(False)
 
             self.reset_mode_widgets()
+            self.reset_sync_widgets()
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
 
@@ -334,6 +345,15 @@ class RgbStrip(BasicEditor):
 
         self.keyboardWidget.update()
 
+    def on_sync_check(self):
+        if self.strip == -1:
+            return
+
+        sync = self.keyboard.amk_rgb_strip["strips"][self.strip]["sync"] if self.sync_cbx.is_checked() else 0xFF
+        self.keyboard.apply_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, sync, self.strip)
+
+        self.keyboardWidget.update()
+
     def on_speed_sld(self):
         if self.strip == -1:
             return
@@ -397,6 +417,8 @@ class RgbStrip(BasicEditor):
         self.strip = cur
         self.mode = self.keyboard.amk_rgb_strip["strips"][cur]["mode"]
         self.mode_lst.setCurrentRow(self.mode)
+
+        self.reset_sync_widgets()
 
     def on_mode_changed(self):
         cur = self.mode_lst.currentRow()

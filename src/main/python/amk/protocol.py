@@ -95,6 +95,7 @@ DKS_KEY_MAX = 4
 RGB_PARAM_COLOR = 0
 RGB_PARAM_HSV = 1
 RGB_PARAM_SPEED = 2
+RGB_PARAM_SYNC = 3
 
 RGB_TYPE_MATRIX = 0
 RGB_TYPE_STRIP  = 1
@@ -109,6 +110,12 @@ FIRMWARE_FINISH = 4
 FIRMWARE_RESET = 5
 
 GRID_TEXT_MAX = 10
+GRID_ENABLE_SHIFT = 0x00
+GRID_ENABLE_MASK = 0x01
+GRID_ROTATION_SHIFT = 0x01
+GRID_ROTATION_MASK = 0x03
+GRID_MODE_SHIFT = 0x03
+GRID_MODE_MASK = 0x01F
 
 class DksKey:
     def __init__(self):
@@ -882,10 +889,16 @@ class ProtocolAmk(BaseProtocol):
                                 if mask is not None:
                                     grid["mask_enable"] = mask[0]
                                     grid["mask_text"] = mask[1]
+                                    grid["mask_rotation"] = mask[2]
+                                    grid["mask_mode"] = mask[3]
+                                else:
+                                    grid["mask_enable"] = 0
+                                    grid["mask_text"] = ""
+                                    grid["mask_rotation"] = 0
+                                    grid["mask_mode"] = 0
                         else:
                             grid["mask"] = 0
 
-                        #print("AMK protocol: get rgb grid: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
             for i in range(self.amk_rgb_grid["count"]):
                 self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+i)
 
@@ -1279,6 +1292,8 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_strip["strips"][index]["color"] = self.color_from_hsv(data[4], data[4], data[6])
                 elif param == RGB_PARAM_SPEED:
                     self.amk_rgb_strip["strips"][index]["speed"] = data[4]
+                elif param == RGB_PARAM_SYNC:
+                    self.amk_rgb_strip["strips"][index]["sync"] = data[4]
             elif rgb_type == RGB_TYPE_GRID:
                 if param == RGB_PARAM_COLOR:
                     self.amk_rgb_grid["grids"][index]["color"] = RgbColor(data[4], data[5], data[6])
@@ -1370,6 +1385,8 @@ class ProtocolAmk(BaseProtocol):
                                                 hue,sat,val), retries=20)
             elif param == RGB_PARAM_SPEED:
                 data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+            elif param == RGB_PARAM_SYNC:
+                data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
         elif rgb_type == RGB_TYPE_GRID:
             if param == RGB_PARAM_COLOR:
                 data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
@@ -1414,6 +1431,8 @@ class ProtocolAmk(BaseProtocol):
             for i in range (len(self.amk_rgb_strip["strips"])):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_COLOR, i)
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
+                self.amk_rgb_strip["strips"][i]["sync"] = 0xFF
+                self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, i)
         elif rgb_type == RGB_TYPE_GRID:
             for i in range (len(self.amk_rgb_grid["grids"])):
                 self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_COLOR, i)
@@ -1493,19 +1512,21 @@ class ProtocolAmk(BaseProtocol):
     def reload_grid_mask(self, index):
         data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_GRID_MASK, index), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            enabled = data[4]
+            enabled = (data[4] >> GRID_ENABLE_SHIFT) & GRID_ENABLE_MASK
+            rotation = (data[4] >> GRID_ROTATION_SHIFT) & GRID_ROTATION_MASK
+            mode = (data[4] >> GRID_MODE_SHIFT) & GRID_MODE_MASK
             text = ""
             for i in range(GRID_TEXT_MAX):
                 if data[5+i] != 0:
                     text = text + str(data[5+i])
                 else:
                     break
-            print(enabled, text)
-            return (enabled, text)
+            print(enabled, text, rotation, mode)
+            return (enabled, text, rotation, mode)
         else:
             return None
     
-    def apply_grid_mask(self, index, enabled, text):
+    def apply_grid_mask(self, index, enabled, text, rotation, mode):
         if index >= len(self.amk_rgb_grid["grids"]):
             print("invalid grid index: ", index)
             return
@@ -1520,8 +1541,12 @@ class ProtocolAmk(BaseProtocol):
 
         grid["mask_enable"] = enabled
         grid["mask_text"] = text
+        grid["mask_rotation"] = rotation
+        grid["mask_mode"] = mode 
 
-        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, enabled) + text.encode("utf-8")
+        param = ((enabled&GRID_ENABLE_MASK) << GRID_ENABLE_SHIFT) | ((rotation&GRID_ROTATION_MASK) << GRID_ROTATION_SHIFT) | ((mode&GRID_MODE_MASK) << GRID_MODE_SHIFT)
+
+        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, param) + text.encode("utf-8")
         self.usb_send(self.dev, data, retries=20)
 
         if data[2] != AMK_PROTOCOL_OK:
