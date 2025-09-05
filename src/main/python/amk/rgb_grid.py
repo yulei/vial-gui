@@ -140,19 +140,21 @@ class RgbGrid(BasicEditor):
         layout.addLayout(lyt)
         lyt = QHBoxLayout()
         self.text_cbx = QCheckBox(tr("RGB Grid", "Text/文字"))
-        self.text_cbx.stateChanged.connect(self.on_text_check)
+        self.text_cbx.stateChanged.connect(self.on_mask_check)
         lyt.addWidget(self.text_cbx)
         self.text_edt = QLineEdit()
         self.text_edt.setInputMask(GRID_TEXT_MASK)
         self.text_edt.setMaxLength(GRID_TEXT_MAX)
-        #self.text_edt.textChanged.connect(self.on_text_changed)
-        self.text_edt.editingFinished.connect(self.on_text_finished)
+        self.text_edt.editingFinished.connect(self.on_mask_text)
         lyt.addStretch(1)
         lyt.addWidget(self.text_edt)
         self.text_rotation_cbb = QComboBox()
         self.text_rotation_cbb.addItems(["roate/旋转 0", "rotate/旋转 90", "rotate/旋转 180", "rotate/旋转 270"])
+        self.text_rotation_cbb.currentIndexChanged.connect(self.on_mask_rotation)
         lyt.addWidget(self.text_rotation_cbb)
         self.text_mode_cbb = QComboBox()
+        self.text_mode_cbb.addItems(["static/静态"])
+        self.text_mode_cbb.currentIndexChanged.connect(self.on_mask_mode)
         lyt.addWidget(self.text_mode_cbb)
         layout.addLayout(lyt)
         layout.addStretch(3)
@@ -190,9 +192,15 @@ class RgbGrid(BasicEditor):
         if cur == -1:
             cur = 0
 
-        if self.keyboard.amk_rgb_grid["grids"][cur]["mask_enable"] > 0:
+        #print(self.keyboard.amk_rgb_grid["grids"][cur])
+
+        if self.keyboard.amk_rgb_grid["grids"][cur]["mask"] > 0:
             self.text_cbx.setEnabled(True)
             self.text_edt.setEnabled(True)
+            self.text_cbx.setChecked(True if self.keyboard.amk_rgb_grid["grids"][cur]["mask_enable"] > 0 else False)
+            self.text_edt.setText(self.keyboard.amk_rgb_grid["grids"][cur]["mask_text"])
+            self.text_rotation_cbb.setCurrentIndex(self.keyboard.amk_rgb_grid["grids"][cur]["mask_rotation"])
+            self.text_mode_cbb.setCurrentIndex(self.keyboard.amk_rgb_grid["grids"][cur]["mask_mode"])
         else:
             self.text_cbx.setEnabled(False)
             self.text_edt.setEnabled(False)
@@ -452,14 +460,21 @@ class RgbGrid(BasicEditor):
 
         enabled = self.text_cbx.isChecked()
         text = self.text_edt.text().strip()
-        self.keyboard.apply_grid_mask(self.grid, enabled, text)
-        print("enabled: {}, current text: {}".format(enabled, text))
 
-    def on_text_check(self):
+        rotation = self.text_rotation_cbb.currentIndex()
+        mode = self.text_mode_cbb.currentIndex()
+
+        self.keyboard.apply_grid_mask(self.grid, enabled, text, rotation, mode)
+        #print("enabled: {}, text: {}, rotation: {}, mode: {}".format(enabled, text, rotation, mode))
+
+    def on_mask_check(self):
         self.grid_mask_update()
 
-    def on_text_changed(self, text):
-        print("text changed:", text)
+    def on_mask_text(self):
+        self.grid_mask_update()
 
-    def on_text_finished(self):
+    def on_mask_rotation(self):
+        self.grid_mask_update()
+
+    def on_mask_mode(self):
         self.grid_mask_update()

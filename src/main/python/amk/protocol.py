@@ -884,6 +884,10 @@ class ProtocolAmk(BaseProtocol):
                         grid["row"] = data[8]
                         grid["col"] = data[9]
                         if "mask" in grid:
+                            grid["mask_enable"] = 0
+                            grid["mask_text"] = ""
+                            grid["mask_rotation"] = 0
+                            grid["mask_mode"] = 0
                             if grid["mask"] > 0:
                                 mask = self.reload_grid_mask(i)
                                 if mask is not None:
@@ -891,11 +895,6 @@ class ProtocolAmk(BaseProtocol):
                                     grid["mask_text"] = mask[1]
                                     grid["mask_rotation"] = mask[2]
                                     grid["mask_mode"] = mask[3]
-                                else:
-                                    grid["mask_enable"] = 0
-                                    grid["mask_text"] = ""
-                                    grid["mask_rotation"] = 0
-                                    grid["mask_mode"] = 0
                         else:
                             grid["mask"] = 0
 
@@ -1521,22 +1520,22 @@ class ProtocolAmk(BaseProtocol):
                     text = text + str(data[5+i])
                 else:
                     break
-            print(enabled, text, rotation, mode)
+            #print(enabled, text, rotation, mode)
             return (enabled, text, rotation, mode)
         else:
             return None
     
     def apply_grid_mask(self, index, enabled, text, rotation, mode):
         if index >= len(self.amk_rgb_grid["grids"]):
-            print("invalid grid index: ", index)
+            #print("invalid grid index: ", index)
             return
         
         grid = self.amk_rgb_grid["grids"][index]
         if grid["mask"] == 0:
-            print("invalid grid mask: ", grid["mask"])
+            #print("invalid grid mask: ", grid["mask"])
             return
         
-        if grid["mask_enable"] == enabled and grid["mask_text"] == text:
+        if (grid["mask_enable"] == enabled) and (grid["mask_text"] == text) and (grid["mask_rotation"] == rotation) and (grid["mask_mode"] == mode):
             return
 
         grid["mask_enable"] = enabled
@@ -1545,6 +1544,8 @@ class ProtocolAmk(BaseProtocol):
         grid["mask_mode"] = mode 
 
         param = ((enabled&GRID_ENABLE_MASK) << GRID_ENABLE_SHIFT) | ((rotation&GRID_ROTATION_MASK) << GRID_ROTATION_SHIFT) | ((mode&GRID_MODE_MASK) << GRID_MODE_SHIFT)
+
+        #print("mask params: ",hex(param))
 
         data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, param) + text.encode("utf-8")
         self.usb_send(self.dev, data, retries=20)

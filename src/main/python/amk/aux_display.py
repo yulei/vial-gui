@@ -47,7 +47,7 @@ class AuxWidget(QWidget):
         self.font.setFamily(family)
         self.font.setStyleStrategy(QFont.NoAntialias)
         self.font.setPixelSize(self.font_size)
-        print("set font", family)
+        #print("set font", family)
         self.update_pixmap()
         self.repaint()
     
@@ -102,7 +102,7 @@ class AuxWidget(QWidget):
     def get_pixmap_data(self):
         img = self.pix.toImage()
         data = []
-        print(img.height(), img.width())
+        #print(img.height(), img.width())
         for y in range(img.height()):
             for x in range(img.width()):
                 data.append(img.pixelColor(x,y))
@@ -246,6 +246,8 @@ class AuxDsiplay(BasicEditor):
                     break
 
             self.keyboard.close_anim_file(index)
+        #else:
+        #    print("failed to open file, index=", index)
 
         #print("End transfer file")
 
