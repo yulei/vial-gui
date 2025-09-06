@@ -139,7 +139,7 @@ class RgbStrip(BasicEditor):
         layout.addLayout(lyt)
         self.sync_cbx = QCheckBox(tr("RGB Strip", "Toggle Synchronization/切换同步状态"))
         self.sync_cbx.stateChanged.connect(self.on_sync_check)
-        layout.addWidget(self.breath_cbx)
+        layout.addWidget(self.sync_cbx)
         layout.addStretch(3)
         h_layout.addLayout(layout)
         h_layout.addStretch(1)
@@ -171,11 +171,12 @@ class RgbStrip(BasicEditor):
             self.breath_cbx.setEnabled(False)
         
     def reset_sync_widgets(self):
+        self.sync_cbx.setEnabled(False)
         if self.strip != -1:
             if "master" in self.device.keyboard.amk_rgb_strip["strips"][self.strip]:
                 self.sync_cbx.setEnabled(True)
-            else:
-                self.sync_cbx.setEnabled(False)
+                strip = self.keyboard.amk_rgb_strip["strips"][self.strip]
+                self.sync_cbx.setChecked(True if strip["sync"] < len(self.keyboard.amk_rgb_strip["strips"]) else False)
 
     def reset_keyboard_widget(self):
         if self.valid():
@@ -349,7 +350,7 @@ class RgbStrip(BasicEditor):
         if self.strip == -1:
             return
 
-        sync = self.keyboard.amk_rgb_strip["strips"][self.strip]["sync"] if self.sync_cbx.is_checked() else 0xFF
+        sync = self.keyboard.amk_rgb_strip["strips"][self.strip]["master"] if self.sync_cbx.isChecked() else 0xFF
         self.keyboard.apply_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, sync, self.strip)
 
         self.keyboardWidget.update()

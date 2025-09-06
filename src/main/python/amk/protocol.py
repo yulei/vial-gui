@@ -1293,6 +1293,7 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_strip["strips"][index]["speed"] = data[4]
                 elif param == RGB_PARAM_SYNC:
                     self.amk_rgb_strip["strips"][index]["sync"] = data[4]
+                    #print("Reload rgb strip sync: ", self.amk_rgb_strip["strips"][index]["sync"])
             elif rgb_type == RGB_TYPE_GRID:
                 if param == RGB_PARAM_COLOR:
                     self.amk_rgb_grid["grids"][index]["color"] = RgbColor(data[4], data[5], data[6])
@@ -1385,7 +1386,10 @@ class ProtocolAmk(BaseProtocol):
             elif param == RGB_PARAM_SPEED:
                 data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
             elif param == RGB_PARAM_SYNC:
-                data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+                if self.amk_rgb_strip["strips"][index]["sync"] != data:
+                    self.amk_rgb_strip["strips"][index]["sync"] = data
+                    #print("Set rgb strip({}) sync: {}".format(index, data))
+                    data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
         elif rgb_type == RGB_TYPE_GRID:
             if param == RGB_PARAM_COLOR:
                 data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
@@ -1430,7 +1434,7 @@ class ProtocolAmk(BaseProtocol):
             for i in range (len(self.amk_rgb_strip["strips"])):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_COLOR, i)
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
-                self.amk_rgb_strip["strips"][i]["sync"] = 0xFF
+                #self.amk_rgb_strip["strips"][i]["sync"] = 0xFF
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, i)
         elif rgb_type == RGB_TYPE_GRID:
             for i in range (len(self.amk_rgb_grid["grids"])):
