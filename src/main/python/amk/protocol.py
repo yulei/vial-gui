@@ -1520,8 +1520,10 @@ class ProtocolAmk(BaseProtocol):
             mode = (data[4] >> GRID_MODE_SHIFT) & GRID_MODE_MASK
             text = ""
             for i in range(GRID_TEXT_MAX):
-                if data[5+i] != 0:
-                    text = text + str(data[5+i])
+                index = 5+i
+                if data[index] != 0:
+                    text = text + chr(data[index])
+                    #print("text: append", text)
                 else:
                     break
             #print(enabled, text, rotation, mode)
@@ -1549,10 +1551,11 @@ class ProtocolAmk(BaseProtocol):
 
         param = ((enabled&GRID_ENABLE_MASK) << GRID_ENABLE_SHIFT) | ((rotation&GRID_ROTATION_MASK) << GRID_ROTATION_SHIFT) | ((mode&GRID_MODE_MASK) << GRID_MODE_SHIFT)
 
-        #print("mask params: ",hex(param))
+        #print(hex(param))
 
-        data = struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, param) + text.encode("utf-8")
-        self.usb_send(self.dev, data, retries=20)
+        data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_GRID_MASK, index, param) + text.encode("utf-8"), retries=20)
 
         if data[2] != AMK_PROTOCOL_OK:
             print("Faild to set grid mask")
+
+        #print("Set grid mask: index={}, enable={}, text={}, rotation={}, mode={}".format(index, enabled, text, rotation, mode))
