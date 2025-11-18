@@ -163,6 +163,8 @@ class AuxDsiplay(BasicEditor):
         line = line + 1
 
         self.ad_text = QPlainTextEdit()
+        self.ad_text.setFocusPolicy(Qt.StrongFocus)
+        #self.ad_text.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.ad_text.setMaximumSize(QSize(200,100))
         self.ad_text.textChanged.connect(self.on_text)
         g_layout.addWidget(self.ad_text, line, 0, Qt.AlignRight)

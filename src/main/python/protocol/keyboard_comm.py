@@ -123,6 +123,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_has_calibrate = False
         self.amk_switch_states = []
         self.amk_firmware = False
+        self.amk_has_rgb_matrix= False
+        self.amk_esp32_state = {"ready": False, "connected": False, "ssid": "", "password": "", "ssid_count": 0, "ssid_list":{}} 
 
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
@@ -170,6 +172,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_rgb_data = [0] * self.amk_rgb_led["total"]
 
                     if "rgb_matrix" in feature:
+                        self.amk_has_rgb_matrix = True
                         self.amk_rgb_matrix["start"] = feature["rgb_matrix"]["start"]
                         self.amk_rgb_matrix["count"] = feature["rgb_matrix"]["count"]
                         self.amk_rgb_matrix["effects"] = feature["rgb_matrix"]["effects"]
