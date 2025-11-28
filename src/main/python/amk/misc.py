@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QProgressBar
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider, QProgressBar, QLineEdit, QListWidget
 from PyQt5.QtWidgets import QSpinBox, QComboBox, QCheckBox, QFileDialog, QMessageBox, QProgressDialog, QApplication
 from PyQt5.QtCore import Qt, QCoreApplication, QTimer
 
@@ -18,6 +18,21 @@ DATE_INDEX=9*4
 SECOND_INDEX=10*4
 INFO_INDEX=13*4
 
+
+WIFI_STATE_IDLE = 0
+WIFI_STATE_CONNECTING = 1
+WIFI_STATE_CONNECTED = 2
+
+WIFI_START_SCAN_TEXT = tr("Misc", "Scan/扫描")
+WIFI_STOP_SCAN_TEXT = tr("Misc", "Stop Scan/停止扫描")
+WIFI_CONNECT_TEXT = tr("Misc", "Connect/连接")
+WIFI_DISCONNECT_TEXT = tr("Misc", "Disconnect/断开连接")
+
+WIFI_CONNECT_TIMEOUT = 10  #seconds
+WIFI_SCAN_TIMEOUT = 20  #seconds
+
+from amk.protocol import ESP32_STATE, ESP32_GET_SSID, ESP32_CONNECT, ESP32_DISCONNECT
+
 class Misc(BasicEditor):
 
     def __init__(self, layout_editor, appctx):
@@ -25,6 +40,13 @@ class Misc(BasicEditor):
         self.appctx = appctx
         self.timer = QTimer()
         self.timer.timeout.connect(self.upload_firmware_period)
+
+        self.wifi_state = WIFI_STATE_IDLE
+        self.wifi_connect_timeout = 0
+        self.wifi_scanning = False
+        self.wifi_scan_timeout = 0
+        self.wifi_timer = QTimer()
+        self.wifi_timer.timeout.connect(self.wifi_periodic_oper)
 
         g_layout = QGridLayout()
 
@@ -276,6 +298,61 @@ class Misc(BasicEditor):
             self.upload_btn.clicked.connect(self.on_upload_reset)
             self.upload_btn.setEnabled(False)
             g_layout.addWidget(self.upload_btn, line, 2)
+        
+        if False:
+            #esp32 command
+            line = line + 1
+            self.esp32_main_cbx = QComboBox()
+            self.esp32_main_cbx.addItems(["BASIC", "WIFI", "TCPIP", "BLE", "MQTT", 
+                                          "HTTP", "FILESYSTEM", "WEBSOCKET", "SIGNALING", 
+                                          "WEBSERVER", "DRIVER", "USER"])
+            self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
+            g_layout.addWidget(self.esp32_main_cbx, line, 0)
+            self.esp32_wifi_cbx = QComboBox()
+            self.esp32_wifi_cbx.addItems(["CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
+                                          "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
+                                          "CWQAP", "CWSAP", "CWLIF", "CWQIF",
+                                          "CWDHCP", "CWDHCPS", "CWAUTOCONN", "CWAPPROTO",
+                                          "CWSTAPROTO", "CIPSTAMAC", "CIPAPMAC", "CIPSTA",
+                                          "CIPAP", "CWSTARTSMART", "CWSTOPSMART", "WPS",
+                                          "CWJEAP", "CWHOSTNAME", "CWCOUNTRY"])
+            self.esp32_wifi_cbx.currentIndexChanged.connect(self.on_esp32_wifi_cbx)
+            g_layout.addWidget(self.esp32_wifi_cbx, line, 1)
+            self.esp32_type_cbx = QComboBox()
+            self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
+            self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
+            g_layout.addWidget(self.esp32_type_cbx, line, 2)
+            line = line + 1
+            self.esp32_param_edt = QLineEdit()
+            self.esp32_param_edt.editingFinished.connect(self.on_esp32_param_text)
+            g_layout.addWidget(self.esp32_param_edt, line, 1)
+            self.esp32_apply_btn = QPushButton(tr("Misc", "Apply ESP32 Command/应用ESP32指令"))
+            self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
+            g_layout.addWidget(self.esp32_apply_btn, line, 2)
+        
+        if False:
+            #wifi connection
+            line = line + 1
+            self.wifi_lbl = QLabel(tr("Misc", "Wifi:"))
+            g_layout.addWidget(self.wifi_lbl, line, 0)
+            self.wifi_scan_btn = QPushButton(WIFI_START_SCAN_TEXT)
+            self.wifi_scan_btn.clicked.connect(self.on_wifi_scan_btn)
+            g_layout.addWidget(self.wifi_scan_btn, line, 1)
+            self.wifi_conn_btn = QPushButton(WIFI_CONNECT_TEXT)
+            self.wifi_conn_btn.clicked.connect(self.on_wifi_conn_btn)
+            g_layout.addWidget(self.wifi_conn_btn, line, 2)
+            line = line + 1
+            self.wifi_ap_lst = QListWidget()
+            self.wifi_ap_lst.currentRowChanged.connect(self.on_wifi_ap_changed)
+            g_layout.addWidget(self.wifi_ap_lst, line, 1)
+            t_lyt = QHBoxLayout()
+            self.wifi_pass_lbl = QLabel(tr("Misc", "Password/密码:"))
+            t_lyt.addWidget(self.wifi_pass_lbl)
+            self.wifi_pass_edt = QLineEdit()
+            self.wifi_pass_edt.editingFinished.connect(self.on_wifi_pass_text)
+            t_lyt.addWidget(self.wifi_pass_edt)
+            #g_layout.addWidget(self.wifi_pass_edt, line, 2)
+            g_layout.addLayout(t_lyt, line, 2)
 
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
@@ -440,11 +517,14 @@ class Misc(BasicEditor):
                 self.upload_bar.hide()
 
     def activate(self):
-        pass
+        if False:
+            self.wifi_timer.start(1000)
         #print("hs windows activated")
 
     def deactivate(self):
-        pass
+        self.timer.stop()
+        if False:
+            self.wifi_timer.stop()
         #print("hs windows deactivated")
 
     def on_pr_btn(self):
@@ -1047,3 +1127,127 @@ class Misc(BasicEditor):
             if sys.platform == "emscripten":
                 import vialglue
                 vialglue.reload_keyboard()
+
+#esp32 wifi management
+    def on_esp32_main_cbx(self):
+        pass
+
+    def on_esp32_wifi_cbx(self):
+        pass
+
+    def on_esp32_type_cbx(self):
+        pass
+
+    def on_esp32_param_text(self):
+        pass
+
+    def on_esp32_apply_btn(self):
+        main = self.esp32_main_cbx.currentIndex()
+        wifi = self.esp32_wifi_cbx.currentIndex()
+        cmd_type = self.esp32_type_cbx.currentIndex()
+        param = self.esp32_param_edt.text()
+        self.keyboard.apply_esp32_command(main, wifi, cmd_type, param)
+
+    def on_wifi_scan_btn(self):
+        if not self.keyboard.amk_esp32_state["ready"]:
+            print("ESP32 not ready")
+            return
+        
+        # list available APs, main=wifi, cmd = CWLAP, type=execute
+        COMMAND_MAIN = 1
+        COMMAND_WIFI = 7
+        COMMAND_TYPE = 3
+        self.keyboard.apply_esp32_command(COMMAND_MAIN, COMMAND_WIFI, COMMAND_TYPE,"")
+        self.wifi_scanning = True 
+        self.wifi_scan_btn.setEnabled(False)
+        self.wifi_scan_timeout = 0
+        self.keyboard.amk_esp32_state["ssid_count"] = 0
+
+    def on_wifi_conn_btn(self):
+        if not self.keyboard.amk_esp32_state["ready"]:
+            print("ESP32 not ready")
+            return
+        
+        if self.wifi_state == WIFI_STATE_CONNECTING:
+            print("ESP32 already start connecting")
+            return
+        
+        if self.wifi_state == WIFI_STATE_CONNECTED:
+            # disconnect from AP
+            self.keyboard.apply_esp32_oper(ESP32_DISCONNECT, {})
+            self.wifi_state = WIFI_STATE_IDLE
+            self.wifi_conn_btn.setText(WIFI_CONNECT_TEXT)
+        else:
+            ssid = self.wifi_ap_lst.currentRow()
+            if ssid == -1:
+                ssid = 0
+            password = self.wifi_pass_edt.text().strip()
+            self.keyboard.apply_esp32_oper(ESP32_CONNECT, {"index": ssid, "password": password})
+            self.wifi_state = WIFI_STATE_CONNECTING
+            self.wifi_connect_timeout = 0
+            self.wifi_conn_btn.setEnabled(False)
+
+    def on_wifi_ap_changed(self, row):
+        pass
+
+    def on_wifi_pass_text(self):
+        pass
+
+    def wifi_periodic_oper(self):
+        self.keyboard.apply_esp32_oper(ESP32_STATE, {})
+
+        if not self.keyboard.amk_esp32_state["ready"]:
+            return
+
+        if self.wifi_scanning:
+            if self.keyboard.amk_esp32_state["ssid_count"] > 0:
+                self.wifi_ap_lst.blockSignals(True)
+                self.wifi_ap_lst.clear()
+                for i in range(self.keyboard.amk_esp32_state["ssid_count"]):
+                    self.keyboard.apply_esp32_oper(ESP32_GET_SSID, {"index": i})
+
+                for i in range(self.keyboard.amk_esp32_state["ssid_count"]):
+                    self.wifi_ap_lst.addItem(self.keyboard.amk_esp32_state["ssid_list"][i])
+
+                self.wifi_ap_lst.blockSignals(False)
+                self.wifi_scanning = False
+                self.wifi_scan_timeout = 0
+                self.wifi_scan_btn.setEnabled(True)
+                self.wifi_state = WIFI_STATE_IDLE
+            else:
+                self.wifi_scan_timeout = self.wifi_scan_timeout + 1
+                if self.wifi_scan_timeout >= WIFI_SCAN_TIMEOUT:
+                    print("ESP32 WiFi scan timeout, reset to idle")
+                    self.wifi_scanning = False
+                    self.wifi_scan_timeout = 0
+                    self.wifi_scan_btn.setEnabled(True)
+                    self.wifi_state = WIFI_STATE_IDLE
+                else:
+                    self.keyboard.apply_esp32_oper(ESP32_GET_SSID, {"index": 0xFF})
+
+        if self.wifi_state == WIFI_STATE_IDLE:
+            if self.keyboard.amk_esp32_state["connected"]:
+                print("ESP32 WiFi connected")
+                self.wifi_state = WIFI_STATE_CONNECTED
+                self.wifi_conn_btn.setText(WIFI_DISCONNECT_TEXT)
+            return
+        
+        if self.wifi_state == WIFI_STATE_CONNECTED:
+            if not self.keyboard.amk_esp32_state["connected"]:
+                print("ESP32 WiFi disconnected")
+                self.wifi_state = WIFI_STATE_IDLE
+                self.wifi_conn_btn.setText(WIFI_CONNECT_TEXT)
+            return
+
+        if self.wifi_state == WIFI_STATE_CONNECTING:
+            if self.keyboard.amk_esp32_state["connected"]:
+                self.wifi_state = WIFI_STATE_CONNECTED
+                self.wifi_conn_btn.setText(WIFI_DISCONNECT_TEXT)
+            else:
+                self.wifi_connect_timeout = self.wifi_connect_timeout + 1
+                if self.wifi_connect_timeout >= WIFI_CONNECT_TIMEOUT:
+                    print("ESP32 WiFi connect timeout, reset to idle")
+                    self.wifi_state = WIFI_STATE_IDLE
+                    self.wifi_connect_timeout = 0
+                    self.wifi_conn_btn.setEnabled(True)
+        

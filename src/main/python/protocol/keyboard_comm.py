@@ -109,7 +109,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         self.amk_rgb = []
-        self.amk_rgb_led = {}
+        self.amk_rgb_led = {"protocol_v2":False, "total":0}
         self.amk_rgb_matrix = {}
         self.amk_rgb_strip = {}
         self.amk_rgb_grid = {}
@@ -169,6 +169,9 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
 
                     if "rgb_led" in feature:
                         self.amk_rgb_led["total"] = feature["rgb_led"]["total"]
+                        if self.amk_rgb_led["total"] > 254:
+                            self.amk_rgb_led["protocol_v2"] = True
+                            print("Use Protocol V2")
                         self.amk_rgb_data = [0] * self.amk_rgb_led["total"]
 
                     if "rgb_matrix" in feature:

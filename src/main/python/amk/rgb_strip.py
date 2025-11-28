@@ -244,6 +244,8 @@ class RgbStrip(BasicEditor):
         if strip == -1 or strip >= len(self.keyboard.amk_rgb_strip["strips"]):
             return False
         
+        #print("strip", strip)
+        #print(self.keyboard.amk_rgb_strip["strips"][strip])
         return self.keyboard.amk_rgb_strip["strips"][strip]["mode"] == self.keyboard.amk_rgb_strip["effects"].index("Custom") 
 
     def on_color_btn_clicked(self):
@@ -399,7 +401,12 @@ class RgbStrip(BasicEditor):
             self.timer.stop()
             return
         try:
-            self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_strip["start"], self.keyboard.amk_rgb_strip["count"])
+            #self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_strip["start"], self.keyboard.amk_rgb_strip["count"])
+            start = self.keyboard.amk_rgb_strip["start"]
+            for i in range(len(self.keyboard.amk_rgb_strip["strips"])):
+                strip = self.keyboard.amk_rgb_strip["strips"][i]
+                self.keyboard.reload_rgb_leds(start+strip["start"], strip["count"])
+
         except (RuntimeError, ValueError):
             self.timer.stop()
             return

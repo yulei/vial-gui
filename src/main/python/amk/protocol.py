@@ -82,6 +82,8 @@ AMK_PROTOCOL_GET_RGB_GRID_LED = 69
 AMK_PROTOCOL_SET_RGB_GRID_LED = 70
 AMK_PROTOCOL_GET_GRID_MASK = 71
 AMK_PROTOCOL_SET_GRID_MASK = 72
+AMK_PROTOCOL_ESP32_COMMAND = 73
+AMK_PROTOCOL_ESP32_OPERATION = 74
 
 RGB_LED_NUM_LOCK = 0
 RGB_LED_CAPS_LOCK = 1
@@ -108,6 +110,15 @@ FIRMWARE_READ = 2
 FIRMWARE_WRITE = 3
 FIRMWARE_FINISH = 4
 FIRMWARE_RESET = 5
+
+ESP32_STATE = 0
+ESP32_GET_SSID = 1
+ESP32_CONNECT = 2
+ESP32_DISCONNECT = 3
+
+ESP32AT_NOT_READY = 0           #esp32at not ready
+ESP32AT_WIFI_NOT_CONNECT = 1     #esp32at ready but wifi not connected
+ESP32AT_WIFI_CONNECTED = 2      #esp32at ready and wifi connected
 
 GRID_TEXT_MAX = 10
 GRID_ENABLE_SHIFT = 0x00
@@ -540,8 +551,8 @@ class SwitchState:
     
     def set_stroke(self, stroke):
         self.stroke = stroke
-class ProtocolAmk(BaseProtocol):
 
+class ProtocolAmk(BaseProtocol):
     def amk_protocol_version(self):
         """ Get the version of AMK protocol """
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_VERSION), retries=20)
@@ -830,6 +841,8 @@ class ProtocolAmk(BaseProtocol):
     def reload_amk_rgb_strip(self):
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_COUNT), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
+            #print("strip count", len(self.amk_rgb_strip["strips"]))
+            #print("strip count loaded", data[3])
             if len(self.amk_rgb_strip["strips"]) == data[3]:
                 for i in range(data[3]):
                     data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_INFO,i), retries=20)
@@ -840,13 +853,24 @@ class ProtocolAmk(BaseProtocol):
                         strip["mode"] = data[6]
                         strip["custom"] = data[7]
                         #print("AMK protocol: get rgb strip: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
-            for i in range(self.amk_rgb_strip["count"]):
-                self.reload_rgb_strip_led(self.amk_rgb_strip["start"]+i)
+            start = self.amk_rgb_strip["start"]
+            for i in range(len(self.amk_rgb_strip["strips"])):
+                strip = self.amk_rgb_strip["strips"][i]
+                for j in range(strip["count"]):
+                    self.reload_rgb_strip_led(start+j)
+            #for i in range(self.amk_rgb_strip["count"]):
+            #    self.reload_rgb_strip_led(self.amk_rgb_strip["start"]+i)
 
     def reload_rgb_strip_led(self, index):
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_LED,index), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_LED,index), retries=20)
+            offset = 5
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_STRIP_LED,index), retries=20)
+            offset = 4
+
         if data[2] == AMK_PROTOCOL_OK:
-            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            led = RgbLed(index, data[offset], data[offset+1], data[offset+2], data[offset+3])
             self.amk_rgb_strip["leds"][index] = led 
             #print("AMK protocol: get rgb strip led: index={}, hue={},sat={},val={}, param={}".format(data[3], data[4], data[5], data[6],data[7]))
 
@@ -854,7 +878,10 @@ class ProtocolAmk(BaseProtocol):
     def apply_rgb_strip_led(self, index, led):
         self.amk_rgb_strip["leds"][index] = led 
 
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_STRIP_LED, index) + led.pack(), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_STRIP_LED, index) + led.pack(), retries=20)
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_STRIP_LED, index) + led.pack(), retries=20)
         if data[2] != AMK_PROTOCOL_OK:
             print("AMK protocol: failed to set rgb strip led: index={}, led={}".format(index, led.pack()))
         #print("AMK protocol: set rgb strip led: strip={}, index={}, led={}".format(strip, index, led.pack()))
@@ -902,9 +929,15 @@ class ProtocolAmk(BaseProtocol):
                 self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+i)
 
     def reload_rgb_grid_led(self, index):
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_LED,index), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_LED,index), retries=20)
+            offset = 5
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_GRID_LED,index), retries=20)
+            offset = 4
+
         if data[2] == AMK_PROTOCOL_OK:
-            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            led = RgbLed(index, data[offset], data[offset+1], data[offset+2], data[offset+3])
             self.amk_rgb_grid["leds"][index] = led 
             #print("AMK protocol: get rgb grid led: index={}, hue={},sat={},val={}, param={}".format(data[3], data[4], data[5], data[6],data[7]))
 
@@ -912,7 +945,10 @@ class ProtocolAmk(BaseProtocol):
     def apply_rgb_grid_led(self, index, led):
         self.amk_rgb_grid["leds"][index] = led 
 
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_GRID_LED, index) + led.pack(), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_GRID_LED, index) + led.pack(), retries=20)
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_GRID_LED, index) + led.pack(), retries=20)
         if data[2] != AMK_PROTOCOL_OK:
             print("AMK protocol: failed to set rgb grid led: index={}, led={}".format(index, led.pack()))
         #print("AMK protocol: set rgb grid led: grid ={}, index={}, led={}".format(grid, index, led.pack()))
@@ -932,9 +968,15 @@ class ProtocolAmk(BaseProtocol):
             self.reload_rgb_indicator(i)
 
     def reload_rgb_indicator(self, index):
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_INDICATOR_LED,index), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_INDICATOR_LED,index), retries=20)
+            offset = 5
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_INDICATOR_LED,index), retries=20)
+            offset = 4
+
         if data[2] == AMK_PROTOCOL_OK:
-            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            led = RgbLed(index, data[offset], data[offset+1], data[offset+2], data[offset+3])
             self.amk_rgb_indicator["leds"][index] = led 
         else:
             print("Failed to get indicator at: ", index)
@@ -942,7 +984,11 @@ class ProtocolAmk(BaseProtocol):
     def apply_rgb_indicator(self, index, led):
         self.amk_rgb_indicator["leds"][index] = led 
 
-        data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, index) + led.pack(), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, index) + led.pack(), retries=20)
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, index) + led.pack(), retries=20)
+
         if data[2] != AMK_PROTOCOL_OK:
             print("AMK protocol: failed to set rgb indicator led: index={}, led={}".format(index, led.pack()))
 
@@ -1094,8 +1140,12 @@ class ProtocolAmk(BaseProtocol):
         #self.amk_rgb_matrix = {}
         data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_INFO), retries=20)
         if data[2] == AMK_PROTOCOL_OK:
-            self.amk_rgb_matrix["start"] = data[3]
-            self.amk_rgb_matrix["count"] = data[4]
+            if self.amk_rgb_led["protocol_v2"]:
+                self.amk_rgb_matrix["start"] = data[3] + (data[4]<<8)
+                self.amk_rgb_matrix["count"] = data[5] + (data[6]<<8)
+            else:
+                self.amk_rgb_matrix["start"] = data[3]
+                self.amk_rgb_matrix["count"] = data[4]
 
             self.amk_rgb_matrix["mode"] = {}
             data = self.usb_send(self.dev, struct.pack("BB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_MODE), retries=20)
@@ -1120,24 +1170,25 @@ class ProtocolAmk(BaseProtocol):
                 self.reload_rgb_matrix_led(start+i)
         
     def reload_rgb_matrix_led(self, index):
-        data = self.usb_send(self.dev, 
-                            struct.pack("BBB", 
-                                        AMK_PROTOCOL_PREFIX, 
-                                        AMK_PROTOCOL_GET_RGB_MATRIX_LED, 
-                                        index), retries=20)
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_LED, index), retries=20)
+            offset = 5
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_MATRIX_LED, index), retries=20)
+            offset = 4
+
         if data[2] == AMK_PROTOCOL_OK:
-            led = RgbLed(data[3], data[4], data[5], data[6], data[7])
+            led = RgbLed(index, data[offset], data[offset], data[offset], data[offset])
             self.amk_rgb_matrix["leds"][index] = led
 
     def apply_rgb_matrix_led(self, index, led):
         start = self.amk_rgb_matrix["start"]
         self.amk_rgb_matrix["leds"][index] = led
-        data = self.usb_send(self.dev,
-                            struct.pack("BBB", 
-                                        AMK_PROTOCOL_PREFIX, 
-                                        AMK_PROTOCOL_SET_RGB_MATRIX_LED, 
-                                        start+index) + led.pack(), retries=20)
-    
+        if self.amk_rgb_led["protocol_v2"]:
+            data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_MATRIX_LED, start+index) + led.pack(), retries=20)
+        else:
+            data = self.usb_send(self.dev, struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_MATRIX_LED, start+index) + led.pack(), retries=20)
+
     def apply_rgb_matrix_mode(self, index, mode):
         #print("apply rgb matrix mode: index={}, mode={}".format(index, mode))
         data = self.usb_send(self.dev,
@@ -1258,13 +1309,32 @@ class ProtocolAmk(BaseProtocol):
     def reload_rgb_leds(self, start, count):
         cur = start
         remain = count
+        if self.amk_rgb_led["protocol_v2"]:
+            led_max = 8
+        else:
+            led_max = 9
+
         while remain > 0:
-            size = 9 if remain > 9 else remain
-            data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_DATA, cur, size), retries=20)
+            size = led_max if remain > led_max else remain
+            try:
+                if self.amk_rgb_led["protocol_v2"]:
+                    data = self.usb_send(self.dev, struct.pack("<BBHB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_DATA, cur, size), retries=20)
+                    offset = 6
+                else:
+                    data = self.usb_send(self.dev, struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_GET_RGB_DATA, cur, size), retries=20)
+                    offset = 5
+            except Exception as e:
+                print("Exception when reloading rgb leds: ", e)
+                break
+
             if data[2] == AMK_PROTOCOL_OK:
-                readed = data[4]
+                if self.amk_rgb_led["protocol_v2"]:
+                    readed = data[5]
+                else:
+                    readed = data[4]
+                #print("readed:", readed)
                 for i in range(readed):
-                    led = RgbColor(data[i*3+5], data[i*3+6], data[i*3+7])
+                    led = RgbColor(data[i*3+offset], data[i*3+offset+1], data[i*3+offset+2])
                     self.amk_rgb_data[cur+i] = led
             remain = remain - size
             cur = cur + size
@@ -1559,3 +1629,64 @@ class ProtocolAmk(BaseProtocol):
             print("Faild to set grid mask")
 
         #print("Set grid mask: index={}, enable={}, text={}, rotation={}, mode={}".format(index, enabled, text, rotation, mode))
+    
+    def apply_esp32_command(self, main, wifi, cmd_type, param):
+        data = self.usb_send(self.dev, 
+                            struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_ESP32_COMMAND, main, wifi, cmd_type) + param.encode("utf-8"), 
+                            retries=20)
+        if data[2] == AMK_PROTOCOL_OK:
+            print("ESP32 command applied,main={}, wifi={}, type={}, param={}".format(main, wifi, cmd_type, param))
+        else:
+            print("Failed to apply ESP32 command")
+
+    def apply_esp32_oper(self, oper, param):
+        if oper == ESP32_STATE:
+            data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_ESP32_OPERATION, oper), 
+                            retries=20)
+            if data[2] == AMK_PROTOCOL_OK:
+                if data[3] == ESP32AT_NOT_READY:
+                    self.amk_esp32_state["ready"] = False 
+                elif data[3] == ESP32AT_WIFI_NOT_CONNECT:
+                    self.amk_esp32_state["ready"] = True
+                    self.amk_esp32_state["connected"] = False 
+                elif data[3] == ESP32AT_WIFI_CONNECTED:
+                    self.amk_esp32_state["ready"] = True
+                    self.amk_esp32_state["connected"] = True 
+                else:
+                    print("Unknown ESP32 wifi state: ", data[3])
+            else:
+                print("Failed to get ESP32 state")
+        elif oper == ESP32_GET_SSID:
+            data = self.usb_send(self.dev, 
+                                struct.pack("BBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_ESP32_OPERATION, oper, param["index"]), 
+                                retries=20)
+            if data[2] == AMK_PROTOCOL_OK:
+                if param["index"] == 0xFF:
+                    self.amk_esp32_state["ssid_count"] = data[3]
+                else:
+                    index = data[3]
+                    ssid = data[4:].decode("utf-8")
+                    print("ESP32 SSID at index {}: {}".format(index, ssid))
+                    self.amk_esp32_state["ssid_list"][index] = ssid
+            else:
+                print("Failed to get ESP32 SSID at index: ", param["index"])
+        elif oper == ESP32_CONNECT:
+                data = struct.pack("BBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_ESP32_OPERATION, oper, param["index"], len(param["password"])) 
+                data = data + param["password"].encode("utf-8") 
+                data = self.usb_send(self.dev, data, retries=20)
+                if data[2] == AMK_PROTOCOL_OK:
+                    self.amk_esp32_state["ssid"] = self.amk_esp32_state["ssid_list"][param["index"]]
+                    self.amk_esp32_state["password"] = param["password"] 
+                else:
+                    print("Failed to connect to ssid at index: ", param["index"])
+        elif oper == ESP32_DISCONNECT:
+            data = self.usb_send(self.dev, 
+                            struct.pack("BBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_ESP32_OPERATION, oper), 
+                            retries=20)
+            if data[2] == AMK_PROTOCOL_OK:
+                self.amk_esp32_state["connected"] = False
+            else:
+                print("Failed to disconnect wifi")
+        else:
+            print("Unknown ESP32 operation: ", oper)

@@ -432,11 +432,22 @@ class RgbGrid(BasicEditor):
         if not self.valid():
             self.timer.stop()
             return
+        
         try:
-            self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_grid["start"], self.keyboard.amk_rgb_grid["count"])
+            start = self.keyboard.amk_rgb_grid["start"]
+            for i in range(len(self.keyboard.amk_rgb_grid["grids"])):
+                grid = self.keyboard.amk_rgb_grid["grids"][i]
+                self.keyboard.reload_rgb_leds(start+grid["start"], grid["count"])
+
         except (RuntimeError, ValueError):
             self.timer.stop()
             return
+
+        #try:
+        #    self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_grid["start"], self.keyboard.amk_rgb_grid["count"])
+        #except (RuntimeError, ValueError):
+        #    self.timer.stop()
+        #    return
 
         for widget in self.keyboardWidget.widgets:
             color, led = self.get_led(widget.desc.row, widget.desc.col)
