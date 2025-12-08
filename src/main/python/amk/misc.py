@@ -487,7 +487,7 @@ class Misc(BasicEditor):
             self.ud_sbx.setEnabled(True)
             self.ud_sld.setEnabled(True)
         
-        if self.keyboard.amk_has_switch_type:
+        if self.keyboard.amk_feature["switch_type"]:
             self.st_cbb.blockSignals(True)
             self.st_cbb.setCurrentIndex(self.keyboard.amk_switch_type)
             self.st_cbb.blockSignals(False)
@@ -499,7 +499,7 @@ class Misc(BasicEditor):
             self.st_cbb.hide()
             self.st_btn.hide()
 
-        if self.keyboard.amk_firmware:
+        if self.keyboard.amk_feature["firmware"]:
             self.firmware_lbl.show()
             self.firmware_load_btn.show()
             self.firmware_check_btn.show()

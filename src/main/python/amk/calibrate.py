@@ -65,7 +65,7 @@ class Calibrate(BasicEditor):
         return isinstance(self.device, VialKeyboard) and \
                (self.device.keyboard and self.device.keyboard.vial_protocol >= VIAL_PROTOCOL_MATRIX_TESTER) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28) and \
-               (self.device.keyboard.amk_has_calibrate)
+               (self.device.keyboard.amk_feature["calibrate"])
 
     def reset_keyboard_widget(self):
         # reset keyboard widget
@@ -80,13 +80,13 @@ class Calibrate(BasicEditor):
     def activate(self):
         self.grabber.grabKeyboard()
 
-        if self.keyboard.amk_has_switch_state:
+        if self.keyboard.amk_featuer["switch_state"]:
             self.timer.start(50)
 
     def deactivate(self):
         self.grabber.releaseKeyboard()
 
-        if self.keyboard.amk_has_switch_state:
+        if self.keyboard.amk_featuer["switch_state"]:
             self.timer.stop()
 
     def get_switch_state(self, row, col):

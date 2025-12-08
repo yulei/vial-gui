@@ -140,7 +140,7 @@ class RgbMatrix(BasicEditor):
 
     def valid(self):
         return isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard and len(self.device.keyboard.amk_rgb_matrix) > 0 and self.device.keyboard.amk_has_rgb_matrix)
+               (self.device.keyboard and len(self.device.keyboard.amk_rgb_matrix) > 0 and self.device.keyboard.amk_feature["rgb_matrix"])
     
     def reset_custom_widget(self):
         if self.is_custom_mode():

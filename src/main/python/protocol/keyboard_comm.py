@@ -108,30 +108,26 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.amk_nkro = False
         self.reload_nkro()
 
+        self.amk_feature = {"datetime": False, "aux_display": False, "switch_type": False,"switch_state": False, 
+                            "calibrate": False, "firmware": False, "rgb_matrix": False, "bright": False}
+
         self.amk_rgb = []
-        self.amk_rgb_led = {"protocol_v2":False, "total":0}
+        self.amk_rgb_led = {"protocol_v2":False, "total":0, "bright":0}
         self.amk_rgb_matrix = {}
         self.amk_rgb_strip = {}
         self.amk_rgb_grid = {}
         self.amk_rgb_indicator = {}
         self.amk_rgb_data = []
-        self.amk_has_datetime = False
-        self.amk_has_switch_type = False
-        self.amk_has_aux_display = False
         self.amk_aux_display = {}
-        self.amk_has_switch_state = False
-        self.amk_has_calibrate = False
         self.amk_switch_states = []
-        self.amk_firmware = False
-        self.amk_has_rgb_matrix= False
         self.amk_esp32_state = {"ready": False, "connected": False, "ssid": "", "password": "", "ssid_count": 0, "ssid_list":{}} 
 
         if "amkFeature" in self.definition:
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
-                    self.amk_has_datetime = True
+                    self.amk_feature["datetime"] = True
                 if feature == "aux_display":
-                    self.amk_has_aux_display = True
+                    self.amk_feature["aux_display"]= True
                     self.amk_aux_display["width"] = 70
                     self.amk_aux_display["height"] = 40
                     self.amk_aux_display["mode"] = 0
@@ -173,9 +169,12 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_rgb_led["protocol_v2"] = True
                             print("Use Protocol V2")
                         self.amk_rgb_data = [0] * self.amk_rgb_led["total"]
+                        if "bright" in feature["rgb_led"]:
+                            self.amk_rgb_led["bright"] = feature["rgb_led"]["bright"] 
+                            self.amk_feature["bright"] = True
 
                     if "rgb_matrix" in feature:
-                        self.amk_has_rgb_matrix = True
+                        self.amk_feature["rgb_matrix"] = True
                         self.amk_rgb_matrix["start"] = feature["rgb_matrix"]["start"]
                         self.amk_rgb_matrix["count"] = feature["rgb_matrix"]["count"]
                         self.amk_rgb_matrix["effects"] = feature["rgb_matrix"]["effects"]
@@ -256,7 +255,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_rgb_indicator["leds"] = {}
                             self.reload_amk_rgb_indicators()
                     if "firmware" in feature:
-                        self.amk_firmware = True
+                        self.amk_feature["firmware"]= True
 
         #reload apc/rt/dks/sensitivity
         if self.keyboard_type.startswith("ms") or self.keyboard_type == "ec":
@@ -279,11 +278,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         if feature == "snaptap":
                             self.amk_snaptap = True
                         elif feature == "switchType":
-                            self.amk_has_switch_type = True
+                            self.amk_feature["switch_type"] = True
                         elif feature == "switchState":
-                            self.amk_has_switch_state = True
+                            self.amk_feature["switch_state"] = True
                         elif feature == "calibrate":
-                            self.amk_has_calibrate = True
+                            self.amk_feature["calibrate"] = True
                         else:
                             print("unknown feature: {}".format(feature))
 
@@ -318,7 +317,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             self.amk_noise_sens = 50
             self.reload_noise_sensitivity()
 
-            if self.amk_has_switch_type:
+            if self.amk_feature["switch_type"]:
                 self.reload_switch_type()
 
         #reload poll rate and debounce setting

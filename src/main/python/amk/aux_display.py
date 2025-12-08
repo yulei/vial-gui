@@ -186,7 +186,7 @@ class AuxDsiplay(BasicEditor):
             self.reset_ui()
 
     def valid(self):
-        return isinstance(self.device, VialKeyboard) and (self.device.keyboard and self.device.keyboard.amk_has_aux_display)
+        return isinstance(self.device, VialKeyboard) and (self.device.keyboard and self.device.keyboard.amk_feature["aux_display"])
 
     def reset_ui(self):
         self.ad_font_size.setValue(self.ad_preview.get_font_size())

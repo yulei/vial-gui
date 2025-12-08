@@ -9,7 +9,7 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
-from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_TYPE_GRID, GRID_TEXT_MAX, RgbColor
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_PARAM_BRIGHT, RGB_TYPE_GRID, GRID_TEXT_MAX, RgbColor
 
 GRID_TEXT_MASK = "x" * GRID_TEXT_MAX
 
@@ -139,6 +139,19 @@ class RgbGrid(BasicEditor):
         lyt.addWidget(self.speed_sld)
         layout.addLayout(lyt)
         lyt = QHBoxLayout()
+        lyt.addWidget(QLabel(tr("RGB Grid", "Bright/亮度")))
+        self.bright_sld = QSlider(Qt.Horizontal)
+        self.bright_sld.setMaximumWidth(300)
+        self.bright_sld.setMinimumWidth(200)
+        self.bright_sld.setRange(0, 255)
+        self.bright_sld.setSingleStep(1)
+        self.bright_sld.setValue(255)
+        self.bright_sld.setTickPosition(QSlider.TicksAbove)
+        self.bright_sld.setTracking(False)
+        self.bright_sld.valueChanged.connect(self.on_bright_sld) 
+        lyt.addWidget(self.bright_sld)
+        layout.addLayout(lyt)
+        lyt = QHBoxLayout()
         self.text_cbx = QCheckBox(tr("RGB Grid", "Text/文字"))
         self.text_cbx.stateChanged.connect(self.on_mask_check)
         lyt.addWidget(self.text_cbx)
@@ -218,6 +231,17 @@ class RgbGrid(BasicEditor):
         self.text_edt.blockSignals(False)
         self.text_cbx.blockSignals(False)
 
+    def reset_bright_widgets(self):
+        if self.keyboard.amk_feature["bright"]:
+            self.bright_sld.show()
+            self.bright_sld.setEnabled(True)
+            if self.grid != -1:
+                grid = self.keyboard.amk_rgb_grid["grids"][self.grid]
+                self.bright_sld.setValue(grid["bright"])
+        else:
+            self.bright_sld.setEnabled(False)
+            self.bright_sld.hide()
+
     def reset_keyboard_widget(self):
         if self.valid():
             self.grid_lst.clear()
@@ -238,6 +262,7 @@ class RgbGrid(BasicEditor):
                 widget.setOn(False)
 
             self.reset_mode_widgets()
+            self.reset_bright_widgets()
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
 
@@ -404,6 +429,15 @@ class RgbGrid(BasicEditor):
         else:
             speed = (self.speed_sld.value() * 255) // self.speed_sld.maximum()
             self.keyboard.apply_rgb_param(RGB_TYPE_GRID, RGB_PARAM_SPEED, speed, self.grid)
+
+        self.keyboardWidget.update()
+
+    def on_bright_sld(self):
+        if self.grid == -1:
+            self.grid = 0
+
+        bright = self.bright_sld.value()
+        self.keyboard.apply_rgb_param(RGB_TYPE_GRID, RGB_PARAM_BRIGHT, bright, self.grid)
 
         self.keyboardWidget.update()
 

@@ -98,6 +98,7 @@ RGB_PARAM_COLOR = 0
 RGB_PARAM_HSV = 1
 RGB_PARAM_SPEED = 2
 RGB_PARAM_SYNC = 3
+RGB_PARAM_BRIGHT = 4
 
 RGB_TYPE_MATRIX = 0
 RGB_TYPE_STRIP  = 1
@@ -1354,6 +1355,8 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_matrix["color"] = self.color_from_hsv(data[4], data[4], data[6])
                 elif param == RGB_PARAM_SPEED:
                     self.amk_rgb_matrix["speed"] = data[4]
+                else:
+                    print("Unknown rgb matrix param: ", param)
             elif rgb_type == RGB_TYPE_STRIP:
                 if param == RGB_PARAM_COLOR:
                     self.amk_rgb_strip["strips"][index]["color"] = RgbColor(data[4], data[5], data[6])
@@ -1363,7 +1366,10 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_strip["strips"][index]["speed"] = data[4]
                 elif param == RGB_PARAM_SYNC:
                     self.amk_rgb_strip["strips"][index]["sync"] = data[4]
-                    #print("Reload rgb strip sync: ", self.amk_rgb_strip["strips"][index]["sync"])
+                elif param == RGB_PARAM_BRIGHT:
+                    self.amk_rgb_strip["strips"][index]["bright"] = data[4]
+                else:
+                    print("Unknown rgb strip param: ", param)
             elif rgb_type == RGB_TYPE_GRID:
                 if param == RGB_PARAM_COLOR:
                     self.amk_rgb_grid["grids"][index]["color"] = RgbColor(data[4], data[5], data[6])
@@ -1371,6 +1377,10 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_grid["grids"][index]["color"] = self.color_from_hsv(data[4], data[4], data[6])
                 elif param == RGB_PARAM_SPEED:
                     self.amk_rgb_grid["grids"][index]["speed"] = data[4]
+                elif param == RGB_PARAM_BRIGHT:
+                    self.amk_rgb_grid["grids"][index]["bright"] = data[4]
+                else:
+                    print("Unknown rgb grid param: ", param)
         else:
             print("Failed to reload rgb param: ", param)
 
@@ -1460,6 +1470,13 @@ class ProtocolAmk(BaseProtocol):
                     self.amk_rgb_strip["strips"][index]["sync"] = data
                     #print("Set rgb strip({}) sync: {}".format(index, data))
                     data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+            elif param == RGB_PARAM_BRIGHT:
+                if self.amk_rgb_strip["strips"][index]["bright"] != data:
+                    self.amk_rgb_strip["strips"][index]["bright"] = data
+                    #print("Set rgb strip({}) bright: {}".format(index, data))
+                    data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+            else:
+                print("Invalid RGB param: ", param)
         elif rgb_type == RGB_TYPE_GRID:
             if param == RGB_PARAM_COLOR:
                 data = self.usb_send(self.dev, struct.pack("BBBBBBBB", 
@@ -1492,6 +1509,12 @@ class ProtocolAmk(BaseProtocol):
                                                 hue,sat,val), retries=20)
             elif param == RGB_PARAM_SPEED:
                 data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+            elif param == RGB_PARAM_BRIGHT:
+                if self.amk_rgb_grid["grids"][index]["bright"] != data:
+                    self.amk_rgb_grid["grids"][index]["bright"] = data
+                    data = self.usb_send(self.dev, struct.pack("BBBBBB", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_PARAM, rgb_type, param, index, data), retries=20)
+            else:
+                print("Invalid RGB GRID param: ", param)
   
         else:
             print("Invalid RGB param: ", param)
@@ -1506,10 +1529,14 @@ class ProtocolAmk(BaseProtocol):
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SPEED, i)
                 #self.amk_rgb_strip["strips"][i]["sync"] = 0xFF
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, i)
+                if self.amk_feature["bright"]:
+                    self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_BRIGHT, i)
         elif rgb_type == RGB_TYPE_GRID:
             for i in range (len(self.amk_rgb_grid["grids"])):
                 self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_COLOR, i)
                 self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_SPEED, i)
+                if self.amk_feature["bright"]:
+                    self.reload_rgb_param(RGB_TYPE_GRID, RGB_PARAM_BRIGHT, i)
         else:
             print("unknown rgb type: ", rgb_type)
     
