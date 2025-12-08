@@ -138,7 +138,8 @@ class RgbStrip(BasicEditor):
         lyt.addWidget(self.speed_sld)
         layout.addLayout(lyt)
         lyt = QHBoxLayout()
-        lyt.addWidget(QLabel(tr("RGB Strip", "Bright/亮度")))
+        self.bright_lbl = QLabel(tr("RGB Strip", "Bright/亮度"))
+        lyt.addWidget(self.bright_lbl)
         self.bright_sld = QSlider(Qt.Horizontal)
         self.bright_sld.setMaximumWidth(300)
         self.bright_sld.setMinimumWidth(200)
@@ -193,6 +194,7 @@ class RgbStrip(BasicEditor):
 
     def reset_bright_widgets(self):
         if self.keyboard.amk_feature["bright"]:
+            self.bright_lbl.show()
             self.bright_sld.show()
             self.bright_sld.setEnabled(True)
             if self.strip != -1:
@@ -201,6 +203,7 @@ class RgbStrip(BasicEditor):
         else:
             self.bright_sld.setEnabled(False)
             self.bright_sld.hide()
+            self.bright_lbl.hide()
 
     def reset_keyboard_widget(self):
         if self.valid():
