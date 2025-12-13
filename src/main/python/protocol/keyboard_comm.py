@@ -109,7 +109,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         self.amk_feature = {"datetime": False, "aux_display": False, "switch_type": False,"switch_state": False, 
-                            "calibrate": False, "firmware": False, "rgb_matrix": False, "bright": False}
+                            "calibrate": False, "firmware": False, "rgb_matrix": False, "bright": False, "esp32at": False, "esp32at_test": False}
 
         self.amk_rgb = []
         self.amk_rgb_led = {"protocol_v2":False, "total":0, "bright":0}
@@ -126,17 +126,19 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
                     self.amk_feature["datetime"] = True
-                if feature == "aux_display":
+                elif feature == "aux_display":
                     self.amk_feature["aux_display"]= True
                     self.amk_aux_display["width"] = 70
                     self.amk_aux_display["height"] = 40
                     self.amk_aux_display["mode"] = 0
-                if isinstance(feature, dict):
+                elif isinstance(feature, dict):
+                    if "esp32at" in feature:
+                        self.amk_feature["esp32at"] = feature["enabled"]
+                        self.amk_feature["esp32at_test"] = feature.get("test_mode", False)
                     if "aux_display_params" in feature:
                         self.amk_aux_display["width"] = feature["aux_display_params"]["width"]
                         self.amk_aux_display["height"] = feature["aux_display_params"]["height"]
                         self.amk_aux_display["mode"] = feature["aux_display_params"]["mode"]
-
                     if "rgb" in feature:
                         for r in feature["rgb"]:
                             rgb_inst = {"type": r["type"]}
@@ -162,12 +164,14 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             if rgb_inst["type"] == "matrix":
                                 self.reload_amk_rgb_matrix()
                             self.amk_rgb.append(rgb_inst)
-
                     if "rgb_led" in feature:
                         self.amk_rgb_led["total"] = feature["rgb_led"]["total"]
                         if self.amk_rgb_led["total"] > 254:
                             self.amk_rgb_led["protocol_v2"] = True
-                            print("Use Protocol V2")
+                            print("Use RGB Protocol V2")
+                        else:
+                            print("Use RGB Protocol V1")
+
                         self.amk_rgb_data = [0] * self.amk_rgb_led["total"]
                         if "bright" in feature["rgb_led"]:
                             self.amk_rgb_led["bright"] = feature["rgb_led"]["bright"] 
@@ -205,6 +209,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_rgb_strip["leds"] = {}
                         self.reload_amk_rgb_strip()
                         self.reload_amk_rgb_params(RGB_TYPE_STRIP)
+
                     if "rgb_grid" in feature:
                         self.amk_rgb_grid["config_start"] = feature["rgb_grid"]["config_start"]
                         self.amk_rgb_grid["start"] = feature["rgb_grid"]["start"]
@@ -229,6 +234,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_rgb_grid["leds"] = {}
                         self.reload_amk_rgb_grid()
                         self.reload_amk_rgb_params(RGB_TYPE_GRID)
+
                     if "rgb_indicator" in feature:
                         if "layout" in feature["rgb_indicator"]:
                             if "on_off" in feature["rgb_indicator"]:
@@ -254,6 +260,7 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                             self.amk_rgb_indicator["indicators"] = feature["rgb_indicator"]["leds"]
                             self.amk_rgb_indicator["leds"] = {}
                             self.reload_amk_rgb_indicators()
+
                     if "firmware" in feature:
                         self.amk_feature["firmware"]= True
 

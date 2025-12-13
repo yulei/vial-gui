@@ -299,7 +299,7 @@ class Misc(BasicEditor):
             self.upload_btn.setEnabled(False)
             g_layout.addWidget(self.upload_btn, line, 2)
         
-        if False:
+        if True:
             #esp32 command
             line = line + 1
             self.esp32_main_cbx = QComboBox()
@@ -308,16 +308,20 @@ class Misc(BasicEditor):
                                           "WEBSERVER", "DRIVER", "USER"])
             self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
             g_layout.addWidget(self.esp32_main_cbx, line, 0)
-            self.esp32_wifi_cbx = QComboBox()
-            self.esp32_wifi_cbx.addItems(["CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
-                                          "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
-                                          "CWQAP", "CWSAP", "CWLIF", "CWQIF",
-                                          "CWDHCP", "CWDHCPS", "CWAUTOCONN", "CWAPPROTO",
-                                          "CWSTAPROTO", "CIPSTAMAC", "CIPAPMAC", "CIPSTA",
-                                          "CIPAP", "CWSTARTSMART", "CWSTOPSMART", "WPS",
-                                          "CWJEAP", "CWHOSTNAME", "CWCOUNTRY"])
-            self.esp32_wifi_cbx.currentIndexChanged.connect(self.on_esp32_wifi_cbx)
-            g_layout.addWidget(self.esp32_wifi_cbx, line, 1)
+            self.esp32_sub_cbx = QComboBox()
+            self.esp32_sub_cbx.addItems([
+                                        "CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
+                                        "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
+                                        "CWQAP", "CWSAP", "CWLIF", "CWQIF",
+                                        "CWDHCP", "CWDHCPS", "CWAUTOCONN", "CWAPPROTO",
+                                        "CWSTAPROTO", "CIPSTAMAC", "CIPAPMAC", "CIPSTA",
+                                        "CIPAP", "CWSTARTSMART", "CWSTOPSMART", "WPS",
+                                        "CWJEAP", "CWHOSTNAME", "CWCOUNTRY",
+                                        "HTTPCLIENT", "HTTPGETSIZE", "HTTPCGET", "HTTPCPOST",
+                                        "HTTPCPUT", "HTTPURLCFG", "HTTPCHEAD", "HTTPCFG"
+                                        ])
+            self.esp32_sub_cbx.currentIndexChanged.connect(self.on_esp32_sub_cbx)
+            g_layout.addWidget(self.esp32_sub_cbx, line, 1)
             self.esp32_type_cbx = QComboBox()
             self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
             self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
@@ -330,7 +334,7 @@ class Misc(BasicEditor):
             self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
             g_layout.addWidget(self.esp32_apply_btn, line, 2)
         
-        if False:
+        if True:
             #wifi connection
             line = line + 1
             self.wifi_lbl = QLabel(tr("Misc", "Wifi:"))
@@ -385,6 +389,36 @@ class Misc(BasicEditor):
                 self.device.keyboard.keyboard_type.startswith("ms") or \
                 self.device.keyboard.keyboard_type == "ec")) and \
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
+
+    def reset_wifi_ui(self):
+        if self.keyboard.amk_feature.get("esp32at", False):
+            #esp32 command
+            self.esp32_main_cbx.show()
+            self.esp32_sub_cbx.show()
+            self.esp32_type_cbx.show()
+            self.esp32_param_edt.show()
+            self.esp32_apply_btn.show()
+
+            #wifi connection
+            self.wifi_lbl.show()
+            self.wifi_scan_btn.show()
+            self.wifi_conn_btn.show()
+            self.wifi_ap_lst.show()
+            self.wifi_pass_lbl.show()
+            self.wifi_pass_edt.show()
+        else:
+            self.esp32_main_cbx.hide()
+            self.esp32_sub_cbx.hide()
+            self.esp32_type_cbx.hide()
+            self.esp32_param_edt.hide()
+            self.esp32_apply_btn.hide()
+
+            self.wifi_lbl.hide()
+            self.wifi_scan_btn.hide()
+            self.wifi_conn_btn.hide()
+            self.wifi_ap_lst.hide()
+            self.wifi_pass_lbl.hide()
+            self.wifi_pass_edt.hide()
 
     def reset_ui(self):
         self.nk_cbx.blockSignals(True)
@@ -515,6 +549,7 @@ class Misc(BasicEditor):
             if sys.platform == "emscripten":
                 self.upload_btn.hide()
                 self.upload_bar.hide()
+        self.reset_wifi_ui()
 
     def activate(self):
         if False:
@@ -1128,11 +1163,11 @@ class Misc(BasicEditor):
                 import vialglue
                 vialglue.reload_keyboard()
 
-#esp32 wifi management
+#esp32 command 
     def on_esp32_main_cbx(self):
         pass
 
-    def on_esp32_wifi_cbx(self):
+    def on_esp32_sub_cbx(self):
         pass
 
     def on_esp32_type_cbx(self):
@@ -1141,6 +1176,7 @@ class Misc(BasicEditor):
     def on_esp32_param_text(self):
         pass
 
+#esp32 wifi
     def on_esp32_apply_btn(self):
         main = self.esp32_main_cbx.currentIndex()
         wifi = self.esp32_wifi_cbx.currentIndex()

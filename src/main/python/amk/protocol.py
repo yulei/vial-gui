@@ -417,6 +417,11 @@ class RgbLed:
 
     def get_speed(self):
         return self.speed
+    
+    def dump(self):
+        print("RgbLed: index={}, hue={}, sat={}, val={}, on={}, dynamic={}, blink={}, breath={}, speed={}".format(
+            self.index, self.hue, self.sat, self.val, self.on, self.dynamic, self.blink, self.breath, self.speed
+        ))
 
 class RgbLedStrip:
     def __init__(self, index, config, start, count):
@@ -854,11 +859,11 @@ class ProtocolAmk(BaseProtocol):
                         strip["mode"] = data[6]
                         strip["custom"] = data[7]
                         #print("AMK protocol: get rgb strip: index={}, config={}, enabled={}, mode={}, custom={}".format(data[3], data[4], data[5], data[6], data[7]))
-            start = self.amk_rgb_strip["start"]
             for i in range(len(self.amk_rgb_strip["strips"])):
                 strip = self.amk_rgb_strip["strips"][i]
                 for j in range(strip["count"]):
-                    self.reload_rgb_strip_led(start+j)
+                    self.reload_rgb_strip_led(self.amk_rgb_strip["start"]+strip["start"]+j)
+
             #for i in range(self.amk_rgb_strip["count"]):
             #    self.reload_rgb_strip_led(self.amk_rgb_strip["start"]+i)
 
@@ -926,8 +931,10 @@ class ProtocolAmk(BaseProtocol):
                         else:
                             grid["mask"] = 0
 
-            for i in range(self.amk_rgb_grid["count"]):
-                self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+i)
+            for i in range(len(self.amk_rgb_grid["grids"])):
+                grid = self.amk_rgb_grid["grids"][i]
+                for j in range(grid["count"]):
+                    self.reload_rgb_grid_led(self.amk_rgb_grid["start"]+grid["start"]+j)
 
     def reload_rgb_grid_led(self, index):
         if self.amk_rgb_led["protocol_v2"]:
@@ -984,6 +991,9 @@ class ProtocolAmk(BaseProtocol):
 
     def apply_rgb_indicator(self, index, led):
         self.amk_rgb_indicator["leds"][index] = led 
+
+        #print("Apply rgb indicator led:")
+        #led.dump()
 
         if self.amk_rgb_led["protocol_v2"]:
             data = self.usb_send(self.dev, struct.pack("<BBH", AMK_PROTOCOL_PREFIX, AMK_PROTOCOL_SET_RGB_INDICATOR_LED, index) + led.pack(), retries=20)
@@ -1530,6 +1540,7 @@ class ProtocolAmk(BaseProtocol):
                 #self.amk_rgb_strip["strips"][i]["sync"] = 0xFF
                 self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_SYNC, i)
                 if self.amk_feature["bright"]:
+                    print("has bright feature")
                     self.reload_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_BRIGHT, i)
         elif rgb_type == RGB_TYPE_GRID:
             for i in range (len(self.amk_rgb_grid["grids"])):
