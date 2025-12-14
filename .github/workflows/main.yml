@@ -35,12 +35,12 @@ jobs:
     - name: Install Python
       run: |
         sudo installer -pkg python.pkg -target /
-        pip install setuptools==57.5.0
 
     - name: Setup venv
       run: |
         python3 -m venv venv
         source venv/bin/activate
+        pip install setuptools==57.5.0
         pip install -r requirements.txt
 
     - name: Build
