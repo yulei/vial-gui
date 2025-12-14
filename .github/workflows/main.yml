@@ -18,7 +18,7 @@ jobs:
         path: util/linux-builder/output/Vial-x86_64.AppImage
 
   build-mac:
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       PYTHON_VERSION: 3.6.9
       MACOSX_DEPLOYMENT_TARGET: 10.9
