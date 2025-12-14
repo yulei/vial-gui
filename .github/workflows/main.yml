@@ -35,6 +35,7 @@ jobs:
     - name: Install Python
       run: |
         sudo installer -pkg python.pkg -target /
+        pip install setuptools==57.5.0
 
     - name: Setup venv
       run: |
