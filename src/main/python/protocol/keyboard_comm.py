@@ -126,15 +126,19 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
             for feature in self.definition["amkFeature"]:
                 if feature == "datetime":
                     self.amk_feature["datetime"] = True
-                elif feature == "aux_display":
+
+                if feature == "aux_display":
                     self.amk_feature["aux_display"]= True
                     self.amk_aux_display["width"] = 70
                     self.amk_aux_display["height"] = 40
                     self.amk_aux_display["mode"] = 0
-                elif isinstance(feature, dict):
+
+                if isinstance(feature, dict):
                     if "esp32at" in feature:
-                        self.amk_feature["esp32at"] = feature["enabled"]
-                        self.amk_feature["esp32at_test"] = feature.get("test_mode", False)
+                        self.amk_feature["esp32at"] = feature["esp32at"].get("enabled", False)
+                        self.amk_feature["esp32at_test"] = feature["esp32at"].get("test_mode", False)
+                        #print(feature)
+                        #print("ESP32-AT feature enabled: {}, test mode: {}".format(self.amk_feature["esp32at"], self.amk_feature["esp32at_test"]))
                     if "aux_display_params" in feature:
                         self.amk_aux_display["width"] = feature["aux_display_params"]["width"]
                         self.amk_aux_display["height"] = feature["aux_display_params"]["height"]
