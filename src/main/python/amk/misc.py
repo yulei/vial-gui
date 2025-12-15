@@ -299,64 +299,61 @@ class Misc(BasicEditor):
             self.upload_btn.setEnabled(False)
             g_layout.addWidget(self.upload_btn, line, 2)
         
-        if True:
-            #esp32 command
-            line = line + 1
-            self.esp32_main_cbx = QComboBox()
-            self.esp32_main_cbx.addItems(["BASIC", "WIFI", "TCPIP", "BLE", "MQTT", 
-                                          "HTTP", "FILESYSTEM", "WEBSOCKET", "SIGNALING", 
-                                          "WEBSERVER", "DRIVER", "USER"])
-            self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
-            g_layout.addWidget(self.esp32_main_cbx, line, 0)
-            self.esp32_sub_cbx = QComboBox()
-            self.esp32_sub_cbx.addItems([
-                                        "CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
-                                        "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
-                                        "CWQAP", "CWSAP", "CWLIF", "CWQIF",
-                                        "CWDHCP", "CWDHCPS", "CWAUTOCONN", "CWAPPROTO",
-                                        "CWSTAPROTO", "CIPSTAMAC", "CIPAPMAC", "CIPSTA",
-                                        "CIPAP", "CWSTARTSMART", "CWSTOPSMART", "WPS",
-                                        "CWJEAP", "CWHOSTNAME", "CWCOUNTRY",
-                                        "HTTPCLIENT", "HTTPGETSIZE", "HTTPCGET", "HTTPCPOST",
-                                        "HTTPCPUT", "HTTPURLCFG", "HTTPCHEAD", "HTTPCFG"
-                                        ])
-            self.esp32_sub_cbx.currentIndexChanged.connect(self.on_esp32_sub_cbx)
-            g_layout.addWidget(self.esp32_sub_cbx, line, 1)
-            self.esp32_type_cbx = QComboBox()
-            self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
-            self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
-            g_layout.addWidget(self.esp32_type_cbx, line, 2)
-            line = line + 1
-            self.esp32_param_edt = QLineEdit()
-            self.esp32_param_edt.editingFinished.connect(self.on_esp32_param_text)
-            g_layout.addWidget(self.esp32_param_edt, line, 1)
-            self.esp32_apply_btn = QPushButton(tr("Misc", "Apply ESP32 Command/应用ESP32指令"))
-            self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
-            g_layout.addWidget(self.esp32_apply_btn, line, 2)
+        #esp32 command
+        line = line + 1
+        self.esp32_main_cbx = QComboBox()
+        self.esp32_main_cbx.addItems(["BASIC", "WIFI", "TCPIP", "BLE", "MQTT", 
+                                        "HTTP", "FILESYSTEM", "WEBSOCKET", "SIGNALING", 
+                                        "WEBSERVER", "DRIVER", "USER"])
+        self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
+        g_layout.addWidget(self.esp32_main_cbx, line, 0)
+        self.esp32_sub_cbx = QComboBox()
+        self.esp32_sub_cbx.addItems([
+                                    "CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
+                                    "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
+                                    "CWQAP", "CWSAP", "CWLIF", "CWQIF",
+                                    "CWDHCP", "CWDHCPS", "CWAUTOCONN", "CWAPPROTO",
+                                    "CWSTAPROTO", "CIPSTAMAC", "CIPAPMAC", "CIPSTA",
+                                    "CIPAP", "CWSTARTSMART", "CWSTOPSMART", "WPS",
+                                    "CWJEAP", "CWHOSTNAME", "CWCOUNTRY",
+                                    "HTTPCLIENT", "HTTPGETSIZE", "HTTPCGET", "HTTPCPOST",
+                                    "HTTPCPUT", "HTTPURLCFG", "HTTPCHEAD", "HTTPCFG"
+                                    ])
+        self.esp32_sub_cbx.currentIndexChanged.connect(self.on_esp32_sub_cbx)
+        g_layout.addWidget(self.esp32_sub_cbx, line, 1)
+        self.esp32_type_cbx = QComboBox()
+        self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
+        self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
+        g_layout.addWidget(self.esp32_type_cbx, line, 2)
+        line = line + 1
+        self.esp32_param_edt = QLineEdit()
+        self.esp32_param_edt.editingFinished.connect(self.on_esp32_param_text)
+        g_layout.addWidget(self.esp32_param_edt, line, 1)
+        self.esp32_apply_btn = QPushButton(tr("Misc", "Apply ESP32 Command/应用ESP32指令"))
+        self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
+        g_layout.addWidget(self.esp32_apply_btn, line, 2)
         
-        if True:
-            #wifi connection
-            line = line + 1
-            self.wifi_lbl = QLabel(tr("Misc", "Wifi:"))
-            g_layout.addWidget(self.wifi_lbl, line, 0)
-            self.wifi_scan_btn = QPushButton(WIFI_START_SCAN_TEXT)
-            self.wifi_scan_btn.clicked.connect(self.on_wifi_scan_btn)
-            g_layout.addWidget(self.wifi_scan_btn, line, 1)
-            self.wifi_conn_btn = QPushButton(WIFI_CONNECT_TEXT)
-            self.wifi_conn_btn.clicked.connect(self.on_wifi_conn_btn)
-            g_layout.addWidget(self.wifi_conn_btn, line, 2)
-            line = line + 1
-            self.wifi_ap_lst = QListWidget()
-            self.wifi_ap_lst.currentRowChanged.connect(self.on_wifi_ap_changed)
-            g_layout.addWidget(self.wifi_ap_lst, line, 1)
-            t_lyt = QHBoxLayout()
-            self.wifi_pass_lbl = QLabel(tr("Misc", "Password/密码:"))
-            t_lyt.addWidget(self.wifi_pass_lbl)
-            self.wifi_pass_edt = QLineEdit()
-            self.wifi_pass_edt.editingFinished.connect(self.on_wifi_pass_text)
-            t_lyt.addWidget(self.wifi_pass_edt)
-            #g_layout.addWidget(self.wifi_pass_edt, line, 2)
-            g_layout.addLayout(t_lyt, line, 2)
+        #wifi connection
+        line = line + 1
+        self.wifi_lbl = QLabel(tr("Misc", "Wifi:"))
+        g_layout.addWidget(self.wifi_lbl, line, 0)
+        self.wifi_scan_btn = QPushButton(WIFI_START_SCAN_TEXT)
+        self.wifi_scan_btn.clicked.connect(self.on_wifi_scan_btn)
+        g_layout.addWidget(self.wifi_scan_btn, line, 1)
+        self.wifi_conn_btn = QPushButton(WIFI_CONNECT_TEXT)
+        self.wifi_conn_btn.clicked.connect(self.on_wifi_conn_btn)
+        g_layout.addWidget(self.wifi_conn_btn, line, 2)
+        line = line + 1
+        self.wifi_ap_lst = QListWidget()
+        self.wifi_ap_lst.currentRowChanged.connect(self.on_wifi_ap_changed)
+        g_layout.addWidget(self.wifi_ap_lst, line, 1)
+        t_lyt = QHBoxLayout()
+        self.wifi_pass_lbl = QLabel(tr("Misc", "Password/密码:"))
+        t_lyt.addWidget(self.wifi_pass_lbl)
+        self.wifi_pass_edt = QLineEdit()
+        self.wifi_pass_edt.editingFinished.connect(self.on_wifi_pass_text)
+        t_lyt.addWidget(self.wifi_pass_edt)
+        g_layout.addLayout(t_lyt, line, 2)
 
         v_layout = QVBoxLayout()
         v_layout.addStretch(1)
@@ -391,21 +388,12 @@ class Misc(BasicEditor):
                ((self.device.keyboard.cols // 8 + 1) * self.device.keyboard.rows <= 28)
 
     def reset_wifi_ui(self):
-        if self.keyboard.amk_feature.get("esp32at", False):
-            #esp32 command
+        if self.keyboard.amk_feature.get("esp32at_test", False):
             self.esp32_main_cbx.show()
             self.esp32_sub_cbx.show()
             self.esp32_type_cbx.show()
             self.esp32_param_edt.show()
             self.esp32_apply_btn.show()
-
-            #wifi connection
-            self.wifi_lbl.show()
-            self.wifi_scan_btn.show()
-            self.wifi_conn_btn.show()
-            self.wifi_ap_lst.show()
-            self.wifi_pass_lbl.show()
-            self.wifi_pass_edt.show()
         else:
             self.esp32_main_cbx.hide()
             self.esp32_sub_cbx.hide()
@@ -413,6 +401,14 @@ class Misc(BasicEditor):
             self.esp32_param_edt.hide()
             self.esp32_apply_btn.hide()
 
+        if self.keyboard.amk_feature.get("esp32at", False):
+            self.wifi_lbl.show()
+            self.wifi_scan_btn.show()
+            self.wifi_conn_btn.show()
+            self.wifi_ap_lst.show()
+            self.wifi_pass_lbl.show()
+            self.wifi_pass_edt.show()
+        else:
             self.wifi_lbl.hide()
             self.wifi_scan_btn.hide()
             self.wifi_conn_btn.hide()
