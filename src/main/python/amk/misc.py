@@ -300,15 +300,16 @@ class Misc(BasicEditor):
             g_layout.addWidget(self.upload_btn, line, 2)
         
         #esp32 command
-        line = line + 1
-        self.esp32_main_cbx = QComboBox()
-        self.esp32_main_cbx.addItems(["BASIC", "WIFI", "TCPIP", "BLE", "MQTT", 
+        if True:
+            line = line + 1
+            self.esp32_main_cbx = QComboBox()
+            self.esp32_main_cbx.addItems(["BASIC", "WIFI", "TCPIP", "BLE", "MQTT", 
                                         "HTTP", "FILESYSTEM", "WEBSOCKET", "SIGNALING", 
                                         "WEBSERVER", "DRIVER", "USER"])
-        self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
-        g_layout.addWidget(self.esp32_main_cbx, line, 0)
-        self.esp32_sub_cbx = QComboBox()
-        self.esp32_sub_cbx.addItems([
+            self.esp32_main_cbx.currentIndexChanged.connect(self.on_esp32_main_cbx)
+            g_layout.addWidget(self.esp32_main_cbx, line, 0)
+            self.esp32_sub_cbx = QComboBox()
+            self.esp32_sub_cbx.addItems([
                                     "CWINIT", "CWMODE", "CWSTATE", "CWCONFIG", 
                                     "CWJAP", "CWRECONNCFG", "CWLAPOPT", "CWLAP",
                                     "CWQAP", "CWSAP", "CWLIF", "CWQIF",
@@ -319,19 +320,19 @@ class Misc(BasicEditor):
                                     "HTTPCLIENT", "HTTPGETSIZE", "HTTPCGET", "HTTPCPOST",
                                     "HTTPCPUT", "HTTPURLCFG", "HTTPCHEAD", "HTTPCFG"
                                     ])
-        self.esp32_sub_cbx.currentIndexChanged.connect(self.on_esp32_sub_cbx)
-        g_layout.addWidget(self.esp32_sub_cbx, line, 1)
-        self.esp32_type_cbx = QComboBox()
-        self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
-        self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
-        g_layout.addWidget(self.esp32_type_cbx, line, 2)
-        line = line + 1
-        self.esp32_param_edt = QLineEdit()
-        self.esp32_param_edt.editingFinished.connect(self.on_esp32_param_text)
-        g_layout.addWidget(self.esp32_param_edt, line, 1)
-        self.esp32_apply_btn = QPushButton(tr("Misc", "Apply ESP32 Command/应用ESP32指令"))
-        self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
-        g_layout.addWidget(self.esp32_apply_btn, line, 2)
+            self.esp32_sub_cbx.currentIndexChanged.connect(self.on_esp32_sub_cbx)
+            g_layout.addWidget(self.esp32_sub_cbx, line, 1)
+            self.esp32_type_cbx = QComboBox()
+            self.esp32_type_cbx.addItems(["TEST", "QUERY", "SET", "EXECUTE"])
+            self.esp32_type_cbx.currentIndexChanged.connect(self.on_esp32_type_cbx)
+            g_layout.addWidget(self.esp32_type_cbx, line, 2)
+            line = line + 1
+            self.esp32_param_edt = QLineEdit()
+            self.esp32_param_edt.editingFinished.connect(self.on_esp32_param_text)
+            g_layout.addWidget(self.esp32_param_edt, line, 1)
+            self.esp32_apply_btn = QPushButton(tr("Misc", "Apply ESP32 Command/应用ESP32指令"))
+            self.esp32_apply_btn.clicked.connect(self.on_esp32_apply_btn)
+            g_layout.addWidget(self.esp32_apply_btn, line, 2)
         
         #wifi connection
         line = line + 1
@@ -548,14 +549,13 @@ class Misc(BasicEditor):
         self.reset_wifi_ui()
 
     def activate(self):
-        if False:
+        if self.keyboard is not None and self.keyboard.amk_feature.get("esp32at", False):
             self.wifi_timer.start(1000)
         #print("hs windows activated")
 
     def deactivate(self):
         self.timer.stop()
-        if False:
-            self.wifi_timer.stop()
+        self.wifi_timer.stop()
         #print("hs windows deactivated")
 
     def on_pr_btn(self):
