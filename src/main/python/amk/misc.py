@@ -1229,7 +1229,12 @@ class Misc(BasicEditor):
         self.keyboard.apply_esp32_oper(ESP32_STATE, {})
 
         if not self.keyboard.amk_esp32_state["ready"]:
+            self.wifi_conn_btn.setEnabled(False)
+            self.wifi_scan_btn.setEnabled(False)
             return
+        else:
+            self.wifi_conn_btn.setEnabled(True)
+            self.wifi_scan_btn.setEnabled(True)
 
         if self.wifi_scanning:
             if self.keyboard.amk_esp32_state["ssid_count"] > 0:
