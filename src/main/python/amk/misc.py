@@ -1028,15 +1028,17 @@ class Misc(BasicEditor):
             self.keyboard.firmware_reset()
 
     def on_check_firmware(self):
+        url_prefix = "https://config.matrix-lab.com/update/"
         if sys.platform == "emscripten":
-            with open(self.appctx.get_resource("firmware.json"), "r", encoding='utf-8') as fp:
-                import json
-                firmwares = json.load(fp)
-            print(firmwares)
+            #with open(self.appctx.get_resource("firmware.json"), "r", encoding='utf-8') as fp:
+            #    import json
+            #    firmwares = json.load(fp)
+            import vialglue
+            vialglue.load_firmware_info(url_prefix + "firmware.json")
+            return
         else:
             from urllib.request import urlopen 
             from urllib.error import URLError
-            url_prefix = "https://config.matrix-lab.com/update/"
 
             try:
                 firmware_list = urlopen(url_prefix + "firmware.json")
@@ -1095,7 +1097,37 @@ class Misc(BasicEditor):
                                                     defaultButton=QMessageBox.Ok)
                     break
 
+    def on_firmware_info_loaded(self, data):
+        print("Firmware info loaded:", data)
+        import json
+        firmwares = json.loads(data)
 
+        vendor_id, product_id, family, date, second, size = self.keyboard.firmware_info()
+
+        if "keyboards" in firmwares:
+            for kbd in firmwares["keyboards"]:
+                if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
+                    kbd_date, kbd_second = self.convert_date_second(kbd["build"])
+                    if (kbd_date > date) or (kbd_date == date and kbd_second > second):
+                        print("New firmware found:", kbd["build"])
+                        if sys.platform == "emscripten":
+                            import vial_glue
+                            vial_glue.load_firmware_data(url_prefix + "firmwares/"+kbd["firmware"])
+                            return
+                    else:
+                        if sys.platform == "emscripten":
+                            self.firmware_check_btn.setText(tr("Misc", "Already Latest/已经是最新版本"))
+                    break
+
+    def on_firmware_data_loaded(self, data):
+        print("Firmware data loaded, type:", type(data), "size:", len(data))
+        if sys.platform == "emscripten":
+            uf2 = data
+            data, address = self.parse_uf2(uf2)
+            self.current_firmware_data = data
+            self.current_firmware_address = address
+            self.upload_btn.setEnabled(True)
+            self.upload_bar.reset()
 
     def on_load_firmware(self):
         firmware_file, firmware_file_type = QFileDialog.getOpenFileName(None, "Select Firmware/选择固件", os.getcwd(), "Firmware Files (*.uf2)")

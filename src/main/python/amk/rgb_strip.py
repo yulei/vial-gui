@@ -13,8 +13,8 @@ from util import tr
 from vial_device import VialKeyboard
 from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_PARAM_SYNC, RGB_PARAM_BRIGHT, RGB_TYPE_STRIP, RgbColor
 
-def rgb_display(widget, is_custom, color, led = None):
-    apc_text =""
+def rgb_display(widget, is_custom, color, led = None, strip=-1, index=-1):
+    mask_text =""
     widget.setMaskColor(None)
 
     if is_custom:
@@ -23,11 +23,14 @@ def rgb_display(widget, is_custom, color, led = None):
             blink = "\u2b16" if led.get_blink() else " "
             breath = "\u2b14" if led.get_breath() else " "
             speed = "\u2942{}".format(led.get_speed())
-            apc_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
+            mask_text = "{}{}{}{}".format(dynamic, blink, breath, speed)
+
+    if False and strip != -1 and index != -1:
+        mask_text = "{}:{}".format(strip, index)
 
     led_color = QColor.fromRgbF(color.get_red()/255.0, color.get_green()/255.0, color.get_blue()/255.0)
     widget.setMaskColor(led_color)
-    widget.setText(apc_text)
+    widget.setText(mask_text)
 
 class RgbStripWidget(AmkWidget):
     def __init__(self, layout_editor, editor):
@@ -59,6 +62,9 @@ class RgbStripWidget(AmkWidget):
             color_brush.setStyle(Qt.SolidPattern)
             qp.setBrush(color_brush)
             qp.drawRoundedRect(key.mask_rect, key.corner, key.corner)
+
+            if self.editor.strip == key.desc.row:
+                qp.drawPath(key.background_draw_path)
 
             qp.restore()
 
@@ -228,6 +234,11 @@ class RgbStrip(BasicEditor):
 
     def activate(self):
         if self.valid():
+            try:
+                self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_strip["start"], self.keyboard.amk_rgb_strip["count"])
+            except (RuntimeError, ValueError):
+                pass
+
             self.reset_keyboard_widget()
             self.timer.start(50)
 
@@ -437,12 +448,13 @@ class RgbStrip(BasicEditor):
         if not self.valid():
             self.timer.stop()
             return
+        
         try:
-            #self.keyboard.reload_rgb_leds(self.keyboard.amk_rgb_strip["start"], self.keyboard.amk_rgb_strip["count"])
             start = self.keyboard.amk_rgb_strip["start"]
             for i in range(len(self.keyboard.amk_rgb_strip["strips"])):
-                strip = self.keyboard.amk_rgb_strip["strips"][i]
-                self.keyboard.reload_rgb_leds(start+strip["start"], strip["count"])
+                if i == self.strip:
+                    strip = self.keyboard.amk_rgb_strip["strips"][i]
+                    self.keyboard.reload_rgb_leds(start+strip["start"], strip["count"])
 
         except (RuntimeError, ValueError):
             self.timer.stop()
@@ -450,7 +462,7 @@ class RgbStrip(BasicEditor):
 
         for widget in self.keyboardWidget.widgets:
             color, led = self.get_led(widget.desc.row, widget.desc.col)
-            rgb_display(widget, self.is_custom_mode(widget.desc.row), color, led)
+            rgb_display(widget, self.is_custom_mode(widget.desc.row), color, led, self.strip if self.strip == widget.desc.row else -1, widget.desc.col)
 
         self.keyboardWidget.update()
 
