@@ -1210,11 +1210,12 @@ class ProtocolAmk(BaseProtocol):
                                         mode), retries=20)
     
     def get_rgb_matrix_led_index(self, row, col):
-        index = self.amk_rgb_matrix["data"].get((row, col)) - self.amk_rgb_matrix["start"]
+        index = self.amk_rgb_matrix["data"].get((row, col)) #- self.amk_rgb_matrix["start"]
         if index is None:
             #print("get led index at row: {}, col: {}".format(row, col))
             return None
-        if index >= len(self.amk_rgb_matrix["leds"]):
+
+        if index >= len(self.amk_rgb_matrix["leds"]) + self.amk_rgb_matrix["start"]:
             return None
 
         return index
