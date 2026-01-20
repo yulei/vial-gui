@@ -31,6 +31,8 @@ WIFI_DISCONNECT_TEXT = tr("Misc", "Disconnect/断开连接")
 WIFI_CONNECT_TIMEOUT = 10  #seconds
 WIFI_SCAN_TIMEOUT = 20  #seconds
 
+url_prefix = "https://config.matrix-lab.com/update/"
+
 from amk.protocol import ESP32_STATE, ESP32_GET_SSID, ESP32_CONNECT, ESP32_DISCONNECT
 
 class Misc(BasicEditor):
@@ -966,7 +968,7 @@ class Misc(BasicEditor):
     def convert_date_second(self, build):
         data = build.split("-")
         date = (int(data[0])<<16) | (int(data[1])<<8) | int(data[2])
-        second = (int(data[3]*3600) | (int(data[4])*60) | int(data[5]))
+        second = (int(data[3])*3600) | (int(data[4])*60) | int(data[5])
         return (date, second)
 
     def upload_firmware(self, data, address):
@@ -1028,11 +1030,7 @@ class Misc(BasicEditor):
             self.keyboard.firmware_reset()
 
     def on_check_firmware(self):
-        url_prefix = "https://config.matrix-lab.com/update/"
         if sys.platform == "emscripten":
-            #with open(self.appctx.get_resource("firmware.json"), "r", encoding='utf-8') as fp:
-            #    import json
-            #    firmwares = json.load(fp)
             import vialglue
             vialglue.load_firmware_info(url_prefix + "firmware.json")
             return
@@ -1043,7 +1041,7 @@ class Misc(BasicEditor):
             try:
                 firmware_list = urlopen(url_prefix + "firmware.json")
             except URLError as e:
-                print("Failed to load firmware list:", e)
+                #print("Failed to load firmware list:", e)
                 button = QMessageBox.warning(None, "Firmware",
                                             "Failed to load firmware list./无法加载固件列表",
                                             buttons=QMessageBox.Ok,
@@ -1058,47 +1056,40 @@ class Misc(BasicEditor):
                 if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
                     kbd_date, kbd_second = self.convert_date_second(kbd["build"])
                     if (kbd_date > date) or (kbd_date == date and kbd_second > second):
-                        print("New firmware found:", kbd["build"])
-                        if sys.platform == "emscripten":
-                            with open(self.appctx.get_resource("firmwares/"+kbd["firmware"]), "rb") as fp:
-                                uf2 = fp.read()
-                                data, address = self.parse_uf2(uf2)
-                                self.current_firmware_data = data
-                                self.current_firmware_address = address
-                                self.upload_btn.setEnabled(True)
-                                self.upload_bar.reset()
-                        else:
-                            button = QMessageBox.warning(None, "Firmware",
-                                                        "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
-                                                        buttons=QMessageBox.Yes | QMessageBox.No,
-                                                        defaultButton=QMessageBox.No)
-                            if button == QMessageBox.Yes:
-                                url = url_prefix + "firmwares/"+kbd["firmware"]
-                                print("Downloading firmware from:", url)
-                                try:
-                                    firmware = urlopen(url)
-                                except URLError as e:
-                                    print("Failed to load firmware:", e)
-                                    button = QMessageBox.warning(None, "Firmware",
-                                                                "Failed to download firmware./无法下载固件",
-                                                                buttons=QMessageBox.Ok,
-                                                                defaultButton=QMessageBox.Ok)
-                                    return
-                                uf2 = firmware.read()
-                                data, address = self.parse_uf2(uf2)
-                                self.upload_firmware(data, address)
+                        #print("New firmware found:", kbd["build"])
+                        button = QMessageBox.warning(None, "Firmware",
+                                                    "New firmware found.Do you want to download and update it?\n发现新固件,是否下载并更新?",
+                                                    buttons=QMessageBox.Yes | QMessageBox.No,
+                                                    defaultButton=QMessageBox.No)
+                        if button == QMessageBox.Yes:
+                            url = url_prefix + "firmwares/"+kbd["firmware"]
+                            #print("Downloading firmware from:", url)
+                            try:
+                                firmware = urlopen(url)
+                            except URLError as e:
+                                #print("Failed to load firmware:", e)
+                                button = QMessageBox.warning(None, "Firmware",
+                                                            "Failed to download firmware./无法下载固件",
+                                                            buttons=QMessageBox.Ok,
+                                                            defaultButton=QMessageBox.Ok)
+                                return
+                            uf2 = firmware.read()
+                            data, address = self.parse_uf2(uf2)
+                            if data is None or address is None:
+                                button = QMessageBox.warning(None, "Firmware",
+                                                            "Invalid firmware./不是正确的固件",
+                                                            buttons=QMessageBox.Ok,
+                                                            defaultButton=QMessageBox.Ok)
+                                return
+                            self.upload_firmware(data, address)
                     else:
-                        if sys.platform == "emscripten":
-                            self.firmware_check_btn.setText(tr("Misc", "Already Latest/已经是最新版本"))
-                        else:
-                            button = QMessageBox.warning(None, "Firmware",
+                        button = QMessageBox.warning(None, "Firmware",
                                                     "No new firmware available./目前已经是最新版",
                                                     buttons=QMessageBox.Ok,
                                                     defaultButton=QMessageBox.Ok)
                     break
 
     def on_firmware_info_loaded(self, data):
-        print("Firmware info loaded:", data)
         import json
         firmwares = json.loads(data)
 
@@ -1109,21 +1100,18 @@ class Misc(BasicEditor):
                 if kbd["vendor_id"] == hex(vendor_id) and kbd["product_id"] == hex(product_id) and kbd["family"] == hex(family):
                     kbd_date, kbd_second = self.convert_date_second(kbd["build"])
                     if (kbd_date > date) or (kbd_date == date and kbd_second > second):
-                        print("New firmware found:", kbd["build"])
-                        if sys.platform == "emscripten":
-                            import vial_glue
-                            vial_glue.load_firmware_data(url_prefix + "firmwares/"+kbd["firmware"])
-                            return
+                        import vialglue
+                        vialglue.load_firmware_data(url_prefix + "firmwares/"+kbd["firmware"])
                     else:
-                        if sys.platform == "emscripten":
-                            self.firmware_check_btn.setText(tr("Misc", "Already Latest/已经是最新版本"))
+                        self.firmware_check_btn.setText(tr("Misc", "Already Latest/已经是最新版本"))
                     break
 
     def on_firmware_data_loaded(self, data):
-        print("Firmware data loaded, type:", type(data), "size:", len(data))
-        if sys.platform == "emscripten":
-            uf2 = data
-            data, address = self.parse_uf2(uf2)
+        import base64
+        fm = base64.b64decode(data.decode("utf-8"))
+        uf2 = fm 
+        data, address = self.parse_uf2(uf2)
+        if data is not None and address is not None:
             self.current_firmware_data = data
             self.current_firmware_address = address
             self.upload_btn.setEnabled(True)
@@ -1137,7 +1125,6 @@ class Misc(BasicEditor):
         if not os.path.exists(firmware_file):
             return
 
-        #print(firmware_file)
         with open(firmware_file, "rb") as fp:
             uf2 = fp.read()
             data, address = self.parse_uf2(uf2)
