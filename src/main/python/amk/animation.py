@@ -633,8 +633,8 @@ class Animation(BasicEditor):
                 self.fastdownload_btn.hide()
 
     def valid(self):
-        return (sys.platform != "emscripten") and isinstance(self.device, VialKeyboard) and \
-               (self.device.keyboard)
+        #return (sys.platform != "emscripten") and  isinstance(self.device, VialKeyboard) and (self.device.keyboard)
+        return isinstance(self.device, VialKeyboard) and (self.device.keyboard)
     
     def on_keyboard_file_changed(self):
         item = self.file_lst.currentItem()
@@ -834,6 +834,12 @@ class Animation(BasicEditor):
         self.update_animation_display()
 
     def on_select_btn_clicked(self):
+        if sys.platform == "emscripten":
+            print("on select btn clicked in emscripten")
+            import vialglue
+            vialglue.load_animation_file()
+            return
+
         filters = "{};;{};;{}".format(FILE_FILTER_ANIMATIONS, FILE_FILTER_IMAGES, FILE_FILTER_AMK)
         src_file, filter = QFileDialog.getOpenFileName(None, "Select File", "", filters, FILE_FILTER_ANIMATIONS)
         if src_file and len(src_file) > 0:
@@ -992,3 +998,45 @@ class Animation(BasicEditor):
             cur = cur + "~{}".format(1)
 
         return cur
+    
+    def on_file_loaded(self, data, file_type):
+        import base64
+        fm = base64.b64decode(data.decode("utf-8"))
+
+        if src_file and len(src_file) > 0:
+            self.current_file = src_file
+            self.current_filter = filter
+            if self.fastdev_valid():
+                self.fastdownload_btn.setEnabled(True)
+            self.download_btn.setEnabled(True)
+            self.convert_btn.setEnabled(True)
+
+            if self.current_filter == FILE_FILTER_ANIMATIONS:
+                self.player = QMovie(self.current_file)
+                label_size = self.display_label.frameSize()
+                movie_rect = self.player.frameRect()
+                if movie_rect.width() > label_size.width() or movie_rect.height() > label_size.height():
+                    self.player.setScaledSize(label_size)
+
+                self.display_label.setMovie(self.player)
+                self.player.start()
+
+            elif self.current_filter == FILE_FILTER_IMAGES:
+                self.player = QImage(self.current_file)
+                pixmap = QPixmap.fromImage(self.player)
+                label_size = self.display_label.frameSize()
+                pixmap_rect = self.player.rect()
+                if pixmap_rect.width() > label_size.width() or pixmap_rect.height() > label_size.height():
+                    pixmap = pixmap.scaled(label_size.width(), label_size.height(), aspectRatioMode=Qt.KeepAspectRatio)
+                self.display_label.setPixmap(pixmap)
+            else:
+                self.player = AmkMovie(self.current_file)
+                if self.player.parse():
+                    self.update_animation_display()
+                    self.player.update_frame.connect(self.on_animation_update)
+                    self.player.start()
+
+        if file_type == "animation":
+            print("animation size:", len(fm), "type: ", file_type)
+        else:
+            print("image size:", len(fm), "type: ", file_type)
