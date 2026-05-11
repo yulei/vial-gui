@@ -11,7 +11,7 @@ from editor.basic_editor import BasicEditor
 from amk.widget import ClickableWidget, AmkWidget
 from util import tr
 from vial_device import VialKeyboard
-from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_PARAM_SYNC, RGB_PARAM_BRIGHT, RGB_TYPE_STRIP, RgbColor
+from amk.protocol import RGB_PARAM_COLOR, RGB_PARAM_SPEED, RGB_PARAM_SYNC, RGB_PARAM_BRIGHT, RGB_PARAM_USE_CUSTOM_COLOR, RGB_TYPE_STRIP, RgbColor
 
 def rgb_display(widget, is_custom, color, led = None, strip=-1, index=-1):
     mask_text =""
@@ -160,6 +160,9 @@ class RgbStrip(BasicEditor):
         self.sync_cbx = QCheckBox(tr("RGB Strip", "Toggle Synchronization/切换同步状态"))
         self.sync_cbx.stateChanged.connect(self.on_sync_check)
         layout.addWidget(self.sync_cbx)
+        self.use_custom_cbx = QCheckBox(tr("RGB Strip", "Use Custom Color/使用自定义颜色"))
+        self.use_custom_cbx.stateChanged.connect(self.on_use_custom_check)
+        layout.addWidget(self.use_custom_cbx)
         layout.addStretch(3)
         h_layout.addLayout(layout)
         h_layout.addStretch(1)
@@ -198,6 +201,12 @@ class RgbStrip(BasicEditor):
                 strip = self.keyboard.amk_rgb_strip["strips"][self.strip]
                 self.sync_cbx.setChecked(True if strip["sync"] < len(self.keyboard.amk_rgb_strip["strips"]) else False)
 
+    def reset_use_custom_widgets(self):
+        self.use_custom_cbx.setEnabled(True if self.keyboard.amk_feature["use_custom_color"] else False)
+        if self.strip != -1:
+            strip = self.keyboard.amk_rgb_strip["strips"][self.strip]
+            self.use_custom_cbx.setChecked(True if strip["use_custom_color"] else False)
+
     def reset_bright_widgets(self):
         if self.keyboard.amk_feature["bright"]:
             self.bright_lbl.show()
@@ -229,6 +238,7 @@ class RgbStrip(BasicEditor):
             self.reset_mode_widgets()
             self.reset_sync_widgets()
             self.reset_bright_widgets()
+            self.reset_use_custom_widgets()
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
 
@@ -396,6 +406,15 @@ class RgbStrip(BasicEditor):
 
         self.keyboardWidget.update()
 
+    def on_use_custom_check(self):
+        if self.strip == -1:
+            return
+
+        use_custom = 1 if self.use_custom_cbx.isChecked() else 0
+        self.keyboard.apply_rgb_param(RGB_TYPE_STRIP, RGB_PARAM_USE_CUSTOM_COLOR, use_custom, self.strip)
+
+        self.keyboardWidget.update()
+
     def on_speed_sld(self):
         if self.strip == -1:
             return
@@ -476,6 +495,7 @@ class RgbStrip(BasicEditor):
         self.mode_lst.setCurrentRow(self.mode)
 
         self.reset_sync_widgets()
+        self.reset_use_custom_widgets()
 
     def on_mode_changed(self):
         cur = self.mode_lst.currentRow()
