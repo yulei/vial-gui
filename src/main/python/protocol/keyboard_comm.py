@@ -109,7 +109,8 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
         self.reload_nkro()
 
         self.amk_feature = {"datetime": False, "aux_display": False, "switch_type": False,"switch_state": False, 
-                            "calibrate": False, "firmware": False, "rgb_matrix": False, "bright": False, "esp32at": False, "esp32at_test": False}
+                            "calibrate": False, "firmware": False, "rgb_matrix": False, "bright": False, "esp32at": False, "esp32at_test": False,
+                            "use_custom_color": False}
 
         self.amk_rgb = []
         self.amk_rgb_led = {"protocol_v2":False, "total":0, "bright":0}
@@ -180,6 +181,10 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         if "bright" in feature["rgb_led"]:
                             self.amk_rgb_led["bright"] = feature["rgb_led"]["bright"] 
                             self.amk_feature["bright"] = True
+                        
+                        if "use_custom_color" in feature["rgb_led"]:
+                            self.amk_feature["use_custom_color"] = True
+                            #print("Enable use custom color")
 
                     if "rgb_matrix" in feature:
                         self.amk_feature["rgb_matrix"] = True
