@@ -174,6 +174,9 @@ class RgbGrid(BasicEditor):
         self.text_mode_cbb.currentIndexChanged.connect(self.on_mask_mode)
         lyt.addWidget(self.text_mode_cbb)
         layout.addLayout(lyt)
+        self.typing_cbx = QCheckBox(tr("RGB Grid", "Typing Effect/打字特效"))
+        self.typing_cbx.stateChanged.connect(self.on_typing_check)
+        layout.addWidget(self.typing_cbx)
         layout.addStretch(3)
         h_layout.addLayout(layout)
         h_layout.addStretch(1)
@@ -236,6 +239,14 @@ class RgbGrid(BasicEditor):
         self.text_rotation_cbb.blockSignals(False)
         self.text_edt.blockSignals(False)
         self.text_cbx.blockSignals(False)
+    
+    def reset_typing_widgets(self):
+        self.typing_cbx.setEnabled(False)
+        if self.grid != -1:
+            grid = self.keyboard.amk_rgb_grid["grids"][self.grid]
+            if grid["has_typing"] > 0:
+                self.typing_cbx.setEnabled(True)
+                self.typing_cbx.setChecked(True if grid["typing_enable"] > 0 else False)
 
     def reset_bright_widgets(self):
         if self.keyboard.amk_feature["bright"]:
@@ -271,6 +282,7 @@ class RgbGrid(BasicEditor):
 
             self.reset_mode_widgets()
             self.reset_bright_widgets()
+            self.reset_typing_widgets()
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
 
@@ -512,6 +524,7 @@ class RgbGrid(BasicEditor):
         self.mode = self.keyboard.amk_rgb_grid["grids"][cur]["mode"]
         self.mode_lst.setCurrentRow(self.mode)
 
+        self.reset_typing_widgets()
         self.reset_grid_mask()
 
     def on_mode_changed(self):
@@ -536,7 +549,9 @@ class RgbGrid(BasicEditor):
         rotation = self.text_rotation_cbb.currentIndex()
         mode = self.text_mode_cbb.currentIndex()
 
-        self.keyboard.apply_grid_mask(self.grid, enabled, text, rotation, mode)
+        typing = 1 if self.typing_cbx.isChecked() else 0
+
+        self.keyboard.apply_grid_mask(self.grid, enabled, text, rotation, mode, typing)
         #print("enabled: {}, text: {}, rotation: {}, mode: {}".format(enabled, text, rotation, mode))
 
     def on_mask_check(self):
@@ -549,4 +564,7 @@ class RgbGrid(BasicEditor):
         self.grid_mask_update()
 
     def on_mask_mode(self):
+        self.grid_mask_update()
+
+    def on_typing_check(self):
         self.grid_mask_update()

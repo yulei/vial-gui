@@ -128,7 +128,9 @@ GRID_ENABLE_MASK = 0x01
 GRID_ROTATION_SHIFT = 0x01
 GRID_ROTATION_MASK = 0x03
 GRID_MODE_SHIFT = 0x03
-GRID_MODE_MASK = 0x01F
+GRID_MODE_MASK = 0x0F
+GRID_TYPING_SHIFT = 0x07
+GRID_TYPING_MASK = 0x01
 
 class DksKey:
     def __init__(self):
@@ -932,6 +934,15 @@ class ProtocolAmk(BaseProtocol):
                                     grid["mask_mode"] = mask[3]
                         else:
                             grid["mask"] = 0
+                        
+                        if "typing" in grid:
+                            grid["has_typing"] = grid["typing"]
+                            if grid["typing"] > 0:
+                                mask = self.reload_grid_mask(i)
+                                if mask is not None:
+                                    grid["typing_enable"] = mask[4]
+                        else:
+                            grid["has_typing"] = 0 
 
             for i in range(len(self.amk_rgb_grid["grids"])):
                 grid = self.amk_rgb_grid["grids"][i]
@@ -1640,6 +1651,7 @@ class ProtocolAmk(BaseProtocol):
             enabled = (data[4] >> GRID_ENABLE_SHIFT) & GRID_ENABLE_MASK
             rotation = (data[4] >> GRID_ROTATION_SHIFT) & GRID_ROTATION_MASK
             mode = (data[4] >> GRID_MODE_SHIFT) & GRID_MODE_MASK
+            typing = (data[4] >> GRID_TYPING_SHIFT) & GRID_TYPING_MASK
             text = ""
             for i in range(GRID_TEXT_MAX):
                 index = 5+i
@@ -1649,29 +1661,31 @@ class ProtocolAmk(BaseProtocol):
                 else:
                     break
             #print(enabled, text, rotation, mode)
-            return (enabled, text, rotation, mode)
+            return (enabled, text, rotation, mode, typing)
         else:
             return None
     
-    def apply_grid_mask(self, index, enabled, text, rotation, mode):
+    def apply_grid_mask(self, index, enabled, text, rotation, mode, typing):
         if index >= len(self.amk_rgb_grid["grids"]):
-            #print("invalid grid index: ", index)
+            print("invalid grid index: ", index)
             return
         
         grid = self.amk_rgb_grid["grids"][index]
-        if grid["mask"] == 0:
-            #print("invalid grid mask: ", grid["mask"])
+        if grid["mask"] == 0 and grid["has_typing"] == 0:
             return
         
-        if (grid["mask_enable"] == enabled) and (grid["mask_text"] == text) and (grid["mask_rotation"] == rotation) and (grid["mask_mode"] == mode):
+        if (grid["mask_enable"] == enabled) and (grid["mask_text"] == text) \
+            and (grid["mask_rotation"] == rotation) and (grid["mask_mode"] == mode) \
+            and (grid["typing_enable"] == typing):
             return
 
         grid["mask_enable"] = enabled
         grid["mask_text"] = text
         grid["mask_rotation"] = rotation
         grid["mask_mode"] = mode 
-
-        param = ((enabled&GRID_ENABLE_MASK) << GRID_ENABLE_SHIFT) | ((rotation&GRID_ROTATION_MASK) << GRID_ROTATION_SHIFT) | ((mode&GRID_MODE_MASK) << GRID_MODE_SHIFT)
+        grid["typing_enable"] = typing
+        param = ((enabled&GRID_ENABLE_MASK) << GRID_ENABLE_SHIFT) | ((rotation&GRID_ROTATION_MASK) << GRID_ROTATION_SHIFT) \
+            | ((mode&GRID_MODE_MASK) << GRID_MODE_SHIFT) | ((typing&GRID_TYPING_MASK) << GRID_TYPING_SHIFT)
 
         #print(hex(param))
 
@@ -1680,7 +1694,7 @@ class ProtocolAmk(BaseProtocol):
         if data[2] != AMK_PROTOCOL_OK:
             print("Faild to set grid mask")
 
-        #print("Set grid mask: index={}, enable={}, text={}, rotation={}, mode={}".format(index, enabled, text, rotation, mode))
+        #print("Set grid mask: index={}, enable={}, text={}, rotation={}, mode={}, typing={}".format(index, enabled, text, rotation, mode, typing))
     
     def apply_esp32_command(self, main, wifi, cmd_type, param):
         data = self.usb_send(self.dev, 
