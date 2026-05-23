@@ -191,6 +191,11 @@ class Keyboard(ProtocolMacro, ProtocolDynamic, ProtocolTapDance, ProtocolCombo, 
                         self.amk_rgb_matrix["start"] = feature["rgb_matrix"]["start"]
                         self.amk_rgb_matrix["count"] = feature["rgb_matrix"]["count"]
                         self.amk_rgb_matrix["effects"] = feature["rgb_matrix"]["effects"]
+                        if "animation" in feature["rgb_matrix"]:
+                            self.amk_rgb_matrix["animation_file"] = True
+                        else:
+                            self.amk_rgb_matrix["animation_file"] = False
+
                         self.reload_amk_rgb_matrix()
                         self.reload_amk_rgb_params(RGB_TYPE_MATRIX)
 

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QPushButton, QCheckBox, QColorDialog, QListWidget, QFileDialog
 from PyQt5.QtCore import Qt, QTimer
 
-from PyQt5.QtGui import QPainter, QColor, QPainterPath, QTransform, QBrush, QPolygonF, QPalette
+from PyQt5.QtGui import QPainter, QColor, QBrush, QPalette
 from PyQt5.QtWidgets import QApplication
 
 from themes import Theme
@@ -124,6 +124,9 @@ class RgbMatrix(BasicEditor):
         self.speed_sld.valueChanged.connect(self.on_speed_sld) 
         lyt.addWidget(self.speed_sld)
         layout.addLayout(lyt)
+        self.animation_btn = QPushButton(tr("RGB Matrix", "Load Animation/导入动画"))
+        self.animation_btn.clicked.connect(self.on_animation_btn_clicked)
+        layout.addWidget(self.animation_btn)
         layout.addStretch(3)
         h_layout.addLayout(layout)
         h_layout.addStretch(1)
@@ -165,8 +168,15 @@ class RgbMatrix(BasicEditor):
             for widget in self.keyboardWidget.widgets:
                 widget.masked = True
                 widget.setOn(False)
-            
+
             self.reset_custom_widget()
+
+            self.animation_btn.setEnabled(False)
+
+            import sys
+            if sys.platform != "emscripten":
+                if self.keyboard.amk_rgb_matrix["animation_file"]:
+                    self.animation_btn.setEnabled(True)
 
             self.keyboardWidget.update()
             self.keyboardWidget.updateGeometry()
@@ -332,6 +342,33 @@ class RgbMatrix(BasicEditor):
             self.keyboard.apply_rgb_param(RGB_TYPE_MATRIX, RGB_PARAM_SPEED, speed)
 
         self.keyboardWidget.update()
+
+    def download_animation(self, file_name):
+        try:
+            print("download animation file:", file_name)
+            with open(file_name, "rb") as f:
+                data = f.read()
+                index = self.keyboard.open_anim_file("EFFECT.RMA", False)
+                if index != 0xFF:
+                    total = len(data) 
+                    remain = total
+                    cur = 0
+                    while remain > 0:
+                        size = 24 if remain > 24 else remain
+                        if self.keyboard.write_anim_file(index, data[cur:cur+size], cur):
+                            remain = remain - size
+                            cur = cur + size
+                        else:
+                            break
+
+                    self.keyboard.close_anim_file(index)
+        except Exception as e:
+            print("Failed to load animation: ", e)
+
+    def on_animation_btn_clicked(self):
+        file_name, _ = QFileDialog.getOpenFileName(None, "Select Animation File", "", "RGB Matrix Animation Files (*.rma)")
+        if file_name:
+            self.download_animation(file_name)
 
     def on_rgb_matrix_poller(self):
         if not self.valid():
