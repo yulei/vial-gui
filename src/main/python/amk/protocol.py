@@ -1191,7 +1191,8 @@ class ProtocolAmk(BaseProtocol):
             count = self.amk_rgb_matrix["count"]
             self.amk_rgb_matrix["leds"] = {}
             for i in range(count):
-                self.reload_rgb_matrix_led(start+i)
+                #self.reload_rgb_matrix_led(start+i)
+                self.reload_rgb_matrix_led(i)
         
     def reload_rgb_matrix_led(self, index):
         if self.amk_rgb_led["protocol_v2"]:

@@ -391,6 +391,7 @@ class RgbMatrix(BasicEditor):
         color = RgbColor(0,0,0)
         index = self.keyboard.get_rgb_matrix_led_index(row, col)
         if index is not None:
+            index = self.keyboard.amk_rgb_matrix["start"] + index
             color = self.keyboard.amk_rgb_data[index]
         led = None
         if self.is_custom_mode():
